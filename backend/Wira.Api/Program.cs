@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Wira.Api.Data;
+using Wira.Api.Services;
+using Wira.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 // Agregar Swagger
@@ -14,6 +17,28 @@ builder.Services.AddSwaggerGen();
 // Configurar Entity Framework
 builder.Services.AddDbContext<WiraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configurar JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "default-secret-key"))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Registrar servicios
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Configurar CORS para desarrollo
 builder.Services.AddCors(options =>
@@ -33,7 +58,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configurar pipeline HTTP request
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -44,7 +69,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Wira API v1");
-        c.RoutePrefix = "swagger"; // Swagger estará en /swagger
+        c.RoutePrefix = "swagger";
     });
 }
 
@@ -52,6 +77,10 @@ app.UseHttpsRedirection();
 
 // Usar CORS
 app.UseCors("AllowReactApp");
+
+// Usar autenticación y autorización
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Mapear controladores
 app.MapControllers();

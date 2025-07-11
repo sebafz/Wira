@@ -27,6 +27,16 @@ namespace Wira.Api.Models
 
         public bool ValidadoEmail { get; set; } = false;
 
+        [StringLength(255)]
+        public string? TokenVerificacionEmail { get; set; }
+
+        public DateTime? FechaVencimientoTokenVerificacion { get; set; }
+
+        [StringLength(255)]
+        public string? TokenRecuperacionPassword { get; set; }
+
+        public DateTime? FechaVencimientoTokenRecuperacion { get; set; }
+
         public int? MineraID { get; set; }
 
         public int? ProveedorID { get; set; }

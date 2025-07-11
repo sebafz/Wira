@@ -15,7 +15,93 @@ GET {{Wira.Api_HostAddress}}/api/test/estados
 
 ###
 
-# OpenAPI/Swagger endpoint
-GET {{Wira.Api_HostAddress}}/openapi/v1.json
+# Get mineras for registration
+GET {{Wira.Api_HostAddress}}/api/auth/mineras
+
+###
+
+# Get proveedores for registration
+GET {{Wira.Api_HostAddress}}/api/auth/proveedores
+
+###
+
+# Register new user (Minera)
+POST {{Wira.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@minera1.com",
+  "password": "Password123!",
+  "confirmPassword": "Password123!",
+  "nombre": "Administrador Minera",
+  "tipoCuenta": "Minera",
+  "mineraID": 1
+}
+
+###
+
+# Register new user (Proveedor)
+POST {{Wira.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "contacto@proveedor1.com",
+  "password": "Password123!",
+  "confirmPassword": "Password123!",
+  "nombre": "Representante Proveedor",
+  "tipoCuenta": "Proveedor",
+  "proveedorID": 1
+}
+
+###
+
+# Login
+POST {{Wira.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@minera1.com",
+  "password": "Password123!"
+}
+
+###
+
+# Verify email
+POST {{Wira.Api_HostAddress}}/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "admin@minera1.com",
+  "token": "your-verification-token"
+}
+
+###
+
+# Forgot password
+POST {{Wira.Api_HostAddress}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "admin@minera1.com"
+}
+
+###
+
+# Reset password
+POST {{Wira.Api_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "admin@minera1.com",
+  "token": "your-reset-token",
+  "newPassword": "NewPassword123!",
+  "confirmNewPassword": "NewPassword123!"
+}
+
+###
+
+# Get current user (requires authentication)
+GET {{Wira.Api_HostAddress}}/api/auth/me
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
 
 ###
