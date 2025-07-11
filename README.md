@@ -1,6 +1,10 @@
-# Sistema de Licitación para Mineras del Norte Argentino - Proyecto Wira
-
-Este proyecto tiene como objetivo desarrollar una plataforma de licitación en línea que promueva la libre competencia, transparencia y eficiencia en la contratación de proveedores por parte de empresas mineras del NOA (Noroeste Argentino).
+# Proyecto Wira
+<div align="center">
+<img src="https://res.cloudinary.com/dbkb6ywuz/image/upload/v1752202258/wira2-removebg-preview_aoecda.png" width="35%" >
+  <br>
+  <sup>Sistema de licitación para mineras del norte argentino</sup>
+</div>
+Este proyecto tiene como objetivo desarrollar una plataforma de licitación en línea que promueva la libre competencia, transparencia y eficiencia en la contratación de proveedores por parte de empresas mineras del norte argentino.
 
 ## Contexto
 
