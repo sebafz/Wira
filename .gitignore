@@ -26,8 +26,8 @@ dist-ssr/
 # Backend
 # ────────────
 # Build results
-backend/bin/
-backend/obj/
+**/bin/
+**/obj/
 
 # User-specific files
 *.suo
@@ -35,16 +35,21 @@ backend/obj/
 *.userosscache
 *.sln.docstates
 
-# VS Code
-backend/.vscode/
-backend/.vs/
+# Visual Studio files
+**/.vs/
+**/.vscode/
+*.vsidx
+*.vsix
+
+# Entity Framework
+**/Migrations/
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
 # Environment configs
-backend/appsettings.Development.json
-backend/appsettings.Local.json
+**/appsettings.Development.json
+**/appsettings.Local.json
 
 # Others
 *.ntvs*

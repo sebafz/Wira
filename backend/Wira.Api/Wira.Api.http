@@ -1,6 +1,21 @@
-@Wira.Api_HostAddress = http://localhost:5242
+@Wira.Api_HostAddress = https://localhost:5001
 
-GET {{Wira.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+# Test database connection
+GET {{Wira.Api_HostAddress}}/api/test/connection
+
+###
+
+# Get all roles
+GET {{Wira.Api_HostAddress}}/api/test/roles
+
+###
+
+# Get all estados
+GET {{Wira.Api_HostAddress}}/api/test/estados
+
+###
+
+# OpenAPI/Swagger endpoint
+GET {{Wira.Api_HostAddress}}/openapi/v1.json
 
 ###
