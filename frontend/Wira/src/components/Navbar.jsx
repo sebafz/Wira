@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import logoWira from "../assets/logoWira.png";
 
 const NavbarContainer = styled.nav`
   background: white;
@@ -26,15 +27,8 @@ const Logo = styled.div`
   align-items: center;
   cursor: pointer;
 
-  h1 {
-    color: #333;
-    font-size: 1.8rem;
-    font-weight: bold;
-    margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  img {
+    height: 40px;
   }
 `;
 
@@ -67,7 +61,7 @@ const ProfileButton = styled.button`
   height: 40px;
   border-radius: 50%;
   border: 2px solid #e1e5e9;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   color: white;
   font-weight: bold;
   font-size: 1rem;
@@ -189,7 +183,7 @@ const Navbar = () => {
     <NavbarContainer>
       <NavbarContent>
         <Logo onClick={handleLogoClick}>
-          <h1>Wira</h1>
+          <img src={logoWira} alt="Wira" />
         </Logo>
 
         <UserSection ref={dropdownRef}>

@@ -57,6 +57,7 @@ export const apiService = {
     apiClient.post("/auth/resend-verification", { email }),
   forgotPassword: (email) => apiClient.post("/auth/forgot-password", { email }),
   resetPassword: (data) => apiClient.post("/auth/reset-password", data),
+  updateProfile: (userData) => apiClient.put("/auth/profile", userData),
 
   // Data endpoints
   getMineras: () => apiClient.get("/mineras"),

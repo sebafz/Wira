@@ -3,13 +3,18 @@ import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../services/apiService";
+import logoWira from "../assets/logoWira.png";
 
 const RegisterContainer = styled.div`
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(252, 107, 10, 0.8) 0%,
+    rgba(255, 143, 66, 0.7) 100%
+  );
   padding: 20px;
 `;
 
@@ -26,15 +31,9 @@ const Logo = styled.div`
   text-align: center;
   margin-bottom: 30px;
 
-  h1 {
-    color: #333;
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  img {
+    height: 60px;
+    margin-bottom: 5px;
   }
 
   p {
@@ -61,7 +60,7 @@ const StepIndicator = styled.div`
     margin: 0 10px;
 
     &.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
       color: white;
     }
 
@@ -115,7 +114,7 @@ const Input = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #fc6b0a;
   }
 
   &::placeholder {
@@ -133,7 +132,7 @@ const Select = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #fc6b0a;
   }
 `;
 
@@ -146,17 +145,17 @@ const UserTypeSelector = styled.div`
 
 const UserTypeCard = styled.div`
   padding: 20px;
-  border: 2px solid ${(props) => (props.selected ? "#667eea" : "#e1e5e9")};
+  border: 2px solid ${(props) => (props.selected ? "#fc6b0a" : "#e1e5e9")};
   border-radius: 8px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
   background: ${(props) =>
-    props.selected ? "rgba(102, 126, 234, 0.1)" : "white"};
+    props.selected ? "rgba(252, 107, 10, 0.1)" : "white"};
 
   &:hover {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    border-color: #fc6b0a;
+    background: rgba(252, 107, 10, 0.05);
   }
 
   .icon {
@@ -177,7 +176,7 @@ const UserTypeCard = styled.div`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   color: white;
   border: none;
   padding: 14px 20px;
@@ -186,10 +185,11 @@ const Button = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex: 1;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
   }
 
   &:active {
@@ -206,6 +206,10 @@ const Button = styled.button`
 
 const SecondaryButton = styled(Button)`
   background: #6c757d;
+  flex: 0 0 auto;
+  padding: 14px 20px;
+  font-size: 1rem;
+  min-width: 80px;
 
   &:hover {
     box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
@@ -455,14 +459,14 @@ const Register = () => {
   const renderStep2 = () => (
     <>
       <InputGroup>
-        <Label htmlFor="nombre">Nombre Completo</Label>
+        <Label htmlFor="nombre">Nombre completo</Label>
         <Input
           type="text"
           id="nombre"
           name="nombre"
           value={formData.nombre}
           onChange={handleChange}
-          placeholder="Su nombre completo"
+          placeholder="Nombre completo"
           required
         />
       </InputGroup>
@@ -481,7 +485,7 @@ const Register = () => {
       </InputGroup>
 
       <InputGroup>
-        <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+        <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
         <Input
           type="password"
           id="confirmPassword"
@@ -495,7 +499,7 @@ const Register = () => {
 
       {userType === "minera" && (
         <InputGroup>
-          <Label htmlFor="mineraId">Seleccione su Minera</Label>
+          <Label htmlFor="mineraId">Seleccione su minera</Label>
           <Select
             id="mineraId"
             name="mineraId"
@@ -506,7 +510,7 @@ const Register = () => {
             <option value="">Seleccione una minera...</option>
             {mineras.map((minera) => (
               <option key={minera.mineraID} value={minera.mineraID}>
-                {minera.nombre} - {minera.cuit}
+                {minera.nombre}
               </option>
             ))}
           </Select>
@@ -515,7 +519,7 @@ const Register = () => {
 
       {userType === "proveedor" && (
         <InputGroup>
-          <Label htmlFor="proveedorId">Seleccione su Empresa</Label>
+          <Label htmlFor="proveedorId">Seleccione su empresa</Label>
           <Select
             id="proveedorId"
             name="proveedorId"
@@ -526,7 +530,7 @@ const Register = () => {
             <option value="">Seleccione un proveedor...</option>
             {proveedores.map((proveedor) => (
               <option key={proveedor.proveedorID} value={proveedor.proveedorID}>
-                {proveedor.nombre} - {proveedor.cuit}
+                {proveedor.nombre}
               </option>
             ))}
           </Select>
@@ -544,7 +548,7 @@ const Register = () => {
               <span style={{ marginLeft: "8px" }}>Creando cuenta...</span>
             </>
           ) : (
-            "Crear Cuenta"
+            "Crear cuenta"
           )}
         </Button>
       </ButtonGroup>
@@ -555,8 +559,8 @@ const Register = () => {
     <RegisterContainer>
       <RegisterCard>
         <Logo>
-          <h1>Wira</h1>
-          <p>Crear Nueva Cuenta</p>
+          <img src={logoWira} alt="Wira" />
+          <p>Crear nueva cuenta</p>
         </Logo>
 
         <StepIndicator>
@@ -575,7 +579,7 @@ const Register = () => {
 
         <div style={{ textAlign: "center" }}>
           <LinkButton onClick={() => navigate("/login")}>
-            ¿Ya tienes cuenta? Inicia sesión
+            ¿Ya tenés cuenta? Iniciá sesión
           </LinkButton>
         </div>
       </RegisterCard>

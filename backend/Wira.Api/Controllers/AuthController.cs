@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using Wira.Api.Data;
 using Wira.Api.DTOs;
 using Wira.Api.Services.Interfaces;
@@ -128,7 +129,7 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 {
@@ -178,10 +179,53 @@ namespace Wira.Api.Controllers
             }
             catch (Exception ex)
             {
-                // Log the error for debugging purposes
-                // In a production environment, you might want to use a proper logging framework
-                Console.WriteLine($"Error getting current user: {ex.Message}");
                 return StatusCode(500, new { message = "Error al obtener información del usuario" });
+            }
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new { message = "Token inválido" });
+                }
+
+                var user = await _context.Usuarios.FindAsync(userId);
+                
+                if (user == null)
+                {
+                    return NotFound(new { message = "Usuario no encontrado" });
+                }
+
+                // Actualizar solo los campos proporcionados
+                if (!string.IsNullOrEmpty(request.Nombre))
+                {
+                    user.Nombre = request.Nombre.Trim();
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { 
+                    success = true, 
+                    message = "Perfil actualizado correctamente",
+                    user = new {
+                        usuarioID = user.UsuarioID,
+                        email = user.Email,
+                        nombre = user.Nombre,
+                        validadoEmail = user.ValidadoEmail
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating profile: {ex.Message}");
+                return StatusCode(500, new { success = false, message = "Error al actualizar el perfil" });
             }
         }
     }

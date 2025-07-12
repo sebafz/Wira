@@ -26,7 +26,7 @@ const WelcomeTitle = styled.h1`
   color: #333;
   font-size: 2rem;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -39,11 +39,11 @@ const WelcomeSubtitle = styled.p`
 `;
 
 const UserCard = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   color: white;
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
 `;
 
 const UserCardTitle = styled.h3`
@@ -83,13 +83,13 @@ const StatCard = styled.div`
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid ${(props) => props.color || "#667eea"};
+  border-left: 4px solid ${(props) => props.color || "#fc6b0a"};
 `;
 
 const StatNumber = styled.div`
   font-size: 2.5rem;
   font-weight: bold;
-  color: ${(props) => props.color || "#667eea"};
+  color: ${(props) => props.color || "#fc6b0a"};
   margin-bottom: 5px;
 `;
 

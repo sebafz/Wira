@@ -2,13 +2,18 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import logoWira from "../assets/logoWira.png";
 
 const LoginContainer = styled.div`
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(252, 107, 10, 0.8) 0%,
+    rgba(255, 143, 66, 0.7) 100%
+  );
   padding: 20px;
 `;
 
@@ -25,15 +30,9 @@ const Logo = styled.div`
   text-align: center;
   margin-bottom: 30px;
 
-  h1 {
-    color: #333;
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  img {
+    height: 60px;
+    margin-bottom: 5px;
   }
 
   p {
@@ -79,7 +78,7 @@ const Input = styled.input`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   color: white;
   border: none;
   padding: 14px 20px;
@@ -91,7 +90,7 @@ const Button = styled.button`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
   }
 
   &:active {
@@ -204,7 +203,7 @@ const Login = () => {
     <LoginContainer>
       <LoginCard>
         <Logo>
-          <h1>Wira</h1>
+          <img src={logoWira} alt="Wira" />
           <p>Sistema de Licitaciones Mineras</p>
         </Logo>
 
@@ -262,14 +261,18 @@ const Login = () => {
                 <span style={{ marginLeft: "8px" }}>Iniciando sesión...</span>
               </>
             ) : (
-              "Iniciar Sesión"
+              "Iniciar sesión"
             )}
           </Button>
         </Form>
 
         <div style={{ textAlign: "center" }}>
+          <LinkButton onClick={() => navigate("/forgot-password")}>
+            ¿Olvidaste tu contraseña?
+          </LinkButton>
+          <br />
           <LinkButton onClick={() => navigate("/register")}>
-            ¿No tienes cuenta? Créala aquí
+            ¿No tenés cuenta? Creala acá
           </LinkButton>
         </div>
       </LoginCard>

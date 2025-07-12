@@ -162,12 +162,21 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: "CLEAR_ERROR" });
   };
 
+  // Actualizar información del usuario
+  const updateUser = (updatedUserData) => {
+    const updatedUser = { ...state.user, ...updatedUserData };
+    localStorage.setItem("userInfo", JSON.stringify(updatedUser));
+    dispatch({ type: "SET_USER", payload: updatedUser });
+    return Promise.resolve(updatedUser);
+  };
+
   const value = {
     ...state,
     login,
     logout,
     refreshUser,
     clearError,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

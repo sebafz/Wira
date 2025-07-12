@@ -80,4 +80,10 @@ namespace Wira.Api.DTOs
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
     }
+
+    public class UpdateProfileRequest
+    {
+        [StringLength(100)]
+        public string? Nombre { get; set; }
+    }
 }

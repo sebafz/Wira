@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
+import { apiService } from "../services/apiService";
 import Navbar from "./Navbar";
 
 const ProfileContainer = styled.div`
@@ -22,7 +23,7 @@ const ProfileCard = styled.div`
 `;
 
 const ProfileHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   color: white;
   padding: 30px;
   text-align: center;
@@ -87,6 +88,9 @@ const InfoItem = styled.div`
     margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .value {
@@ -94,6 +98,98 @@ const InfoItem = styled.div`
     color: #333;
     font-weight: 500;
   }
+`;
+
+const EditableField = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const EditInput = styled.input`
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 500;
+  border: 2px solid #fc6b0a;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: white;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: #ff8f42;
+    box-shadow: 0 0 0 3px rgba(252, 107, 10, 0.1);
+  }
+`;
+
+const EditButton = styled.button`
+  background: none;
+  border: none;
+  color: #fc6b0a;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(252, 107, 10, 0.1);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const SaveButton = styled.button`
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #218838;
+  }
+
+  &:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+  }
+`;
+
+const CancelButton = styled.button`
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #5a6268;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: 5px;
+`;
+
+const SuccessMessage = styled.div`
+  color: #28a745;
+  font-size: 0.9rem;
+  margin-top: 5px;
 `;
 
 const Badge = styled.span`
@@ -133,11 +229,82 @@ const BackButton = styled.button`
 `;
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+
+  // Estado para la edición del nombre
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
+
+  // Inicializar el nombre editado cuando se inicia la edición
+  const handleStartEdit = () => {
+    setEditedName(user?.Nombre || user?.nombre || "");
+    setIsEditingName(true);
+    setSaveError("");
+    setSaveSuccess("");
+  };
+
+  // Cancelar edición
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName("");
+    setSaveError("");
+    setSaveSuccess("");
+  };
+
+  // Guardar cambios
+  const handleSaveName = async () => {
+    if (!editedName.trim()) {
+      setSaveError("El nombre no puede estar vacío");
+      return;
+    }
+
+    if (editedName.trim() === (user?.Nombre || user?.nombre)) {
+      // No hay cambios
+      handleCancelEdit();
+      return;
+    }
+
+    setSaveLoading(true);
+    setSaveError("");
+
+    try {
+      // Llamada al API para actualizar el perfil
+      const response = await apiService.updateProfile({
+        Nombre: editedName.trim(),
+      });
+
+      if (response.data.success) {
+        // Actualizar el contexto de usuario
+        await updateUser({
+          ...user,
+          Nombre: editedName.trim(),
+          nombre: editedName.trim(), // Mantener compatibilidad
+        });
+
+        setSaveSuccess("Nombre actualizado correctamente");
+        setIsEditingName(false);
+
+        // Limpiar mensaje de éxito después de 3 segundos
+        setTimeout(() => setSaveSuccess(""), 3000);
+      } else {
+        setSaveError(response.data.message || "Error al actualizar el nombre");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Error al actualizar el nombre";
+      setSaveError(errorMessage);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   const getUserInitials = () => {
-    if (!user?.nombre) return "U";
-    return user.nombre
+    const nombre = user?.Nombre || user?.nombre;
+    if (!nombre) return "U";
+    return nombre
       .split(" ")
       .map((name) => name.charAt(0))
       .join("")
@@ -153,14 +320,14 @@ const Profile = () => {
   const getCompanyInfo = () => {
     if (user?.minera) {
       return {
-        type: "Información de la Minera",
+        type: "Información de la minera",
         name: user.minera.nombre,
         cuit: user.minera.cuit,
       };
     }
     if (user?.proveedor) {
       return {
-        type: "Información del Proveedor",
+        type: "Información del proveedor",
         name: user.proveedor.nombre,
         cuit: user.proveedor.cuit,
         specialty: user.proveedor.especialidad,
@@ -185,17 +352,63 @@ const Profile = () => {
         <ProfileCard>
           <ProfileHeader>
             <ProfileAvatar>{getUserInitials()}</ProfileAvatar>
-            <ProfileName>{user?.nombre || "Usuario"}</ProfileName>
+            <ProfileName>
+              {user?.Nombre || user?.nombre || "Usuario"}
+            </ProfileName>
             <ProfileRole>{getUserRole()}</ProfileRole>
           </ProfileHeader>
 
           <ProfileBody>
             <Section>
-              <SectionTitle>Información Personal</SectionTitle>
+              <SectionTitle>Información personal</SectionTitle>
               <InfoGrid>
                 <InfoItem>
-                  <div className="label">Nombre Completo</div>
-                  <div className="value">{user?.nombre || "No disponible"}</div>
+                  <div className="label">
+                    Nombre completo
+                    {!isEditingName && (
+                      <EditButton
+                        onClick={handleStartEdit}
+                        title="Editar nombre"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                        </svg>
+                      </EditButton>
+                    )}
+                  </div>
+                  {isEditingName ? (
+                    <div>
+                      <EditableField>
+                        <EditInput
+                          type="text"
+                          value={editedName}
+                          onChange={(e) => setEditedName(e.target.value)}
+                          placeholder="Ingrese su nombre completo"
+                          disabled={saveLoading}
+                        />
+                        <SaveButton
+                          onClick={handleSaveName}
+                          disabled={saveLoading}
+                        >
+                          {saveLoading ? "..." : "✓"}
+                        </SaveButton>
+                        <CancelButton
+                          onClick={handleCancelEdit}
+                          disabled={saveLoading}
+                        >
+                          ✕
+                        </CancelButton>
+                      </EditableField>
+                      {saveError && <ErrorMessage>{saveError}</ErrorMessage>}
+                      {saveSuccess && (
+                        <SuccessMessage>{saveSuccess}</SuccessMessage>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="value">
+                      {user?.Nombre || user?.nombre || "No disponible"}
+                    </div>
+                  )}
                 </InfoItem>
                 <InfoItem>
                   <div className="label">Email</div>
@@ -208,16 +421,6 @@ const Profile = () => {
                     </Badge>
                   </div>
                 </InfoItem>
-                <InfoItem>
-                  <div className="label">ID de Usuario</div>
-                  <div className="value">
-                    {user?.usuarioID || "No disponible"}
-                  </div>
-                </InfoItem>
-                <InfoItem>
-                  <div className="label">Roles</div>
-                  <div className="value">{getUserRole()}</div>
-                </InfoItem>
               </InfoGrid>
             </Section>
 
@@ -226,7 +429,7 @@ const Profile = () => {
                 <SectionTitle>{companyInfo.type}</SectionTitle>
                 <InfoGrid>
                   <InfoItem>
-                    <div className="label">Nombre de la Empresa</div>
+                    <div className="label">Nombre de la empresa</div>
                     <div className="value">{companyInfo.name}</div>
                   </InfoItem>
                   <InfoItem>

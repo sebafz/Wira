@@ -74,10 +74,10 @@ namespace Wira.Api.Services
                     <style>
                         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .header {{ background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
                         .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
-                        .code-box {{ background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px; }}
-                        .code {{ font-size: 2.5rem; font-weight: bold; color: #667eea; letter-spacing: 0.5rem; font-family: 'Courier New', monospace; }}
+                        .code-box {{ background: white; border: 2px dashed #fc6b0a; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px; }}
+                        .code {{ font-size: 2.5rem; font-weight: bold; color: #fc6b0a; letter-spacing: 0.5rem; font-family: 'Courier New', monospace; }}
                         .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 14px; }}
                         .warning {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 15px 0; }}
                     </style>
@@ -132,9 +132,9 @@ namespace Wira.Api.Services
                     <style>
                         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .header {{ background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
                         .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
-                        .button {{ display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                        .button {{ display: inline-block; background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
                         .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 14px; }}
                         .warning {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 15px 0; }}
                     </style>

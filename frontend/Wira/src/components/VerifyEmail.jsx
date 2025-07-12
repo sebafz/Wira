@@ -8,7 +8,11 @@ const VerifyContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(252, 107, 10, 0.8) 0%,
+    rgba(255, 143, 66, 0.7) 100%
+  );
   padding: 20px;
 `;
 
@@ -25,14 +29,14 @@ const VerifyCard = styled.div`
 const Icon = styled.div`
   font-size: 4rem;
   margin-bottom: 20px;
-  color: #667eea;
+  color: #fc6b0a;
 `;
 
 const Title = styled.h1`
   color: #333;
   font-size: 2rem;
   margin-bottom: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -79,7 +83,7 @@ const CodeInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #fc6b0a;
   }
 
   &::-webkit-outer-spin-button,
@@ -94,7 +98,7 @@ const CodeInput = styled.input`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
   color: white;
   border: none;
   padding: 14px 20px;
@@ -106,7 +110,7 @@ const Button = styled.button`
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
   }
 
   &:active {
@@ -121,12 +125,29 @@ const Button = styled.button`
   }
 `;
 
-const SecondaryButton = styled(Button)`
-  background: #6c757d;
-  margin-top: 10px;
+const SecondaryButton = styled.button`
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  margin-top: 15px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 
   &:hover:not(:disabled) {
-    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+    color: #5a6fd8;
+    background-color: rgba(102, 126, 234, 0.1);
+    text-decoration: none;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: #999;
+    text-decoration: none;
   }
 `;
 
@@ -288,7 +309,7 @@ const VerifyEmail = () => {
           <Title>Error</Title>
           <Message>No se encontró el email para verificar.</Message>
           <Button onClick={() => navigate("/register")}>
-            Volver al Registro
+            Volver al registro
           </Button>
         </VerifyCard>
       </VerifyContainer>
@@ -300,11 +321,11 @@ const VerifyEmail = () => {
       <VerifyCard>
         <Icon>📧</Icon>
 
-        <Title>Verificar Email</Title>
+        <Title>Verificar email</Title>
 
         <Message>
           Hemos enviado un código de 6 dígitos a{" "}
-          <EmailHighlight>{email}</EmailHighlight>. Ingresa el código a
+          <EmailHighlight>{email}</EmailHighlight>. Ingrese el código a
           continuación:
         </Message>
 
@@ -337,7 +358,7 @@ const VerifyEmail = () => {
                 <span style={{ marginLeft: "8px" }}>Verificando...</span>
               </>
             ) : (
-              "Verificar Código"
+              "Verificar código"
             )}
           </Button>
         </Form>
@@ -350,7 +371,7 @@ const VerifyEmail = () => {
             ? "Reenviando..."
             : timer > 0
             ? `Reenviar en ${timer}s`
-            : "Reenviar Código"}
+            : "Reenviar código"}
         </SecondaryButton>
 
         {timer > 0 && (
@@ -364,7 +385,7 @@ const VerifyEmail = () => {
             style={{ background: "#6c757d" }}
             onClick={() => navigate("/login")}
           >
-            Volver al Login
+            Volver al inico de sesión
           </Button>
         </div>
       </VerifyCard>
