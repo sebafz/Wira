@@ -129,11 +129,11 @@ Por defecto: `http://localhost:5173`
 ## Estado actual
 
 - [x] Estructura inicial
-- [ ] Incremento 1 – Configuración técnica y base
-- [ ] Incremento 2 – Autenticación y usuarios
-- [ ] Incremento 3 – Licitaciones y ofertas
-- [ ] Incremento 4 – Paneles y navegación
-- [ ] Incremento 5 – Archivos, seguridad y auditoría
+- [ ] Incremento 1 – Autenticación y carga de licitaciones
+- [ ] Incremento 2 – Parámetros de licitaciones y recepción de ofertas
+- [ ] Incremento 3 – Generación de ranking de propuestas
+- [ ] Incremento 4 – Notificaciones y auditoría
+- [ ] Incremento 5 – Historial de participación y calificación post-licitación
 - [ ] Validaciones y pruebas
 - [ ] Integraciones finales
 - [ ] CI/CD y producción
