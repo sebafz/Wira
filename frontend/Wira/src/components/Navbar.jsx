@@ -198,11 +198,11 @@ const Navbar = () => {
 
           <DropdownMenu show={showDropdown}>
             <DropdownItem onClick={handleProfileView}>
-              👤 Ver Perfil
+              👤 Ver perfil
             </DropdownItem>
             <Divider />
             <DropdownItem className="danger" onClick={handleLogout}>
-              🚪 Cerrar Sesión
+              🚪 Cerrar sesión
             </DropdownItem>
           </DropdownMenu>
         </UserSection>

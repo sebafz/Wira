@@ -14,6 +14,7 @@ namespace Wira.Api.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<UsuarioRol> UsuariosRoles { get; set; }
         public DbSet<Minera> Mineras { get; set; }
+        public DbSet<Rubro> Rubros { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
         public DbSet<EstadoLicitacion> EstadosLicitacion { get; set; }
         public DbSet<Licitacion> Licitaciones { get; set; }
@@ -117,9 +118,29 @@ namespace Wira.Api.Data
                 .Property(p => p.Activo)
                 .HasDefaultValue(true);
 
+            modelBuilder.Entity<Rubro>()
+                .Property(r => r.Activo)
+                .HasDefaultValue(true);
+
             modelBuilder.Entity<Licitacion>()
                 .Property(l => l.Eliminado)
                 .HasDefaultValue(false);
+
+            modelBuilder.Entity<Licitacion>()
+                .Property(l => l.FechaCreacion)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Proveedor>()
+                .HasOne(p => p.Rubro)
+                .WithMany(r => r.Proveedores)
+                .HasForeignKey(p => p.RubroID)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Licitacion>()
+                .HasOne(l => l.Rubro)
+                .WithMany(r => r.Licitaciones)
+                .HasForeignKey(l => l.RubroID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Propuesta>()
                 .Property(p => p.FechaEnvio)
@@ -156,6 +177,21 @@ namespace Wira.Api.Data
             modelBuilder.Entity<Auditoria>()
                 .Property(a => a.Fecha)
                 .HasDefaultValueSql("GETDATE()");
+
+            // Configuración de relaciones opcionales para ArchivosAdjuntos
+            modelBuilder.Entity<Licitacion>()
+                .HasOne(l => l.ArchivoAdjunto)
+                .WithMany()
+                .HasForeignKey(l => l.ArchivoID)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Propuesta>()
+                .HasOne(p => p.ArchivoAdjunto)
+                .WithMany()
+                .HasForeignKey(p => p.ArchivoID)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

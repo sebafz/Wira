@@ -35,6 +35,7 @@ namespace Wira.Api.Services
                         .ThenInclude(ur => ur.Rol)
                     .Include(u => u.Minera)
                     .Include(u => u.Proveedor)
+                        .ThenInclude(p => p!.Rubro)
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
 
                 if (user == null)
@@ -91,7 +92,8 @@ namespace Wira.Api.Services
                         ProveedorID = user.Proveedor.ProveedorID,
                         Nombre = user.Proveedor.Nombre,
                         CUIT = user.Proveedor.CUIT,
-                        Especialidad = user.Proveedor.Especialidad
+                        RubroID = user.Proveedor.RubroID,
+                        RubroNombre = user.Proveedor.Rubro?.Nombre
                     } : null
                 };
 

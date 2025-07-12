@@ -55,6 +55,23 @@ namespace Wira.Api.Data
 
             await context.EstadosPropuesta.AddRangeAsync(estadosPropuesta);
 
+            // Agregar rubros iniciales
+            var rubros = new[]
+            {
+                new Rubro { Nombre = "Construcción e Infraestructura", Activo = true },
+                new Rubro { Nombre = "Transporte y Logística", Activo = true },
+                new Rubro { Nombre = "Equipos y Maquinarias", Activo = true },
+                new Rubro { Nombre = "Servicios Profesionales", Activo = true },
+                new Rubro { Nombre = "Suministros y Materiales", Activo = true },
+                new Rubro { Nombre = "Mantenimiento y Reparaciones", Activo = true },
+                new Rubro { Nombre = "Seguridad Industrial", Activo = true },
+                new Rubro { Nombre = "Medio Ambiente y Sustentabilidad", Activo = true },
+                new Rubro { Nombre = "Reactivos Químicos", Activo = true },
+                new Rubro { Nombre = "Tecnología y Software", Activo = true }
+            };
+
+            await context.Rubros.AddRangeAsync(rubros);
+
             // Agregar mineras de ejemplo
             var mineras = new[]
             {
@@ -65,16 +82,80 @@ namespace Wira.Api.Data
 
             await context.Mineras.AddRangeAsync(mineras);
 
-            // Agregar proveedores de ejemplo
+            // Guardar cambios intermedios para obtener IDs
+            await context.SaveChangesAsync();
+
+            // Obtener IDs de rubros para asignar a proveedores
+            var rubroTransporte = await context.Rubros.FirstAsync(r => r.Nombre == "Transporte y Logística");
+            var rubroEquipos = await context.Rubros.FirstAsync(r => r.Nombre == "Equipos y Maquinarias");
+            var rubroMantenimiento = await context.Rubros.FirstAsync(r => r.Nombre == "Mantenimiento y Reparaciones");
+            var rubroQuimicos = await context.Rubros.FirstAsync(r => r.Nombre == "Reactivos Químicos");
+
+            // Agregar proveedores de ejemplo con rubros asignados
             var proveedores = new[]
             {
-                new Proveedor { Nombre = "Transportes del Norte SA", CUIT = "30-55667788-1", Especialidad = "Transporte y Logística", Activo = true },
-                new Proveedor { Nombre = "Equipos Mineros SRL", CUIT = "30-99887766-4", Especialidad = "Equipamiento Industrial", Activo = true },
-                new Proveedor { Nombre = "Servicios Técnicos Unidos", CUIT = "30-44556677-7", Especialidad = "Mantenimiento y Reparaciones", Activo = true },
-                new Proveedor { Nombre = "Químicos Industriales SA", CUIT = "30-33445566-9", Especialidad = "Reactivos Químicos", Activo = true }
+                new Proveedor { Nombre = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, Activo = true },
+                new Proveedor { Nombre = "Equipos Mineros SRL", CUIT = "30-99887766-4", RubroID = rubroEquipos.RubroID, Activo = true },
+                new Proveedor { Nombre = "Servicios Técnicos Unidos", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, Activo = true },
+                new Proveedor { Nombre = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, Activo = true }
             };
 
             await context.Proveedores.AddRangeAsync(proveedores);
+
+            // Guardar cambios para obtener IDs de mineras y proveedores
+            await context.SaveChangesAsync();
+
+            // Obtener roles
+            var rolMinera = await context.Roles.FirstAsync(r => r.NombreRol == "Minera");
+            var rolProveedor = await context.Roles.FirstAsync(r => r.NombreRol == "Proveedor");
+
+            // Obtener primera minera y proveedor para asignar a usuarios
+            var primeraMinera = await context.Mineras.FirstAsync();
+            var primerProveedor = await context.Proveedores.FirstAsync();
+
+            // Hash de la contraseña "123456"
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword("123456");
+
+            // Agregar usuarios de ejemplo
+            var usuarios = new[]
+            {
+                new Usuario 
+                { 
+                    Email = "minera@gmail.com", 
+                    PasswordHash = passwordHash,
+                    Nombre = "Usuario Minera", 
+                    Activo = true, 
+                    ValidadoEmail = true,
+                    MineraID = primeraMinera.MineraID,
+                    FechaRegistro = DateTime.Now
+                },
+                new Usuario 
+                { 
+                    Email = "proveedor@gmail.com", 
+                    PasswordHash = passwordHash,
+                    Nombre = "Usuario Proveedor", 
+                    Activo = true, 
+                    ValidadoEmail = true,
+                    ProveedorID = primerProveedor.ProveedorID,
+                    FechaRegistro = DateTime.Now
+                }
+            };
+
+            await context.Usuarios.AddRangeAsync(usuarios);
+            await context.SaveChangesAsync();
+
+            // Obtener IDs de usuarios recién creados
+            var usuarioMinera = await context.Usuarios.FirstAsync(u => u.Email == "minera@gmail.com");
+            var usuarioProveedor = await context.Usuarios.FirstAsync(u => u.Email == "proveedor@gmail.com");
+
+            // Asignar roles a usuarios
+            var usuarioRoles = new[]
+            {
+                new UsuarioRol { UsuarioID = usuarioMinera.UsuarioID, RolID = rolMinera.RolID },
+                new UsuarioRol { UsuarioID = usuarioProveedor.UsuarioID, RolID = rolProveedor.RolID }
+            };
+
+            await context.UsuariosRoles.AddRangeAsync(usuarioRoles);
 
             // Guardar cambios
             await context.SaveChangesAsync();

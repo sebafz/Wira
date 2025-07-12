@@ -17,10 +17,14 @@ namespace Wira.Api.Models
         [StringLength(20)]
         public string CUIT { get; set; } = string.Empty;
 
-        [StringLength(255)]
-        public string? Especialidad { get; set; }
+        // Clave foránea hacia Rubros
+        public int? RubroID { get; set; }
 
         public bool Activo { get; set; } = true;
+
+        // Navegación - Rubro al que pertenece este proveedor
+        [ForeignKey("RubroID")]
+        public virtual Rubro? Rubro { get; set; }
 
         // Navegación
         public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();

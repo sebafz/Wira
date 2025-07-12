@@ -23,13 +23,15 @@ namespace Wira.Api.Controllers
             try
             {
                 var proveedores = await _context.Proveedores
+                    .Include(p => p.Rubro)
                     .Where(p => p.Activo)
                     .Select(p => new
                     {
                         p.ProveedorID,
                         p.Nombre,
                         p.CUIT,
-                        p.Especialidad
+                        p.RubroID,
+                        RubroNombre = p.Rubro != null ? p.Rubro.Nombre : null
                     })
                     .OrderBy(p => p.Nombre)
                     .ToListAsync();
@@ -49,13 +51,15 @@ namespace Wira.Api.Controllers
             try
             {
                 var proveedor = await _context.Proveedores
+                    .Include(p => p.Rubro)
                     .Where(p => p.ProveedorID == id && p.Activo)
                     .Select(p => new
                     {
                         p.ProveedorID,
                         p.Nombre,
                         p.CUIT,
-                        p.Especialidad
+                        p.RubroID,
+                        RubroNombre = p.Rubro != null ? p.Rubro.Nombre : null
                     })
                     .FirstOrDefaultAsync();
 
@@ -73,24 +77,23 @@ namespace Wira.Api.Controllers
             }
         }
 
-        [HttpGet("especialidades")]
-        public async Task<IActionResult> GetEspecialidades()
+        [HttpGet("rubros")]
+        public async Task<IActionResult> GetRubrosConProveedores()
         {
             try
             {
-                var especialidades = await _context.Proveedores
-                    .Where(p => p.Activo && !string.IsNullOrEmpty(p.Especialidad))
-                    .Select(p => p.Especialidad)
-                    .Distinct()
-                    .OrderBy(e => e)
+                var rubros = await _context.Rubros
+                    .Where(r => r.Activo && r.Proveedores.Any(p => p.Activo))
+                    .Select(r => new { r.RubroID, r.Nombre })
+                    .OrderBy(r => r.Nombre)
                     .ToListAsync();
 
-                return Ok(especialidades);
+                return Ok(rubros);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener las especialidades");
-                return StatusCode(500, new { message = "Error al obtener las especialidades" });
+                _logger.LogError(ex, "Error al obtener los rubros");
+                return StatusCode(500, new { message = "Error al obtener los rubros" });
             }
         }
     }

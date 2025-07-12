@@ -22,6 +22,8 @@ namespace Wira.Api.Models
 
         public bool Eliminado { get; set; } = false;
 
+        public int? ArchivoID { get; set; }
+
         // Navegación
         [ForeignKey("LicitacionID")]
         public virtual Licitacion Licitacion { get; set; } = null!;
@@ -31,6 +33,9 @@ namespace Wira.Api.Models
 
         [ForeignKey("EstadoPropuestaID")]
         public virtual EstadoPropuesta EstadoPropuesta { get; set; } = null!;
+
+        [ForeignKey("ArchivoID")]
+        public virtual ArchivoAdjunto? ArchivoAdjunto { get; set; }
 
         public virtual ICollection<RespuestaCriterioLicitacion> RespuestasCriterios { get; set; } = new List<RespuestaCriterioLicitacion>();
     }

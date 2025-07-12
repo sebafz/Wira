@@ -13,6 +13,9 @@ namespace Wira.Api.Models
         public int MineraID { get; set; }
 
         [Required]
+        public int RubroID { get; set; }
+
+        [Required]
         [StringLength(255)]
         public string Titulo { get; set; } = string.Empty;
 
@@ -36,12 +39,22 @@ namespace Wira.Api.Models
 
         public bool Eliminado { get; set; } = false;
 
+        public int? ArchivoID { get; set; }
+
+        public DateTime FechaCreacion { get; set; } = DateTime.Now;
+
         // Navegación
         [ForeignKey("MineraID")]
         public virtual Minera Minera { get; set; } = null!;
 
+        [ForeignKey("RubroID")]
+        public virtual Rubro Rubro { get; set; } = null!;
+
         [ForeignKey("EstadoLicitacionID")]
         public virtual EstadoLicitacion EstadoLicitacion { get; set; } = null!;
+
+        [ForeignKey("ArchivoID")]
+        public virtual ArchivoAdjunto? ArchivoAdjunto { get; set; }
 
         public virtual ICollection<CriterioLicitacion> CriteriosLicitacion { get; set; } = new List<CriterioLicitacion>();
         public virtual ICollection<Propuesta> Propuestas { get; set; } = new List<Propuesta>();

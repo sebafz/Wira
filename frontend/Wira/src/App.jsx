@@ -12,6 +12,10 @@ import Register from "./components/Register";
 import VerifyEmail from "./components/VerifyEmail";
 import ForgotPassword from "./components/ForgotPassword";
 import Dashboard from "./components/Dashboard";
+import DashboardRouter from "./components/DashboardRouter";
+import DashboardMinera from "./components/DashboardMinera";
+import DashboardProveedor from "./components/DashboardProveedor";
+import CrearLicitacion from "./components/CrearLicitacion";
 import Profile from "./components/Profile";
 import "./App.css";
 
@@ -34,7 +38,43 @@ function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
+                  <DashboardRouter />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard-general"
+              element={
+                <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard-minera"
+              element={
+                <ProtectedRoute>
+                  <DashboardMinera />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard-proveedor"
+              element={
+                <ProtectedRoute>
+                  <DashboardProveedor />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/crear-licitacion"
+              element={
+                <ProtectedRoute>
+                  <CrearLicitacion />
                 </ProtectedRoute>
               }
             />

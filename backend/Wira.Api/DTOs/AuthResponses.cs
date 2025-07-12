@@ -32,6 +32,7 @@ namespace Wira.Api.DTOs
         public int ProveedorID { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public string CUIT { get; set; } = string.Empty;
-        public string? Especialidad { get; set; }
+        public int? RubroID { get; set; }
+        public string? RubroNombre { get; set; }
     }
 }

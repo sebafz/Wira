@@ -141,6 +141,7 @@ namespace Wira.Api.Controllers
                         .ThenInclude(ur => ur.Rol)
                     .Include(u => u.Minera)
                     .Include(u => u.Proveedor)
+                        .ThenInclude(p => p!.Rubro)
                     .FirstOrDefaultAsync(u => u.UsuarioID == userId);
 
                 if (user == null)
@@ -166,7 +167,8 @@ namespace Wira.Api.Controllers
                         ProveedorID = user.Proveedor.ProveedorID,
                         Nombre = user.Proveedor.Nombre,
                         CUIT = user.Proveedor.CUIT,
-                        Especialidad = user.Proveedor.Especialidad
+                        RubroID = user.Proveedor.RubroID,
+                        RubroNombre = user.Proveedor.Rubro?.Nombre
                     } : null
                 };
 
@@ -179,6 +181,7 @@ namespace Wira.Api.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error al obtener información del usuario: {ex.Message}");
                 return StatusCode(500, new { message = "Error al obtener información del usuario" });
             }
         }
