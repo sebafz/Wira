@@ -29,9 +29,19 @@ namespace Wira.Api.Controllers
                     .Include(l => l.Minera)
                     .Include(l => l.Rubro)
                     .Include(l => l.EstadoLicitacion)
-                    .Include(l => l.ArchivoAdjunto)
                     .Where(l => !l.Eliminado)
-                    .Select(l => new LicitacionDto
+                    .ToListAsync();
+
+                var licitacionDtos = new List<LicitacionDto>();
+
+                foreach (var l in licitaciones)
+                {
+                    // Buscar archivo adjunto en la tabla ArchivosAdjuntos
+                    var archivoAdjunto = await _context.ArchivosAdjuntos
+                        .Where(a => a.EntidadTipo == "LICITACION" && a.EntidadID == l.LicitacionID)
+                        .FirstOrDefaultAsync();
+
+                    var licitacionDto = new LicitacionDto
                     {
                         LicitacionID = l.LicitacionID,
                         MineraID = l.MineraID,
@@ -48,11 +58,13 @@ namespace Wira.Api.Controllers
                         MineraNombre = l.Minera.Nombre,
                         RubroNombre = l.Rubro.Nombre,
                         EstadoNombre = l.EstadoLicitacion.NombreEstado,
-                        ArchivoNombre = l.ArchivoAdjunto != null ? l.ArchivoAdjunto.NombreArchivo : null
-                    })
-                    .ToListAsync();
+                        ArchivoNombre = archivoAdjunto?.NombreArchivo
+                    };
 
-                return Ok(licitaciones);
+                    licitacionDtos.Add(licitacionDto);
+                }
+
+                return Ok(licitacionDtos);
             }
             catch (Exception ex)
             {
@@ -70,36 +82,8 @@ namespace Wira.Api.Controllers
                     .Include(l => l.Minera)
                     .Include(l => l.Rubro)
                     .Include(l => l.EstadoLicitacion)
-                    .Include(l => l.ArchivoAdjunto)
                     .Include(l => l.CriteriosLicitacion)
                     .Where(l => l.LicitacionID == id && !l.Eliminado)
-                    .Select(l => new LicitacionDto
-                    {
-                        LicitacionID = l.LicitacionID,
-                        MineraID = l.MineraID,
-                        RubroID = l.RubroID,
-                        Titulo = l.Titulo,
-                        Descripcion = l.Descripcion,
-                        FechaInicio = l.FechaInicio,
-                        FechaCierre = l.FechaCierre,
-                        PresupuestoEstimado = l.PresupuestoEstimado,
-                        Condiciones = l.Condiciones,
-                        EstadoLicitacionID = l.EstadoLicitacionID,
-                        ArchivoID = l.ArchivoID,
-                        FechaCreacion = l.FechaCreacion,
-                        MineraNombre = l.Minera.Nombre,
-                        RubroNombre = l.Rubro.Nombre,
-                        EstadoNombre = l.EstadoLicitacion.NombreEstado,
-                        ArchivoNombre = l.ArchivoAdjunto != null ? l.ArchivoAdjunto.NombreArchivo : null,
-                        Criterios = l.CriteriosLicitacion.Select(c => new CriterioLicitacionDto
-                        {
-                            CriterioID = c.CriterioID,
-                            Nombre = c.Nombre,
-                            Descripcion = c.Descripcion,
-                            Peso = c.Peso,
-                            ModoEvaluacion = c.ModoEvaluacion
-                        }).ToList()
-                    })
                     .FirstOrDefaultAsync();
 
                 if (licitacion == null)
@@ -107,7 +91,40 @@ namespace Wira.Api.Controllers
                     return NotFound();
                 }
 
-                return Ok(licitacion);
+                // Buscar archivo adjunto en la tabla ArchivosAdjuntos
+                var archivoAdjunto = await _context.ArchivosAdjuntos
+                    .Where(a => a.EntidadTipo == "LICITACION" && a.EntidadID == id)
+                    .FirstOrDefaultAsync();
+
+                var licitacionDto = new LicitacionDto
+                {
+                    LicitacionID = licitacion.LicitacionID,
+                    MineraID = licitacion.MineraID,
+                    RubroID = licitacion.RubroID,
+                    Titulo = licitacion.Titulo,
+                    Descripcion = licitacion.Descripcion,
+                    FechaInicio = licitacion.FechaInicio,
+                    FechaCierre = licitacion.FechaCierre,
+                    PresupuestoEstimado = licitacion.PresupuestoEstimado,
+                    Condiciones = licitacion.Condiciones,
+                    EstadoLicitacionID = licitacion.EstadoLicitacionID,
+                    ArchivoID = licitacion.ArchivoID,
+                    FechaCreacion = licitacion.FechaCreacion,
+                    MineraNombre = licitacion.Minera.Nombre,
+                    RubroNombre = licitacion.Rubro.Nombre,
+                    EstadoNombre = licitacion.EstadoLicitacion.NombreEstado,
+                    ArchivoNombre = archivoAdjunto?.NombreArchivo,
+                    Criterios = licitacion.CriteriosLicitacion.Select(c => new CriterioLicitacionDto
+                    {
+                        CriterioID = c.CriterioID,
+                        Nombre = c.Nombre,
+                        Descripcion = c.Descripcion,
+                        Peso = c.Peso,
+                        ModoEvaluacion = c.ModoEvaluacion
+                    }).ToList()
+                };
+
+                return Ok(licitacionDto);
             }
             catch (Exception ex)
             {

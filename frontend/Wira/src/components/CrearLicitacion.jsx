@@ -507,6 +507,91 @@ const ToastStyles = styled.div`
   }
 `;
 
+// Estilos para el modal de confirmación
+const ConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+`;
+
+const ConfirmContent = styled.div`
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+`;
+
+const ConfirmTitle = styled.h3`
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ConfirmText = styled.p`
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 25px;
+  line-height: 1.5;
+`;
+
+const ConfirmActions = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+`;
+
+const ConfirmCreateButton = styled.button`
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(252, 107, 10, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const CancelConfirmButton = styled.button`
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+  }
+`;
+
 const CrearLicitacion = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -564,6 +649,10 @@ const CrearLicitacion = () => {
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [rubrosError, setRubrosError] = useState("");
+
+  // Estado para modal de confirmación
+  const [showConfirmCreate, setShowConfirmCreate] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState(null);
 
   // Cargar rubros al montar el componente
   useEffect(() => {
@@ -712,7 +801,14 @@ const CrearLicitacion = () => {
       return;
     }
 
+    // Mostrar modal de confirmación
+    setShowConfirmCreate(true);
+    setPendingFormData({ ...formData });
+  };
+
+  const confirmCreate = async () => {
     setLoading(true);
+    setShowConfirmCreate(false);
 
     try {
       // Crear licitación primero
@@ -833,6 +929,11 @@ const CrearLicitacion = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const cancelCreate = () => {
+    setShowConfirmCreate(false);
+    setPendingFormData(null);
   };
 
   const handleCancel = () => {
@@ -1276,7 +1377,8 @@ const CrearLicitacion = () => {
                   !formData.rubroID ||
                   !formData.fechaInicio ||
                   !formData.fechaCierre ||
-                  getTotalPeso() !== 100
+                  getTotalPeso() !== 100 ||
+                  showConfirmCreate
                 }
               >
                 {loading ? "Creando..." : "Crear licitación"}
@@ -1284,7 +1386,7 @@ const CrearLicitacion = () => {
               <SecondaryButton
                 type="button"
                 onClick={handleCancel}
-                disabled={loading}
+                disabled={loading || showConfirmCreate}
               >
                 Cancelar
               </SecondaryButton>
@@ -1292,6 +1394,48 @@ const CrearLicitacion = () => {
           </form>
         </FormCard>
       </MainContent>
+
+      {/* Modal de confirmación para crear licitación */}
+      {showConfirmCreate && (
+        <ConfirmModal
+          onClick={(e) => e.target === e.currentTarget && cancelCreate()}
+        >
+          <ConfirmContent>
+            <ConfirmTitle>🏗️ Confirmar creación de licitación</ConfirmTitle>
+            <ConfirmText>
+              ¿Estás seguro que deseas crear esta licitación?
+              <br />
+              <br />
+              <strong>Título:</strong> {formData.titulo}
+              <br />
+              <strong>Fecha de cierre:</strong>{" "}
+              {new Date(formData.fechaCierre).toLocaleDateString("es-ES", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              <br />
+              <br />
+              Una vez creada, la licitación será visible para todos los
+              proveedores.
+            </ConfirmText>
+            <ConfirmActions>
+              <CancelConfirmButton type="button" onClick={cancelCreate}>
+                Cancelar
+              </CancelConfirmButton>
+              <ConfirmCreateButton
+                type="button"
+                onClick={confirmCreate}
+                disabled={loading}
+              >
+                {loading ? "Creando..." : "Crear licitación"}
+              </ConfirmCreateButton>
+            </ConfirmActions>
+          </ConfirmContent>
+        </ConfirmModal>
+      )}
 
       {/* Toast Container para las notificaciones */}
       <ToastStyles>

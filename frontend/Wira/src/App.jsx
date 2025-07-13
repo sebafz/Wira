@@ -16,6 +16,7 @@ import DashboardRouter from "./components/DashboardRouter";
 import DashboardMinera from "./components/DashboardMinera";
 import DashboardProveedor from "./components/DashboardProveedor";
 import CrearLicitacion from "./components/CrearLicitacion";
+import EditarLicitacion from "./components/EditarLicitacion";
 import LicitacionesMinera from "./components/LicitacionesMinera";
 import Profile from "./components/Profile";
 import "./App.css";
@@ -76,6 +77,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CrearLicitacion />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/editar-licitacion/:id"
+              element={
+                <ProtectedRoute>
+                  <EditarLicitacion />
                 </ProtectedRoute>
               }
             />

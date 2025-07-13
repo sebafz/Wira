@@ -416,6 +416,333 @@ const RetryButton = styled.button`
   }
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+`;
+
+const ModalTitle = styled.h2`
+  color: white;
+  font-size: 1.5rem;
+  margin: 0 40px 10px 0;
+  line-height: 1.3;
+`;
+
+const ModalDate = styled.div`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-top: 8px;
+  font-weight: 400;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 30px;
+`;
+
+const DetailSection = styled.div`
+  margin-bottom: 30px;
+`;
+
+const SectionTitle = styled.h3`
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f0f0f0;
+`;
+
+const DetailGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+`;
+
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+`;
+
+const InfoCard = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+`;
+
+const DatesGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+`;
+
+const DateCard = styled.div`
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+  text-align: center;
+`;
+
+const DateIcon = styled.div`
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+`;
+
+const DateLabel = styled.div`
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 5px;
+`;
+
+const DateValue = styled.div`
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1976d2;
+`;
+
+const BudgetCard = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+`;
+
+const BudgetIcon = styled.div`
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+`;
+
+const BudgetLabel = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+`;
+
+const BudgetValue = styled.div`
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+`;
+
+const DetailLabel = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+`;
+
+const DetailValue = styled.div`
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+`;
+
+const DetailDescription = styled.div`
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+`;
+
+const PropuestasSection = styled.div`
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  color: #666;
+`;
+
+const PropuestasIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 15px;
+  opacity: 0.5;
+`;
+
+const PropuestasText = styled.p`
+  font-size: 1rem;
+  margin: 0;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  padding: 20px 30px;
+  background: #f8f9fa;
+  border-top: 1px solid #e1e5e9;
+`;
+
+const ActionButton = styled.button`
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const EditButton = styled(ActionButton)`
+  background: #308becff;
+  color: white;
+
+  &:hover {
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  }
+`;
+
+const DeleteButton = styled(ActionButton)`
+  background: #dc3545;
+  color: white;
+
+  &:hover {
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  }
+`;
+
+const ConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+`;
+
+const ConfirmContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  max-width: 400px;
+  width: 100%;
+  padding: 30px;
+  text-align: center;
+`;
+
+const ConfirmTitle = styled.h3`
+  color: #dc3545;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+`;
+
+const ConfirmText = styled.p`
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 25px;
+  line-height: 1.5;
+`;
+
+const ConfirmActions = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+`;
+
+const ConfirmButton = styled.button`
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+`;
+
+const ConfirmDeleteButton = styled(ConfirmButton)`
+  background: #dc3545;
+  color: white;
+
+  &:hover {
+    background: #c82333;
+  }
+`;
+
+const CancelButton = styled(ConfirmButton)`
+  background: #6c757d;
+  color: white;
+
+  &:hover {
+    background: #5a6268;
+  }
+`;
+
 const LicitacionesMinera = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -424,6 +751,14 @@ const LicitacionesMinera = () => {
   const [licitaciones, setLicitaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Estado para el modal de detalle
+  const [selectedLicitacion, setSelectedLicitacion] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Estado para el modal de confirmación de eliminación
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deletingLicitacion, setDeletingLicitacion] = useState(null);
 
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -461,6 +796,25 @@ const LicitacionesMinera = () => {
       fetchLicitaciones();
     }
   }, [filters, sortBy, sortOrder, user]);
+
+  // Efecto para cerrar modal con Escape
+  useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === "Escape" && showModal) {
+        handleCloseModal();
+      }
+    };
+
+    if (showModal) {
+      document.addEventListener("keydown", handleEscapeKey);
+      document.body.style.overflow = "hidden"; // Prevenir scroll del fondo
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscapeKey);
+      document.body.style.overflow = "unset";
+    };
+  }, [showModal]);
 
   const fetchLicitaciones = async () => {
     try {
@@ -650,11 +1004,81 @@ const LicitacionesMinera = () => {
   };
 
   const handleLicitacionClick = (licitacionId) => {
-    toast.info("Función de detalle próximamente disponible");
+    const licitacion = licitaciones.find(
+      (l) => (l.licitacionID || l.LicitacionID) === licitacionId
+    );
+    if (licitacion) {
+      setSelectedLicitacion(licitacion);
+      setShowModal(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedLicitacion(null);
+  };
+
+  const handleModalOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      handleCloseModal();
+    }
   };
 
   const handleCrearLicitacion = () => {
     navigate("/crear-licitacion");
+  };
+
+  const handleEditarLicitacion = (licitacionId) => {
+    navigate(`/editar-licitacion/${licitacionId}`);
+  };
+
+  const handleDeleteLicitacion = (licitacion) => {
+    setDeletingLicitacion(licitacion);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDeleteLicitacion = async () => {
+    if (!deletingLicitacion) return;
+
+    try {
+      const licitacionId =
+        deletingLicitacion.licitacionID || deletingLicitacion.LicitacionID;
+
+      const response = await fetch(
+        `http://localhost:5242/api/licitaciones/${licitacionId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      toast.success("Licitación eliminada exitosamente");
+
+      // Cerrar modales
+      setShowConfirmDelete(false);
+      setShowModal(false);
+      setDeletingLicitacion(null);
+      setSelectedLicitacion(null);
+
+      // Recargar las licitaciones
+      await fetchLicitaciones();
+    } catch (error) {
+      console.error("Error al eliminar licitación:", error);
+      toast.error(
+        "Error al eliminar la licitación. Por favor, intente nuevamente."
+      );
+    }
+  };
+
+  const cancelDeleteLicitacion = () => {
+    setShowConfirmDelete(false);
+    setDeletingLicitacion(null);
   };
 
   const getCompanyName = () => {
@@ -679,7 +1103,7 @@ const LicitacionesMinera = () => {
         </PageHeader>
 
         <FiltersContainer>
-          <FiltersTitle>🔍 Filtros</FiltersTitle>
+          <FiltersTitle>Filtros</FiltersTitle>
           <FiltersGrid>
             <FilterGroup>
               <FilterLabel>Buscar por título</FilterLabel>
@@ -903,6 +1327,193 @@ const LicitacionesMinera = () => {
           </LicitacionesList>
         </LicitacionesContainer>
       </MainContent>
+
+      {/* Modal de detalle de licitación */}
+      {showModal && selectedLicitacion && (
+        <ModalOverlay onClick={handleModalOverlayClick}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                {selectedLicitacion.titulo || selectedLicitacion.Titulo}
+              </ModalTitle>
+              <ModalDate>
+                Creada el{" "}
+                {formatDate(
+                  selectedLicitacion.fechaCreacion ||
+                    selectedLicitacion.FechaCreacion
+                )}
+              </ModalDate>
+              <CloseButton onClick={handleCloseModal}>×</CloseButton>
+            </ModalHeader>
+
+            <ModalBody>
+              <DetailSection>
+                <SectionTitle>Información General</SectionTitle>
+
+                {/* Primera fila - Estado y Rubro */}
+                <InfoGrid>
+                  <InfoCard>
+                    <DetailLabel>Estado</DetailLabel>
+                    <DetailValue>
+                      {selectedLicitacion.estadoNombre ||
+                        selectedLicitacion.EstadoNombre}
+                    </DetailValue>
+                  </InfoCard>
+                  <InfoCard>
+                    <DetailLabel>Rubro</DetailLabel>
+                    <DetailValue>
+                      {selectedLicitacion.rubroNombre ||
+                        selectedLicitacion.RubroNombre ||
+                        "No especificado"}
+                    </DetailValue>
+                  </InfoCard>
+                </InfoGrid>
+
+                {/* Segunda fila - Fechas importantes */}
+                <DatesGrid>
+                  <DateCard>
+                    <DateIcon>🚀</DateIcon>
+                    <DateLabel>Fecha de inicio</DateLabel>
+                    <DateValue>
+                      {formatDate(
+                        selectedLicitacion.fechaInicio ||
+                          selectedLicitacion.FechaInicio
+                      )}
+                    </DateValue>
+                  </DateCard>
+                  <DateCard>
+                    <DateIcon>⏰</DateIcon>
+                    <DateLabel>Fecha de cierre</DateLabel>
+                    <DateValue>
+                      {formatDate(
+                        selectedLicitacion.fechaCierre ||
+                          selectedLicitacion.FechaCierre
+                      )}
+                    </DateValue>
+                  </DateCard>
+                </DatesGrid>
+
+                {/* Tercera fila - Presupuesto */}
+                <InfoGrid
+                  style={{ gridTemplateColumns: "1fr", marginTop: "15px" }}
+                >
+                  <BudgetCard>
+                    <BudgetLabel>Presupuesto estimado</BudgetLabel>
+                    <BudgetValue>
+                      {formatCurrency(
+                        selectedLicitacion.presupuestoEstimado ||
+                          selectedLicitacion.PresupuestoEstimado
+                      )}
+                    </BudgetValue>
+                  </BudgetCard>
+                </InfoGrid>
+              </DetailSection>
+
+              {(selectedLicitacion.descripcion ||
+                selectedLicitacion.Descripcion) && (
+                <DetailSection>
+                  <SectionTitle>Descripción</SectionTitle>
+                  <DetailDescription>
+                    {selectedLicitacion.descripcion ||
+                      selectedLicitacion.Descripcion}
+                  </DetailDescription>
+                </DetailSection>
+              )}
+
+              {(selectedLicitacion.condiciones ||
+                selectedLicitacion.Condiciones) && (
+                <DetailSection>
+                  <SectionTitle>Condiciones</SectionTitle>
+                  <DetailDescription>
+                    {selectedLicitacion.condiciones ||
+                      selectedLicitacion.Condiciones}
+                  </DetailDescription>
+                </DetailSection>
+              )}
+
+              {(() => {
+                const archivoNombre =
+                  selectedLicitacion.archivoNombre ||
+                  selectedLicitacion.ArchivoNombre;
+                console.log("Evaluando sección archivo adjunto:", {
+                  archivoNombre,
+                  existe: !!archivoNombre,
+                  selectedLicitacion,
+                });
+                return archivoNombre ? (
+                  <DetailSection>
+                    <SectionTitle>Archivo adjunto</SectionTitle>
+                    <DetailDescription>📎 {archivoNombre}</DetailDescription>
+                  </DetailSection>
+                ) : null;
+              })()}
+
+              <DetailSection>
+                <SectionTitle>Propuestas</SectionTitle>
+                <PropuestasSection>
+                  <PropuestasIcon>📋</PropuestasIcon>
+                  <PropuestasText>
+                    La gestión de propuestas estará disponible próximamente.
+                    <br />
+                    Aquí podrá ver y evaluar todas las propuestas recibidas para
+                    esta licitación.
+                  </PropuestasText>
+                </PropuestasSection>
+              </DetailSection>
+            </ModalBody>
+
+            <ModalActions>
+              <EditButton
+                onClick={() =>
+                  handleEditarLicitacion(
+                    selectedLicitacion.licitacionID ||
+                      selectedLicitacion.LicitacionID
+                  )
+                }
+              >
+                ✏️ Editar
+              </EditButton>
+              <DeleteButton
+                onClick={() => handleDeleteLicitacion(selectedLicitacion)}
+              >
+                🗑️ Eliminar
+              </DeleteButton>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showConfirmDelete && deletingLicitacion && (
+        <ConfirmModal
+          onClick={(e) =>
+            e.target === e.currentTarget && cancelDeleteLicitacion()
+          }
+        >
+          <ConfirmContent>
+            <ConfirmTitle>⚠️ Confirmar eliminación</ConfirmTitle>
+            <ConfirmText>
+              ¿Está seguro que desea eliminar la licitación
+              <strong>
+                {" "}
+                "{deletingLicitacion.titulo || deletingLicitacion.Titulo}"
+              </strong>
+              ?
+              <br />
+              <br />
+              Esta acción no se puede deshacer.
+            </ConfirmText>
+            <ConfirmActions>
+              <CancelButton onClick={cancelDeleteLicitacion}>
+                Cancelar
+              </CancelButton>
+              <ConfirmDeleteButton onClick={confirmDeleteLicitacion}>
+                Eliminar
+              </ConfirmDeleteButton>
+            </ConfirmActions>
+          </ConfirmContent>
+        </ConfirmModal>
+      )}
 
       <ToastContainer
         position="top-right"
