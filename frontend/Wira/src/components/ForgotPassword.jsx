@@ -266,7 +266,7 @@ const ForgotPassword = () => {
 
         <Title>¿Olvidaste tu contraseña?</Title>
         <Description>
-          No te preocupes. Ingresa tu email y te enviaremos las instrucciones
+          No te preocupés. Ingresá tu email y te enviaremos las instrucciones
           para restablecer tu contraseña.
         </Description>
 

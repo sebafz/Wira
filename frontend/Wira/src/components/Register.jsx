@@ -424,7 +424,7 @@ const Register = () => {
       </InputGroup>
 
       <div>
-        <Label>Tipo de Usuario</Label>
+        <Label>Tipo de usuario</Label>
         <UserTypeSelector>
           <UserTypeCard
             selected={userType === "minera"}

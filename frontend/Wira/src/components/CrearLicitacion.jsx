@@ -1080,7 +1080,7 @@ const CrearLicitacion = () => {
 
             <CriteriosSection>
               <SectionTitle>
-                📊 Criterios de evaluación
+                Criterios de evaluación
                 <InfoTooltip>
                   <InfoIcon>i</InfoIcon>
                   <TooltipContent>

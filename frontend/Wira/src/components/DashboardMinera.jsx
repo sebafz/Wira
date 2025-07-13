@@ -161,6 +161,10 @@ const DashboardMinera = () => {
     navigate("/crear-licitacion");
   };
 
+  const handleMisLicitaciones = () => {
+    navigate("/mis-licitaciones");
+  };
+
   const getUserName = () => {
     return user?.Nombre || user?.nombre || "Usuario";
   };
@@ -225,11 +229,8 @@ const DashboardMinera = () => {
               Visualice y gestione todas sus licitaciones activas, en evaluación
               y finalizadas.
             </ActionDescription>
-            <ActionButton
-              disabled
-              style={{ opacity: 0.6, cursor: "not-allowed" }}
-            >
-              Próximamente
+            <ActionButton onClick={handleMisLicitaciones}>
+              Ver licitaciones
             </ActionButton>
           </ActionCard>
 
