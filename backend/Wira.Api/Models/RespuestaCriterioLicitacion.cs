@@ -18,8 +18,6 @@ namespace Wira.Api.Models
         [StringLength(255)]
         public string? ValorProveedor { get; set; }
 
-        public DateTime FechaRegistro { get; set; } = DateTime.Now;
-
         // Navegación
         [ForeignKey("PropuestaID")]
         public virtual Propuesta Propuesta { get; set; } = null!;

@@ -166,7 +166,7 @@ const DashboardProveedor = () => {
   const navigate = useNavigate();
 
   const handleVerLicitaciones = () => {
-    navigate("/licitaciones");
+    navigate("/licitaciones-activas");
   };
 
   const getUserName = () => {

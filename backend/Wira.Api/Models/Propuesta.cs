@@ -20,6 +20,19 @@ namespace Wira.Api.Models
         [Required]
         public int EstadoPropuestaID { get; set; }
 
+        public string? Descripcion { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal PresupuestoOfrecido { get; set; }
+
+        public DateTime? FechaEntrega { get; set; }
+
+        public bool CumpleRequisitos { get; set; } = true;
+
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal? CalificacionFinal { get; set; }
+
         public bool Eliminado { get; set; } = false;
 
         public int? ArchivoID { get; set; }

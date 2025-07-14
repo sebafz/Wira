@@ -283,6 +283,43 @@ namespace Wira.Api.Controllers
                 return StatusCode(500, "Error interno del servidor");
             }
         }
+
+        [HttpGet("{id}/criterios")]
+        public async Task<ActionResult<IEnumerable<object>>> GetCriteriosLicitacion(int id)
+        {
+            try
+            {
+                var licitacion = await _context.Licitaciones
+                    .Where(l => l.LicitacionID == id && !l.Eliminado)
+                    .FirstOrDefaultAsync();
+
+                if (licitacion == null)
+                {
+                    return NotFound(new { message = "Licitación no encontrada" });
+                }
+
+                var criterios = await _context.CriteriosLicitacion
+                    .Where(c => c.LicitacionID == id)
+                    .Select(c => new
+                    {
+                        c.CriterioID,
+                        c.LicitacionID,
+                        c.Nombre,
+                        c.Descripcion,
+                        c.Peso,
+                        c.ModoEvaluacion
+                    })
+                    .OrderBy(c => c.Nombre)
+                    .ToListAsync();
+
+                return Ok(criterios);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener criterios de la licitación {LicitacionId}", id);
+                return StatusCode(500, new { message = "Error al obtener los criterios de la licitación" });
+            }
+        }
     }
 
     public class CreateLicitacionRequest

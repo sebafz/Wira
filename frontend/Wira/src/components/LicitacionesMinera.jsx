@@ -531,10 +531,10 @@ const DatesGrid = styled.div`
 `;
 
 const DateCard = styled.div`
-  background: #e3f2fd;
+  background: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid #ff9206;
   text-align: center;
 `;
 
@@ -552,7 +552,7 @@ const DateLabel = styled.div`
 const DateValue = styled.div`
   font-size: 1rem;
   font-weight: 600;
-  color: #1976d2;
+  color: #ff9206;
 `;
 
 const BudgetCard = styled.div`
@@ -1435,11 +1435,6 @@ const LicitacionesMinera = () => {
                 const archivoNombre =
                   selectedLicitacion.archivoNombre ||
                   selectedLicitacion.ArchivoNombre;
-                console.log("Evaluando sección archivo adjunto:", {
-                  archivoNombre,
-                  existe: !!archivoNombre,
-                  selectedLicitacion,
-                });
                 return archivoNombre ? (
                   <DetailSection>
                     <SectionTitle>Archivo adjunto</SectionTitle>

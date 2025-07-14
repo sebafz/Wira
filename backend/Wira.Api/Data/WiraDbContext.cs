@@ -150,10 +150,6 @@ namespace Wira.Api.Data
                 .Property(p => p.Eliminado)
                 .HasDefaultValue(false);
 
-            modelBuilder.Entity<RespuestaCriterioLicitacion>()
-                .Property(r => r.FechaRegistro)
-                .HasDefaultValueSql("GETDATE()");
-
             modelBuilder.Entity<ArchivoAdjunto>()
                 .Property(a => a.FechaSubida)
                 .HasDefaultValueSql("GETDATE()");
