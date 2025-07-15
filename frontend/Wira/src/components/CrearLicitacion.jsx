@@ -688,13 +688,9 @@ const CrearLicitacion = () => {
         setLoadingProyectos(true);
         setProyectosError("");
 
-        console.log("Usuario completo:", user);
-        console.log("MineraID:", user?.MineraID);
-        console.log("mineraID:", user?.mineraID);
+        const mineraId = user?.minera?.mineraID;
 
-        const mineraId = user?.MineraID || user?.mineraID;
         if (!mineraId) {
-          console.log("No se encontró MineraID en el usuario");
           setProyectosError(
             "No se pudo obtener el ID de la minera del usuario."
           );
@@ -705,11 +701,9 @@ const CrearLicitacion = () => {
         const response = await fetch(
           `http://localhost:5242/api/proyectosmineros/minera/${mineraId}`
         );
-        console.log("Response status:", response.status);
 
         if (response.ok) {
           const data = await response.json();
-          console.log("Proyectos mineros obtenidos:", data);
           setProyectosMineros(data);
         } else {
           const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
@@ -732,13 +726,12 @@ const CrearLicitacion = () => {
     };
 
     fetchRubros();
-    if (user?.MineraID || user?.mineraID) {
+    if (user?.minera?.mineraID) {
       fetchProyectosMineros();
     } else {
-      console.log("Usuario sin MineraID, no se cargarán proyectos");
       setLoadingProyectos(false);
     }
-  }, [user?.MineraID, user?.mineraID]);
+  }, [user?.minera?.mineraID]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -871,7 +864,7 @@ const CrearLicitacion = () => {
     try {
       // Crear licitación primero
       const licitacionData = {
-        MineraID: user?.MineraID || 1, // Obtener el ID de la minera del usuario autenticado
+        MineraID: user?.minera?.mineraID || 1, // Obtener el ID de la minera del usuario autenticado
         RubroID: parseInt(formData.rubroID),
         ProyectoMineroID: formData.proyectoMineroID
           ? parseInt(formData.proyectoMineroID)
