@@ -640,8 +640,8 @@ const EditarPropuesta = () => {
   const handleCriterioChange = (criterioId, value) => {
     setCriteriosRespuestas((prev) =>
       prev.map((respuesta) =>
-        respuesta.criterioEvaluacionID === criterioId
-          ? { ...respuesta, respuestaTexto: value }
+        respuesta.criterioID === criterioId
+          ? { ...respuesta, valorProveedor: value }
           : respuesta
       )
     );
@@ -745,8 +745,8 @@ const EditarPropuesta = () => {
 
     // Validar criterios de evaluación
     criteriosRespuestas.forEach((respuesta) => {
-      if (!respuesta.respuestaTexto?.trim()) {
-        newErrors[`criterio_${respuesta.criterioEvaluacionID}`] =
+      if (!respuesta.valorProveedor?.trim()) {
+        newErrors[`criterio_${respuesta.criterioID}`] =
           "Este criterio es requerido";
       }
     });
@@ -772,33 +772,17 @@ const EditarPropuesta = () => {
       setSubmitting(true);
       setShowConfirmUpdate(false);
 
-      const formDataToSend = new FormData();
-      formDataToSend.append("descripcion", formData.descripcion);
-      formDataToSend.append(
-        "presupuestoOfrecido",
-        formData.presupuestoOfrecido
-      );
-
-      if (formData.fechaEntrega) {
-        formDataToSend.append("fechaEntrega", formData.fechaEntrega);
-      }
-
-      // Agregar respuestas de criterios
-      criteriosRespuestas.forEach((respuesta, index) => {
-        formDataToSend.append(
-          `RespuestasCriterios[${index}].CriterioEvaluacionID`,
-          respuesta.criterioEvaluacionID
-        );
-        formDataToSend.append(
-          `RespuestasCriterios[${index}].RespuestaTexto`,
-          respuesta.respuestaTexto
-        );
-      });
-
-      // Agregar archivo si existe y no es el existente
-      if (selectedFile && !selectedFile.isExisting) {
-        formDataToSend.append("archivo", selectedFile);
-      }
+      const dataToSend = {
+        descripcion: formData.descripcion,
+        presupuestoOfrecido: parseFloat(formData.presupuestoOfrecido),
+        fechaEntrega: formData.fechaEntrega
+          ? new Date(formData.fechaEntrega).toISOString()
+          : null,
+        respuestasCriterios: criteriosRespuestas.map((respuesta) => ({
+          criterioID: respuesta.criterioID,
+          valorProveedor: respuesta.valorProveedor,
+        })),
+      };
 
       const response = await fetch(
         `http://localhost:5242/api/propuestas/${id}`,
@@ -806,8 +790,9 @@ const EditarPropuesta = () => {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          body: formDataToSend,
+          body: JSON.stringify(dataToSend),
         }
       );
 
@@ -940,16 +925,16 @@ const EditarPropuesta = () => {
                 <SectionTitle>Criterios de evaluación</SectionTitle>
 
                 {criteriosRespuestas.map((respuesta) => (
-                  <CriterioItem key={respuesta.criterioEvaluacionID}>
+                  <CriterioItem key={respuesta.criterioID}>
                     <CriterioHeader>
                       <CriterioName>
-                        {respuesta.criterioEvaluacion?.nombre || "Criterio"}
+                        {respuesta.criterioNombre || "Criterio"}
                       </CriterioName>
                     </CriterioHeader>
 
-                    {respuesta.criterioEvaluacion?.descripcion && (
+                    {respuesta.criterioDescripcion && (
                       <CriterioDescription>
-                        {respuesta.criterioEvaluacion.descripcion}
+                        {respuesta.criterioDescripcion}
                       </CriterioDescription>
                     )}
 
@@ -957,19 +942,19 @@ const EditarPropuesta = () => {
                       <FormLabel>Valor ofrecido *</FormLabel>
                       <CriterioValue
                         type="text"
-                        value={respuesta.respuestaTexto || ""}
+                        value={respuesta.valorProveedor || ""}
                         onChange={(e) =>
                           handleCriterioChange(
-                            respuesta.criterioEvaluacionID,
+                            respuesta.criterioID,
                             e.target.value
                           )
                         }
                         placeholder="Ingrese su valor para este criterio"
                         required
                       />
-                      {errors[`criterio_${respuesta.criterioEvaluacionID}`] && (
+                      {errors[`criterio_${respuesta.criterioID}`] && (
                         <ErrorText>
-                          {errors[`criterio_${respuesta.criterioEvaluacionID}`]}
+                          {errors[`criterio_${respuesta.criterioID}`]}
                         </ErrorText>
                       )}
                     </FormGroup>

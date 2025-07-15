@@ -2084,7 +2084,7 @@ const LicitacionesProveedor = () => {
               ) : (
                 criteriosLicitacion.length > 0 && (
                   <FormGroup>
-                    <FormLabel>Criterios de Evaluación</FormLabel>
+                    <FormLabel>Criterios de evaluación</FormLabel>
                     <FormHint style={{ marginBottom: "15px" }}>
                       Complete los valores para cada criterio de evaluación de
                       esta licitación
@@ -2136,7 +2136,7 @@ const LicitacionesProveedor = () => {
 
               {/* Archivo Adjunto */}
               <FormGroup>
-                <FormLabel>Archivo adjunto (opcional)</FormLabel>
+                <FormLabel>Archivo adjunto</FormLabel>
                 <FormHint style={{ marginBottom: "15px" }}>
                   Puede adjuntar documentos adicionales que respalden su
                   propuesta

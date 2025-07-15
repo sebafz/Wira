@@ -87,6 +87,34 @@ namespace Wira.Api.Controllers
                     .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
                     .ToListAsync();
 
+                // Obtener respuestas a criterios de evaluación
+                _logger.LogInformation("Buscando respuestas a criterios para PropuestaID: {PropuestaId}", id);
+                var respuestasCriterios = await _context.RespuestasCriteriosLicitacion
+                    .Where(r => r.PropuestaID == id)
+                    .Include(r => r.Criterio)
+                    .Select(r => new
+                    {
+                        r.RespuestaID,
+                        r.CriterioID,
+                        r.ValorProveedor,
+                        CriterioNombre = r.Criterio.Nombre,
+                        CriterioDescripcion = r.Criterio.Descripcion,
+                        CriterioPeso = r.Criterio.Peso,
+                        CriterioModoEvaluacion = r.Criterio.ModoEvaluacion
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation("Encontradas {Count} respuestas a criterios para PropuestaID: {PropuestaId}", respuestasCriterios.Count, id);
+                
+                if (respuestasCriterios.Any())
+                {
+                    foreach (var respuesta in respuestasCriterios)
+                    {
+                        _logger.LogInformation("Respuesta: CriterioID={CriterioID}, ValorProveedor={ValorProveedor}, Nombre={Nombre}", 
+                            respuesta.CriterioID, respuesta.ValorProveedor, respuesta.CriterioNombre);
+                    }
+                }
+
                 var result = new
                 {
                     propuesta.PropuestaID,
@@ -103,7 +131,8 @@ namespace Wira.Api.Controllers
                     LicitacionTitulo = propuesta.Licitacion.Titulo,
                     MineraNombre = propuesta.Licitacion.Minera.Nombre,
                     ProveedorNombre = propuesta.Proveedor.Nombre,
-                    ArchivosAdjuntos = archivosAdjuntos
+                    ArchivosAdjuntos = archivosAdjuntos,
+                    RespuestasCriterios = respuestasCriterios
                 };
 
                 return Ok(result);
@@ -329,6 +358,36 @@ namespace Wira.Api.Controllers
                     propuesta.CalificacionFinal = updateDto.CalificacionFinal.Value;
                 }
 
+                // Actualizar respuestas a criterios si se proporcionan
+                if (updateDto.RespuestasCriterios != null)
+                {
+                    // Eliminar respuestas existentes
+                    var respuestasExistentes = await _context.RespuestasCriteriosLicitacion
+                        .Where(r => r.PropuestaID == id)
+                        .ToListAsync();
+
+                    if (respuestasExistentes.Any())
+                    {
+                        _context.RespuestasCriteriosLicitacion.RemoveRange(respuestasExistentes);
+                    }
+
+                    // Agregar nuevas respuestas
+                    var nuevasRespuestas = updateDto.RespuestasCriterios
+                        .Where(r => !string.IsNullOrWhiteSpace(r.ValorProveedor))
+                        .Select(r => new RespuestaCriterioLicitacion
+                        {
+                            PropuestaID = id,
+                            CriterioID = r.CriterioID,
+                            ValorProveedor = r.ValorProveedor
+                        })
+                        .ToList();
+
+                    if (nuevasRespuestas.Any())
+                    {
+                        _context.RespuestasCriteriosLicitacion.AddRange(nuevasRespuestas);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Propuesta actualizada exitosamente" });
@@ -391,5 +450,6 @@ namespace Wira.Api.Controllers
         public DateTime? FechaEntrega { get; set; }
         public bool? CumpleRequisitos { get; set; }
         public decimal? CalificacionFinal { get; set; }
+        public List<RespuestaCriterioDto>? RespuestasCriterios { get; set; }
     }
 }
