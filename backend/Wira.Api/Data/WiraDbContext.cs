@@ -28,6 +28,7 @@ namespace Wira.Api.Data
         public DbSet<HistorialProveedorLicitacion> HistorialProveedorLicitacion { get; set; }
         public DbSet<CalificacionPostLicitacion> CalificacionesPostLicitacion { get; set; }
         public DbSet<Auditoria> Auditoria { get; set; }
+        public DbSet<ProyectoMinero> ProyectosMineros { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

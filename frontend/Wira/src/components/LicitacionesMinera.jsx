@@ -580,6 +580,33 @@ const BudgetValue = styled.div`
   font-weight: 600;
 `;
 
+const ProjectCard = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #2eaa4a;
+`;
+
+const ProjectLabel = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+`;
+
+const ProjectValue = styled.div`
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+`;
+
+const ProjectLocation = styled.div`
+  font-size: 0.8rem;
+  color: #2eaa4a;
+  margin-top: 2px;
+  font-style: italic;
+`;
+
 const DetailLabel = styled.div`
   font-size: 0.9rem;
   color: #666;
@@ -656,6 +683,15 @@ const EditButton = styled(ActionButton)`
 
   &:hover {
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  }
+`;
+
+const CloseLicitacionButton = styled(ActionButton)`
+  background: #ffc107;
+  color: #212529;
+
+  &:hover {
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
   }
 `;
 
@@ -759,6 +795,10 @@ const LicitacionesMinera = () => {
   // Estado para el modal de confirmación de eliminación
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [deletingLicitacion, setDeletingLicitacion] = useState(null);
+
+  // Estado para el modal de confirmación de cierre
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [closingLicitacion, setClosingLicitacion] = useState(null);
 
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -1037,6 +1077,55 @@ const LicitacionesMinera = () => {
     setShowConfirmDelete(true);
   };
 
+  const handleCloseLicitacion = (licitacion) => {
+    setClosingLicitacion(licitacion);
+    setShowConfirmClose(true);
+  };
+
+  const confirmCloseLicitacion = async () => {
+    if (!closingLicitacion) return;
+
+    try {
+      const licitacionId =
+        closingLicitacion.licitacionID || closingLicitacion.LicitacionID;
+
+      const response = await fetch(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      toast.success("Licitación cerrada y pasada a evaluación exitosamente");
+
+      // Cerrar modales
+      setShowConfirmClose(false);
+      setShowModal(false);
+      setClosingLicitacion(null);
+      setSelectedLicitacion(null);
+
+      // Recargar las licitaciones
+      await fetchLicitaciones();
+    } catch (error) {
+      console.error("Error al cerrar licitación:", error);
+      toast.error(
+        "Error al cerrar la licitación. Por favor, intente nuevamente."
+      );
+    }
+  };
+
+  const cancelCloseLicitacion = () => {
+    setShowConfirmClose(false);
+    setClosingLicitacion(null);
+  };
+
   const confirmDeleteLicitacion = async () => {
     if (!deletingLicitacion) return;
 
@@ -1289,6 +1378,16 @@ const LicitacionesMinera = () => {
                           "No especificado"}
                       </MetaValue>
                     </MetaItem>
+                    {(licitacion.proyectoMineroNombre ||
+                      licitacion.ProyectoMineroNombre) && (
+                      <MetaItem>
+                        <MetaLabel>Proyecto Minero</MetaLabel>
+                        <MetaValue>
+                          {licitacion.proyectoMineroNombre ||
+                            licitacion.ProyectoMineroNombre}
+                        </MetaValue>
+                      </MetaItem>
+                    )}
                     <MetaItem>
                       <MetaLabel>Fecha inicio</MetaLabel>
                       <MetaValue>
@@ -1393,9 +1492,16 @@ const LicitacionesMinera = () => {
                   </DateCard>
                 </DatesGrid>
 
-                {/* Tercera fila - Presupuesto */}
+                {/* Tercera fila - Presupuesto y Proyecto Minero */}
                 <InfoGrid
-                  style={{ gridTemplateColumns: "1fr", marginTop: "15px" }}
+                  style={{
+                    gridTemplateColumns:
+                      selectedLicitacion.proyectoMineroNombre ||
+                      selectedLicitacion.ProyectoMineroNombre
+                        ? "1fr 1fr"
+                        : "1fr",
+                    marginTop: "15px",
+                  }}
                 >
                   <BudgetCard>
                     <BudgetLabel>Presupuesto estimado</BudgetLabel>
@@ -1406,6 +1512,17 @@ const LicitacionesMinera = () => {
                       )}
                     </BudgetValue>
                   </BudgetCard>
+
+                  {(selectedLicitacion.proyectoMineroNombre ||
+                    selectedLicitacion.ProyectoMineroNombre) && (
+                    <ProjectCard>
+                      <ProjectLabel>Proyecto Minero</ProjectLabel>
+                      <ProjectValue>
+                        {selectedLicitacion.proyectoMineroNombre ||
+                          selectedLicitacion.ProyectoMineroNombre}
+                      </ProjectValue>
+                    </ProjectCard>
+                  )}
                 </InfoGrid>
               </DetailSection>
 
@@ -1468,6 +1585,14 @@ const LicitacionesMinera = () => {
               >
                 ✏️ Editar
               </EditButton>
+              {(selectedLicitacion.estadoNombre === "Publicada" ||
+                selectedLicitacion.EstadoNombre === "Publicada") && (
+                <CloseLicitacionButton
+                  onClick={() => handleCloseLicitacion(selectedLicitacion)}
+                >
+                  ⏸️ Cerrar
+                </CloseLicitacionButton>
+              )}
               <DeleteButton
                 onClick={() => handleDeleteLicitacion(selectedLicitacion)}
               >
@@ -1504,6 +1629,44 @@ const LicitacionesMinera = () => {
               </CancelButton>
               <ConfirmDeleteButton onClick={confirmDeleteLicitacion}>
                 Eliminar
+              </ConfirmDeleteButton>
+            </ConfirmActions>
+          </ConfirmContent>
+        </ConfirmModal>
+      )}
+
+      {/* Modal de confirmación de cierre */}
+      {showConfirmClose && closingLicitacion && (
+        <ConfirmModal
+          onClick={(e) =>
+            e.target === e.currentTarget && cancelCloseLicitacion()
+          }
+        >
+          <ConfirmContent>
+            <ConfirmTitle style={{ color: "#ffc107" }}>
+              ⏸️ Confirmar cierre de licitación
+            </ConfirmTitle>
+            <ConfirmText>
+              ¿Está seguro que desea cerrar antes de tiempo la licitación
+              <strong>
+                {" "}
+                "{closingLicitacion.titulo || closingLicitacion.Titulo}"
+              </strong>
+              ?
+              <br />
+              <br />
+              La licitación pasará al estado "En evaluación" y no se podrán
+              recibir más propuestas.
+            </ConfirmText>
+            <ConfirmActions>
+              <CancelButton onClick={cancelCloseLicitacion}>
+                Cancelar
+              </CancelButton>
+              <ConfirmDeleteButton
+                onClick={confirmCloseLicitacion}
+                style={{ background: "#ffc107", color: "#212529" }}
+              >
+                Cerrar licitación
               </ConfirmDeleteButton>
             </ConfirmActions>
           </ConfirmContent>

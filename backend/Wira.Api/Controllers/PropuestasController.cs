@@ -26,6 +26,7 @@ namespace Wira.Api.Controllers
                 var propuestas = await _context.Propuestas
                     .Where(p => !p.Eliminado)
                     .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.Minera)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
                     .Select(p => new
@@ -42,6 +43,7 @@ namespace Wira.Api.Controllers
                         p.CalificacionFinal,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
+                        MineraNombre = p.Licitacion.Minera.Nombre,
                         ProveedorNombre = p.Proveedor.Nombre,
                         // Obtener archivos adjuntos de la tabla ArchivosAdjuntos
                         ArchivosAdjuntos = _context.ArchivosAdjuntos
@@ -69,6 +71,7 @@ namespace Wira.Api.Controllers
                 var propuesta = await _context.Propuestas
                     .Where(p => p.PropuestaID == id && !p.Eliminado)
                     .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.Minera)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
                     .FirstOrDefaultAsync();
@@ -98,6 +101,7 @@ namespace Wira.Api.Controllers
                     propuesta.CalificacionFinal,
                     EstadoNombre = propuesta.EstadoPropuesta.NombreEstado,
                     LicitacionTitulo = propuesta.Licitacion.Titulo,
+                    MineraNombre = propuesta.Licitacion.Minera.Nombre,
                     ProveedorNombre = propuesta.Proveedor.Nombre,
                     ArchivosAdjuntos = archivosAdjuntos
                 };
@@ -119,6 +123,7 @@ namespace Wira.Api.Controllers
                 var propuestas = await _context.Propuestas
                     .Where(p => p.ProveedorID == proveedorId && !p.Eliminado)
                     .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.Minera)
                     .Include(p => p.EstadoPropuesta)
                     .Select(p => new
                     {
@@ -134,6 +139,7 @@ namespace Wira.Api.Controllers
                         p.CalificacionFinal,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
+                        MineraNombre = p.Licitacion.Minera.Nombre,
                         // Obtener archivos adjuntos de la tabla ArchivosAdjuntos
                         ArchivosAdjuntos = _context.ArchivosAdjuntos
                             .Where(a => a.EntidadTipo == "PROPUESTA" && a.EntidadID == p.PropuestaID)

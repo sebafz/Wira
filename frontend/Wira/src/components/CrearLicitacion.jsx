@@ -600,6 +600,7 @@ const CrearLicitacion = () => {
     titulo: "",
     descripcion: "",
     rubroID: "",
+    proyectoMineroID: "",
     fechaInicio: "",
     fechaCierre: "",
     presupuestoEstimado: "",
@@ -639,8 +640,10 @@ const CrearLicitacion = () => {
   ]);
 
   const [rubros, setRubros] = useState([]);
+  const [proyectosMineros, setProyectosMineros] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingRubros, setLoadingRubros] = useState(true);
+  const [loadingProyectos, setLoadingProyectos] = useState(true);
   const [errors, setErrors] = useState({});
 
   // Estado para archivos adjuntos
@@ -649,12 +652,13 @@ const CrearLicitacion = () => {
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [rubrosError, setRubrosError] = useState("");
+  const [proyectosError, setProyectosError] = useState("");
 
   // Estado para modal de confirmación
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
 
-  // Cargar rubros al montar el componente
+  // Cargar rubros y proyectos mineros al montar el componente
   useEffect(() => {
     const fetchRubros = async () => {
       try {
@@ -679,8 +683,62 @@ const CrearLicitacion = () => {
       }
     };
 
+    const fetchProyectosMineros = async () => {
+      try {
+        setLoadingProyectos(true);
+        setProyectosError("");
+
+        console.log("Usuario completo:", user);
+        console.log("MineraID:", user?.MineraID);
+        console.log("mineraID:", user?.mineraID);
+
+        const mineraId = user?.MineraID || user?.mineraID;
+        if (!mineraId) {
+          console.log("No se encontró MineraID en el usuario");
+          setProyectosError(
+            "No se pudo obtener el ID de la minera del usuario."
+          );
+          setProyectosMineros([]);
+          return;
+        }
+
+        const response = await fetch(
+          `http://localhost:5242/api/proyectosmineros/minera/${mineraId}`
+        );
+        console.log("Response status:", response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Proyectos mineros obtenidos:", data);
+          setProyectosMineros(data);
+        } else {
+          const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
+          console.error("Error al cargar proyectos mineros:", errorMsg);
+          setProyectosError(
+            "Error al cargar proyectos mineros desde el servidor."
+          );
+          setProyectosMineros([]);
+        }
+      } catch (error) {
+        console.error(
+          "Error al conectar con la API de proyectos mineros:",
+          error
+        );
+        setProyectosError("No se pudo conectar con el servidor.");
+        setProyectosMineros([]);
+      } finally {
+        setLoadingProyectos(false);
+      }
+    };
+
     fetchRubros();
-  }, []);
+    if (user?.MineraID || user?.mineraID) {
+      fetchProyectosMineros();
+    } else {
+      console.log("Usuario sin MineraID, no se cargarán proyectos");
+      setLoadingProyectos(false);
+    }
+  }, [user?.MineraID, user?.mineraID]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -815,6 +873,9 @@ const CrearLicitacion = () => {
       const licitacionData = {
         MineraID: user?.MineraID || 1, // Obtener el ID de la minera del usuario autenticado
         RubroID: parseInt(formData.rubroID),
+        ProyectoMineroID: formData.proyectoMineroID
+          ? parseInt(formData.proyectoMineroID)
+          : null,
         Titulo: formData.titulo,
         Descripcion: formData.descripcion,
         FechaInicio: formData.fechaInicio,
@@ -1112,6 +1173,62 @@ const CrearLicitacion = () => {
               )}
             </FormGroup>
 
+            <FormGroup>
+              <FormLabel htmlFor="proyectoMineroID">
+                Proyecto minero
+                <InfoTooltip>
+                  <InfoIcon>?</InfoIcon>
+                  <TooltipContent>
+                    Seleccione el proyecto minero al cual pertenece esta
+                    licitación. Este campo es opcional y te ayudará a organizar
+                    mejor tus licitaciones.
+                  </TooltipContent>
+                </InfoTooltip>
+              </FormLabel>
+              <FormSelect
+                id="proyectoMineroID"
+                name="proyectoMineroID"
+                value={formData.proyectoMineroID}
+                onChange={handleInputChange}
+                disabled={loadingProyectos}
+              >
+                <option value="">
+                  {loadingProyectos
+                    ? "Cargando proyectos..."
+                    : proyectosMineros.length === 0
+                    ? "No hay proyectos disponibles"
+                    : "Sin proyecto asignado"}
+                </option>
+                {proyectosMineros.map((proyecto) => (
+                  <option
+                    key={proyecto.proyectoMineroID}
+                    value={proyecto.proyectoMineroID}
+                  >
+                    {proyecto.nombre}{" "}
+                    {proyecto.ubicacion && `- ${proyecto.ubicacion}`}
+                  </option>
+                ))}
+              </FormSelect>
+              {errors.proyectoMineroID && (
+                <ErrorText>{errors.proyectoMineroID}</ErrorText>
+              )}
+              {proyectosError && (
+                <InfoText style={{ color: "#fc6b0a", marginTop: "5px" }}>
+                  ⚠️ {proyectosError}
+                </InfoText>
+              )}
+              {proyectosMineros.length === 0 &&
+                !loadingProyectos &&
+                !proyectosError && (
+                  <InfoText>
+                    No hay proyectos mineros registrados. Puede crear uno desde
+                    la configuración de su perfil. La licitación se creará sin
+                    proyecto asignado.
+                    <br />
+                  </InfoText>
+                )}
+            </FormGroup>
+
             <FormRow>
               <FormGroup>
                 <FormLabel htmlFor="fechaInicio">Fecha de inicio *</FormLabel>
@@ -1183,7 +1300,7 @@ const CrearLicitacion = () => {
               <SectionTitle>
                 Criterios de evaluación
                 <InfoTooltip>
-                  <InfoIcon>i</InfoIcon>
+                  <InfoIcon>?</InfoIcon>
                   <TooltipContent>
                     <strong>¿Qué son los criterios de evaluación?</strong>
                     <br />
@@ -1371,6 +1488,7 @@ const CrearLicitacion = () => {
                 disabled={
                   loading ||
                   loadingRubros ||
+                  loadingProyectos ||
                   rubros.length === 0 ||
                   !formData.titulo.trim() ||
                   !formData.descripcion.trim() ||

@@ -553,6 +553,7 @@ const EditarLicitacion = () => {
     titulo: "",
     descripcion: "",
     rubroID: "",
+    proyectoMineroID: "",
     fechaInicio: "",
     fechaCierre: "",
     presupuestoEstimado: "",
@@ -560,6 +561,9 @@ const EditarLicitacion = () => {
   });
 
   const [rubros, setRubros] = useState([]);
+  const [proyectosMineros, setProyectosMineros] = useState([]);
+  const [loadingProyectos, setLoadingProyectos] = useState(true);
+  const [proyectosError, setProyectosError] = useState("");
   const [errors, setErrors] = useState({});
 
   // Estado para criterios de evaluación
@@ -568,7 +572,16 @@ const EditarLicitacion = () => {
   // Cargar datos iniciales
   useEffect(() => {
     const fetchData = async () => {
-      await Promise.all([fetchLicitacion(), fetchRubros()]);
+      const promises = [fetchLicitacion(), fetchRubros()];
+
+      if (user?.MineraID || user?.mineraID) {
+        promises.push(fetchProyectosMineros());
+      } else {
+        console.log("Usuario sin MineraID, no se cargarán proyectos");
+        setLoadingProyectos(false);
+      }
+
+      await Promise.all(promises);
     };
 
     if (id) {
@@ -577,7 +590,7 @@ const EditarLicitacion = () => {
       setError("ID de licitación no proporcionado");
       setLoading(false);
     }
-  }, [id]);
+  }, [id, user?.MineraID, user?.mineraID]);
 
   const fetchLicitacion = async () => {
     try {
@@ -626,6 +639,9 @@ const EditarLicitacion = () => {
         titulo: licitacion.titulo || licitacion.Titulo || "",
         descripcion: licitacion.descripcion || licitacion.Descripcion || "",
         rubroID: String(licitacion.rubroID || licitacion.RubroID || ""),
+        proyectoMineroID: String(
+          licitacion.proyectoMineroID || licitacion.ProyectoMineroID || ""
+        ),
         fechaInicio: formatDateForInput(
           licitacion.fechaInicio || licitacion.FechaInicio
         ),
@@ -697,6 +713,52 @@ const EditarLicitacion = () => {
       );
     } finally {
       setLoadingRubros(false);
+    }
+  };
+
+  const fetchProyectosMineros = async () => {
+    try {
+      setLoadingProyectos(true);
+      setProyectosError("");
+
+      console.log("Usuario completo:", user);
+      console.log("MineraID:", user?.MineraID);
+      console.log("mineraID:", user?.mineraID);
+
+      const mineraId = user?.MineraID || user?.mineraID;
+      if (!mineraId) {
+        console.log("No se encontró MineraID en el usuario");
+        setProyectosError("No se pudo obtener el ID de la minera del usuario.");
+        setProyectosMineros([]);
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:5242/api/proyectosmineros/minera/${mineraId}`
+      );
+      console.log("Response status:", response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Proyectos mineros obtenidos:", data);
+        setProyectosMineros(data);
+      } else {
+        const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
+        console.error("Error al cargar proyectos mineros:", errorMsg);
+        setProyectosError(
+          "Error al cargar proyectos mineros desde el servidor."
+        );
+        setProyectosMineros([]);
+      }
+    } catch (error) {
+      console.error(
+        "Error al conectar con la API de proyectos mineros:",
+        error
+      );
+      setProyectosError("No se pudo conectar con el servidor.");
+      setProyectosMineros([]);
+    } finally {
+      setLoadingProyectos(false);
     }
   };
 
@@ -853,6 +915,9 @@ const EditarLicitacion = () => {
         ? parseFloat(formData.presupuestoEstimado)
         : null,
       condiciones: formData.condiciones.trim() || null,
+      ProyectoMineroID: formData.proyectoMineroID
+        ? parseInt(formData.proyectoMineroID)
+        : null,
       criterios: criterios.map((c) => ({
         Nombre: c.nombre,
         Descripcion: c.descripcion,
@@ -1036,6 +1101,60 @@ const EditarLicitacion = () => {
                   ⚠️ {rubrosError}
                 </InfoText>
               )}
+            </FormGroup>
+
+            <FormGroup>
+              <FormLabel htmlFor="proyectoMineroID">
+                Proyecto minero
+                <InfoTooltip>
+                  <InfoIcon>?</InfoIcon>
+                  <TooltipContent>
+                    Seleccione el proyecto minero al cual pertenece esta
+                    licitación. Este campo es opcional y te ayudará a organizar
+                    mejor tus licitaciones.
+                  </TooltipContent>
+                </InfoTooltip>
+              </FormLabel>
+              <FormSelect
+                id="proyectoMineroID"
+                name="proyectoMineroID"
+                value={formData.proyectoMineroID}
+                onChange={handleInputChange}
+                disabled={loadingProyectos}
+              >
+                <option value="">
+                  {loadingProyectos
+                    ? "Cargando proyectos..."
+                    : proyectosMineros.length === 0
+                    ? "No hay proyectos disponibles"
+                    : "Sin proyecto asignado"}
+                </option>
+                {proyectosMineros.map((proyecto) => (
+                  <option
+                    key={proyecto.proyectoMineroID}
+                    value={proyecto.proyectoMineroID}
+                  >
+                    {proyecto.nombre}{" "}
+                    {proyecto.ubicacion && `- ${proyecto.ubicacion}`}
+                  </option>
+                ))}
+              </FormSelect>
+              {errors.proyectoMineroID && (
+                <ErrorText>{errors.proyectoMineroID}</ErrorText>
+              )}
+              {proyectosError && (
+                <InfoText style={{ color: "#fc6b0a", marginTop: "5px" }}>
+                  ⚠️ {proyectosError}
+                </InfoText>
+              )}
+              {proyectosMineros.length === 0 &&
+                !loadingProyectos &&
+                !proyectosError && (
+                  <InfoText style={{ color: "#6c757d", marginTop: "5px" }}>
+                    No hay proyectos mineros registrados. Puedes crear uno desde
+                    la configuración de tu perfil.
+                  </InfoText>
+                )}
             </FormGroup>
 
             <FormRow>

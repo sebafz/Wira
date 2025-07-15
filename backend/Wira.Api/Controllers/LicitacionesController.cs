@@ -29,6 +29,7 @@ namespace Wira.Api.Controllers
                     .Include(l => l.Minera)
                     .Include(l => l.Rubro)
                     .Include(l => l.EstadoLicitacion)
+                    .Include(l => l.ProyectoMinero)
                     .Where(l => !l.Eliminado)
                     .ToListAsync();
 
@@ -54,11 +55,13 @@ namespace Wira.Api.Controllers
                         Condiciones = l.Condiciones,
                         EstadoLicitacionID = l.EstadoLicitacionID,
                         ArchivoID = l.ArchivoID,
+                        ProyectoMineroID = l.ProyectoMineroID,
                         FechaCreacion = l.FechaCreacion,
                         MineraNombre = l.Minera.Nombre,
                         RubroNombre = l.Rubro.Nombre,
                         EstadoNombre = l.EstadoLicitacion.NombreEstado,
-                        ArchivoNombre = archivoAdjunto?.NombreArchivo
+                        ArchivoNombre = archivoAdjunto?.NombreArchivo,
+                        ProyectoMineroNombre = l.ProyectoMinero?.Nombre
                     };
 
                     licitacionDtos.Add(licitacionDto);
@@ -82,6 +85,7 @@ namespace Wira.Api.Controllers
                     .Include(l => l.Minera)
                     .Include(l => l.Rubro)
                     .Include(l => l.EstadoLicitacion)
+                    .Include(l => l.ProyectoMinero)
                     .Include(l => l.CriteriosLicitacion)
                     .Where(l => l.LicitacionID == id && !l.Eliminado)
                     .FirstOrDefaultAsync();
@@ -109,11 +113,13 @@ namespace Wira.Api.Controllers
                     Condiciones = licitacion.Condiciones,
                     EstadoLicitacionID = licitacion.EstadoLicitacionID,
                     ArchivoID = licitacion.ArchivoID,
+                    ProyectoMineroID = licitacion.ProyectoMineroID,
                     FechaCreacion = licitacion.FechaCreacion,
                     MineraNombre = licitacion.Minera.Nombre,
                     RubroNombre = licitacion.Rubro.Nombre,
                     EstadoNombre = licitacion.EstadoLicitacion.NombreEstado,
                     ArchivoNombre = archivoAdjunto?.NombreArchivo,
+                    ProyectoMineroNombre = licitacion.ProyectoMinero?.Nombre,
                     Criterios = licitacion.CriteriosLicitacion.Select(c => new CriterioLicitacionDto
                     {
                         CriterioID = c.CriterioID,
@@ -150,6 +156,19 @@ namespace Wira.Api.Controllers
                 if (rubro == null)
                 {
                     return BadRequest("El rubro especificado no existe.");
+                }
+
+                // Validar que el proyecto minero existe y pertenece a la minera (si se especifica)
+                if (request.ProyectoMineroID.HasValue)
+                {
+                    var proyecto = await _context.ProyectosMineros
+                        .FirstOrDefaultAsync(p => p.ProyectoMineroID == request.ProyectoMineroID.Value && 
+                                                  p.MineraID == request.MineraID && 
+                                                  p.Activo);
+                    if (proyecto == null)
+                    {
+                        return BadRequest("El proyecto minero especificado no existe o no pertenece a la minera.");
+                    }
                 }
 
                 // Validar fechas
@@ -190,6 +209,7 @@ namespace Wira.Api.Controllers
                     Condiciones = request.Condiciones,
                     EstadoLicitacionID = estadoInicial.EstadoLicitacionID,
                     ArchivoID = request.ArchivoID,
+                    ProyectoMineroID = request.ProyectoMineroID,
                     FechaCreacion = DateTime.Now
                 };
 
@@ -244,6 +264,7 @@ namespace Wira.Api.Controllers
                 licitacion.PresupuestoEstimado = request.PresupuestoEstimado;
                 licitacion.Condiciones = request.Condiciones;
                 licitacion.ArchivoID = request.ArchivoID;
+                licitacion.ProyectoMineroID = request.ProyectoMineroID;
 
                 await _context.SaveChangesAsync();
 
@@ -320,6 +341,54 @@ namespace Wira.Api.Controllers
                 return StatusCode(500, new { message = "Error al obtener los criterios de la licitación" });
             }
         }
+
+        [HttpPut("{id}/cerrar")]
+        public async Task<IActionResult> CerrarLicitacion(int id)
+        {
+            try
+            {
+                var licitacion = await _context.Licitaciones
+                    .Include(l => l.EstadoLicitacion)
+                    .Where(l => l.LicitacionID == id && !l.Eliminado)
+                    .FirstOrDefaultAsync();
+
+                if (licitacion == null)
+                {
+                    return NotFound(new { message = "Licitación no encontrada" });
+                }
+
+                // Verificar que la licitación esté en estado "Publicada"
+                if (licitacion.EstadoLicitacion.NombreEstado != "Publicada")
+                {
+                    return BadRequest(new { message = "La licitación debe estar en estado 'Publicada' para poder cerrarla" });
+                }
+
+                // Buscar el estado "En Evaluación"
+                var estadoEnEvaluacion = await _context.EstadosLicitacion
+                    .Where(e => e.NombreEstado == "En Evaluación")
+                    .FirstOrDefaultAsync();
+
+                if (estadoEnEvaluacion == null)
+                {
+                    return BadRequest(new { message = "No se encontró el estado 'En Evaluación'" });
+                }
+
+                // Cambiar el estado de la licitación y actualizar la fecha de cierre
+                licitacion.EstadoLicitacionID = estadoEnEvaluacion.EstadoLicitacionID;
+                licitacion.FechaCierre = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Licitación cerrada y pasada a evaluación con ID: {id}");
+
+                return Ok(new { message = "Licitación cerrada exitosamente y pasada a evaluación" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cerrar licitación con ID: {id}");
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
     }
 
     public class CreateLicitacionRequest
@@ -347,6 +416,8 @@ namespace Wira.Api.Controllers
         public string? Condiciones { get; set; }
 
         public int? ArchivoID { get; set; }
+
+        public int? ProyectoMineroID { get; set; }
 
         [Required]
         public List<CreateCriterioRequest> Criterios { get; set; } = new List<CreateCriterioRequest>();
@@ -388,5 +459,7 @@ namespace Wira.Api.Controllers
         public string? Condiciones { get; set; }
 
         public int? ArchivoID { get; set; }
+
+        public int? ProyectoMineroID { get; set; }
     }
 }

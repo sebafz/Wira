@@ -169,6 +169,10 @@ const DashboardProveedor = () => {
     navigate("/licitaciones-activas");
   };
 
+  const handleVerPropuestas = () => {
+    navigate("/propuestas-proveedor");
+  };
+
   const getUserName = () => {
     return user?.Nombre || user?.nombre || "Usuario";
   };
@@ -247,11 +251,8 @@ const DashboardProveedor = () => {
               Revise el estado de todas las propuestas que ha enviado y su
               progreso.
             </ActionDescription>
-            <ActionButton
-              disabled
-              style={{ opacity: 0.6, cursor: "not-allowed" }}
-            >
-              Próximamente
+            <ActionButton onClick={handleVerPropuestas}>
+              Ver mis propuestas
             </ActionButton>
           </ActionCard>
 

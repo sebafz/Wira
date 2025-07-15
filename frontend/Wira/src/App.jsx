@@ -19,6 +19,8 @@ import CrearLicitacion from "./components/CrearLicitacion";
 import EditarLicitacion from "./components/EditarLicitacion";
 import LicitacionesMinera from "./components/LicitacionesMinera";
 import LicitacionesProveedor from "./components/LicitacionesProveedor";
+import PropuestasProveedor from "./components/PropuestasProveedor";
+import EditarPropuesta from "./components/EditarPropuesta";
 import Profile from "./components/Profile";
 import "./App.css";
 
@@ -114,6 +116,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/propuestas-proveedor"
+              element={
+                <ProtectedRoute>
+                  <PropuestasProveedor />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/propuestas/editar/:id"
+              element={
+                <ProtectedRoute>
+                  <EditarPropuesta />
                 </ProtectedRoute>
               }
             />

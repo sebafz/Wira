@@ -41,6 +41,8 @@ namespace Wira.Api.Models
 
         public int? ArchivoID { get; set; }
 
+        public int? ProyectoMineroID { get; set; }
+
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
         // Navegación
@@ -55,6 +57,9 @@ namespace Wira.Api.Models
 
         [ForeignKey("ArchivoID")]
         public virtual ArchivoAdjunto? ArchivoAdjunto { get; set; }
+
+        [ForeignKey("ProyectoMineroID")]
+        public virtual ProyectoMinero? ProyectoMinero { get; set; }
 
         public virtual ICollection<CriterioLicitacion> CriteriosLicitacion { get; set; } = new List<CriterioLicitacion>();
         public virtual ICollection<Propuesta> Propuestas { get; set; } = new List<Propuesta>();

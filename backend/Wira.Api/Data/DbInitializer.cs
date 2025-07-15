@@ -157,6 +157,39 @@ namespace Wira.Api.Data
 
             await context.UsuariosRoles.AddRangeAsync(usuarioRoles);
 
+            // Agregar proyectos mineros de ejemplo para Borax Argentina
+            var boraxMinera = await context.Mineras.FirstAsync(m => m.Nombre == "Borax Argentina");
+
+            var proyectosMineros = new[]
+            {
+                new ProyectoMinero 
+                { 
+                    MineraID = boraxMinera.MineraID,
+                    Nombre = "Extracción Tinkal",
+                    Ubicacion = "Salar del Hombre Muerto, Catamarca",
+                    Descripcion = "Proyecto de extracción de boratos en la cuenca de Tincalayu, fase de expansión de operaciones existentes con nuevas tecnologías de extracción sostenible.",
+                    Activo = true
+                },
+                new ProyectoMinero 
+                { 
+                    MineraID = boraxMinera.MineraID,
+                    Nombre = "Planta de Refinado Norte",
+                    Ubicacion = "Campo Quijano, Salta",
+                    Descripcion = "Construcción de nueva planta de refinado de ácido bórico con tecnología de última generación para incrementar la capacidad de procesamiento.",
+                    Activo = true
+                },
+                new ProyectoMinero 
+                { 
+                    MineraID = boraxMinera.MineraID,
+                    Nombre = "Modernización Infraestructura",
+                    Ubicacion = "Tincalayu, Catamarca",
+                    Descripcion = "Actualización integral de sistemas de transporte interno, modernización de equipos de extracción y mejora de la infraestructura logística.",
+                    Activo = true
+                }
+            };
+
+            await context.ProyectosMineros.AddRangeAsync(proyectosMineros);
+
             // Guardar cambios
             await context.SaveChangesAsync();
         }

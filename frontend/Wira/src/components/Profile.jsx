@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService } from "../services/apiService";
@@ -238,6 +238,97 @@ const BackButton = styled.button`
   }
 `;
 
+const ProjectsList = styled.div`
+  display: grid;
+  gap: 15px;
+`;
+
+const ProjectCard = styled.div`
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 20px;
+`;
+
+const ProjectHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+`;
+
+const ProjectName = styled.h3`
+  color: #333;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 600;
+`;
+
+const ProjectStatus = styled.span`
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: ${(props) => {
+    switch (props.status) {
+      case "ACTIVO":
+        return "#28a745";
+      case "EN_PLANIFICACION":
+        return "#ffc107";
+      case "PAUSADO":
+        return "#fd7e14";
+      case "COMPLETADO":
+        return "#6c757d";
+      default:
+        return "#6c757d";
+    }
+  }};
+  color: white;
+`;
+
+const ProjectInfo = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+`;
+
+const ProjectDetail = styled.div`
+  .label {
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+
+  .value {
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 500;
+  }
+`;
+
+const ProjectDescription = styled.p`
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin: 10px 0 0 0;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-style: italic;
+`;
+
+const LoadingState = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: #666;
+`;
+
 const Profile = () => {
   const { user, updateUser } = useAuth();
 
@@ -247,6 +338,11 @@ const Profile = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
+
+  // Estado para proyectos mineros
+  const [proyectosMineros, setProyectosMineros] = useState([]);
+  const [loadingProyectos, setLoadingProyectos] = useState(false);
+  const [proyectosError, setProyectosError] = useState("");
 
   // Inicializar el nombre editado cuando se inicia la edición
   const handleStartEdit = () => {
@@ -311,6 +407,43 @@ const Profile = () => {
     }
   };
 
+  // Cargar proyectos mineros cuando el componente se monta
+  useEffect(() => {
+    const fetchProyectosMineros = async () => {
+      if (!user?.minera?.mineraID) {
+        return; // Solo cargar proyectos si el usuario es de una minera
+      }
+
+      try {
+        setLoadingProyectos(true);
+        setProyectosError("");
+
+        const response = await fetch(
+          `http://localhost:5242/api/ProyectosMineros/minera/${user.minera.mineraID}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setProyectosMineros(data);
+        } else {
+          setProyectosError("Error al cargar proyectos mineros");
+          setProyectosMineros([]);
+        }
+      } catch (error) {
+        console.error(
+          "Error al conectar con la API de proyectos mineros:",
+          error
+        );
+        setProyectosError("No se pudo conectar con el servidor");
+        setProyectosMineros([]);
+      } finally {
+        setLoadingProyectos(false);
+      }
+    };
+
+    fetchProyectosMineros();
+  }, [user?.minera?.mineraID]);
+
   const getUserInitials = () => {
     const nombre = user?.Nombre || user?.nombre;
     if (!nombre) return "U";
@@ -344,6 +477,29 @@ const Profile = () => {
       };
     }
     return null;
+  };
+
+  const formatProjectStatus = (status) => {
+    const statusMap = {
+      ACTIVO: "Activo",
+      EN_PLANIFICACION: "En planificación",
+      PAUSADO: "Pausado",
+      COMPLETADO: "Completado",
+    };
+    return statusMap[status] || status;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "No especificada";
+    try {
+      return new Date(dateString).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return "Fecha inválida";
+    }
   };
 
   const companyInfo = getCompanyInfo();
@@ -453,6 +609,80 @@ const Profile = () => {
                     </InfoItem>
                   )}
                 </InfoGrid>
+              </Section>
+            )}
+
+            {/* Sección de proyectos mineros - solo para usuarios de minera */}
+            {user?.minera && (
+              <Section>
+                <SectionTitle>
+                  Proyectos mineros ({proyectosMineros.length})
+                </SectionTitle>
+
+                {loadingProyectos ? (
+                  <LoadingState>Cargando proyectos...</LoadingState>
+                ) : proyectosError ? (
+                  <ErrorMessage>{proyectosError}</ErrorMessage>
+                ) : proyectosMineros.length === 0 ? (
+                  <EmptyState>
+                    No hay proyectos mineros registrados.
+                    <br />
+                    Los proyectos se pueden gestionar desde el panel principal.
+                  </EmptyState>
+                ) : (
+                  <ProjectsList>
+                    {proyectosMineros.map((proyecto) => (
+                      <ProjectCard key={proyecto.proyectoMineroID}>
+                        <ProjectHeader>
+                          <ProjectName>{proyecto.nombre}</ProjectName>
+                          <ProjectStatus status={proyecto.estado}>
+                            {formatProjectStatus(proyecto.estado)}
+                          </ProjectStatus>
+                        </ProjectHeader>
+
+                        {proyecto.descripcion && (
+                          <ProjectDescription>
+                            {proyecto.descripcion}
+                          </ProjectDescription>
+                        )}
+
+                        <ProjectInfo>
+                          {proyecto.ubicacion && (
+                            <ProjectDetail>
+                              <div className="label">Ubicación</div>
+                              <div className="value">{proyecto.ubicacion}</div>
+                            </ProjectDetail>
+                          )}
+
+                          <ProjectDetail>
+                            <div className="label">Fecha de inicio</div>
+                            <div className="value">
+                              {formatDate(proyecto.fechaInicio)}
+                            </div>
+                          </ProjectDetail>
+
+                          {proyecto.fechaFinalizacionEstimada && (
+                            <ProjectDetail>
+                              <div className="label">Finalización estimada</div>
+                              <div className="value">
+                                {formatDate(proyecto.fechaFinalizacionEstimada)}
+                              </div>
+                            </ProjectDetail>
+                          )}
+
+                          {proyecto.presupuesto && (
+                            <ProjectDetail>
+                              <div className="label">Presupuesto</div>
+                              <div className="value">
+                                ${proyecto.presupuesto.toLocaleString("es-AR")}
+                              </div>
+                            </ProjectDetail>
+                          )}
+                        </ProjectInfo>
+                      </ProjectCard>
+                    ))}
+                  </ProjectsList>
+                )}
               </Section>
             )}
           </ProfileBody>

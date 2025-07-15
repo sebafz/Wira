@@ -13,6 +13,7 @@ namespace Wira.Api.DTOs
         public string? Condiciones { get; set; }
         public int EstadoLicitacionID { get; set; }
         public int? ArchivoID { get; set; }
+        public int? ProyectoMineroID { get; set; }
         public DateTime FechaCreacion { get; set; }
 
         // Propiedades de navegación
@@ -20,6 +21,7 @@ namespace Wira.Api.DTOs
         public string RubroNombre { get; set; } = string.Empty;
         public string EstadoNombre { get; set; } = string.Empty;
         public string? ArchivoNombre { get; set; }
+        public string? ProyectoMineroNombre { get; set; }
 
         // Criterios de evaluación
         public List<CriterioLicitacionDto> Criterios { get; set; } = new List<CriterioLicitacionDto>();

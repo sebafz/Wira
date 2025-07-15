@@ -3,29 +3,30 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Wira.Api.Models
 {
-    [Table("Mineras")]
-    public class Minera
+    [Table("ProyectosMineros")]
+    public class ProyectoMinero
     {
         [Key]
+        public int ProyectoMineroID { get; set; }
+
+        [Required]
         public int MineraID { get; set; }
 
         [Required]
         [StringLength(255)]
         public string Nombre { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(20)]
-        public string CUIT { get; set; } = string.Empty;
-
         [StringLength(255)]
-        [EmailAddress]
-        public string? EmailContacto { get; set; }
+        public string? Ubicacion { get; set; }
+
+        public string? Descripcion { get; set; }
 
         public bool Activo { get; set; } = true;
 
-        // Navegación
-        public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
+        // Navigation properties
+        [ForeignKey("MineraID")]
+        public virtual Minera Minera { get; set; } = null!;
+
         public virtual ICollection<Licitacion> Licitaciones { get; set; } = new List<Licitacion>();
-        public virtual ICollection<ProyectoMinero> ProyectosMineros { get; set; } = new List<ProyectoMinero>();
     }
 }
