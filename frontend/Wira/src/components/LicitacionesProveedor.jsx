@@ -249,6 +249,19 @@ const TimeRemaining = styled.div`
   margin-left: 8px;
 `;
 
+const AppliedIndicator = styled.div`
+  background: #e2d5f0;
+  color: #6f42c1;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 const LicitacionMeta = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -977,6 +990,7 @@ const LicitacionesProveedor = () => {
     fechaCierreDesde: "",
     fechaCierreHasta: "",
     minera: "",
+    estadoPostulacion: "todas", // "todas", "postuladas", "no_postuladas"
   });
 
   // Estados para ordenamiento
@@ -1089,6 +1103,17 @@ const LicitacionesProveedor = () => {
       if (filters.minera) {
         licitacionesActivas = licitacionesActivas.filter(
           (l) => (l.mineraNombre || l.MineraNombre) === filters.minera
+        );
+      }
+
+      // Filtrar por estado de postulación
+      if (filters.estadoPostulacion === "postuladas") {
+        licitacionesActivas = licitacionesActivas.filter((l) =>
+          hasUserApplied(l.licitacionID || l.LicitacionID)
+        );
+      } else if (filters.estadoPostulacion === "no_postuladas") {
+        licitacionesActivas = licitacionesActivas.filter(
+          (l) => !hasUserApplied(l.licitacionID || l.LicitacionID)
         );
       }
 
@@ -1236,6 +1261,7 @@ const LicitacionesProveedor = () => {
       fechaCierreDesde: "",
       fechaCierreHasta: "",
       minera: "",
+      estadoPostulacion: "todas",
     });
   };
 
@@ -1570,6 +1596,50 @@ const LicitacionesProveedor = () => {
     );
   };
 
+  // Función para obtener el mensaje de estado vacío
+  const getEmptyStateMessage = () => {
+    switch (filters.estadoPostulacion) {
+      case "postuladas":
+        return {
+          title: "No tienes propuestas enviadas",
+          description:
+            "Aún no has enviado propuestas para ninguna licitación activa. Explora las licitaciones disponibles y envía tu primera propuesta.",
+        };
+      case "no_postuladas":
+        return {
+          title: "No hay licitaciones disponibles",
+          description:
+            "Ya has enviado propuestas para todas las licitaciones activas que coinciden con tus filtros, o no hay licitaciones disponibles en este momento.",
+        };
+      default:
+        return {
+          title: "No hay licitaciones activas",
+          description:
+            "No se encontraron licitaciones activas que coincidan con los filtros aplicados. Intente ajustar los criterios de búsqueda.",
+        };
+    }
+  };
+
+  // Función para obtener el texto de resultados
+  const getResultsText = () => {
+    if (loading) return "Cargando...";
+
+    const totalCount = licitaciones.length;
+    const appliedCount = licitaciones.filter((l) =>
+      hasUserApplied(l.licitacionID || l.LicitacionID)
+    ).length;
+    const notAppliedCount = totalCount - appliedCount;
+
+    switch (filters.estadoPostulacion) {
+      case "postuladas":
+        return `${totalCount} licitación(es) ya postulada(s)`;
+      case "no_postuladas":
+        return `${totalCount} licitación(es) disponible(s) para postular`;
+      default:
+        return `${totalCount} licitación(es) activa(s) (${appliedCount} postuladas, ${notAppliedCount} disponibles)`;
+    }
+  };
+
   return (
     <Container>
       <Navbar />
@@ -1677,6 +1747,20 @@ const LicitacionesProveedor = () => {
                 }
               />
             </FilterGroup>
+
+            <FilterGroup>
+              <FilterLabel>Estado de postulación</FilterLabel>
+              <FilterSelect
+                value={filters.estadoPostulacion}
+                onChange={(e) =>
+                  handleFilterChange("estadoPostulacion", e.target.value)
+                }
+              >
+                <option value="todas">Todas las licitaciones</option>
+                <option value="no_postuladas">No postuladas</option>
+                <option value="postuladas">Ya postuladas</option>
+              </FilterSelect>
+            </FilterGroup>
           </FiltersGrid>
 
           <FiltersActions>
@@ -1691,11 +1775,7 @@ const LicitacionesProveedor = () => {
           <LicitacionesHeader>
             <div>
               <LicitacionesTitle>Licitaciones activas</LicitacionesTitle>
-              <ResultsInfo>
-                {loading
-                  ? "Cargando..."
-                  : `${licitaciones.length} licitación(es) activa(s)`}
-              </ResultsInfo>
+              <ResultsInfo>{getResultsText()}</ResultsInfo>
             </div>
 
             <SortContainer>
@@ -1742,12 +1822,9 @@ const LicitacionesProveedor = () => {
             ) : licitaciones.length === 0 ? (
               <EmptyState>
                 <EmptyIcon>🔍</EmptyIcon>
-                <EmptyTitle>No hay licitaciones activas</EmptyTitle>
+                <EmptyTitle>{getEmptyStateMessage().title}</EmptyTitle>
                 <EmptyDescription>
-                  No se encontraron licitaciones activas que coincidan con los
-                  filtros aplicados.
-                  <br />
-                  Intente ajustar los criterios de búsqueda.
+                  {getEmptyStateMessage().description}
                 </EmptyDescription>
               </EmptyState>
             ) : (
@@ -1784,15 +1861,7 @@ const LicitacionesProveedor = () => {
                           <TimeRemaining>{timeRemaining}</TimeRemaining>
                         )}
                         {hasApplied && (
-                          <TimeRemaining
-                            style={{
-                              background: "#e2d5f0",
-                              color: "#6f42c1",
-                              marginLeft: "8px",
-                            }}
-                          >
-                            Ya postulado
-                          </TimeRemaining>
+                          <AppliedIndicator>✓ Ya postulado</AppliedIndicator>
                         )}
                       </div>
                     </LicitacionHeader>

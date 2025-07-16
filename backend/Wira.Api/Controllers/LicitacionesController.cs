@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Wira.Api.Data;
 using Wira.Api.Models;
 using Wira.Api.DTOs;
+using Wira.Api.Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace Wira.Api.Controllers
@@ -13,11 +14,13 @@ namespace Wira.Api.Controllers
     {
         private readonly WiraDbContext _context;
         private readonly ILogger<LicitacionesController> _logger;
+        private readonly INotificacionService _notificacionService;
 
-        public LicitacionesController(WiraDbContext context, ILogger<LicitacionesController> logger)
+        public LicitacionesController(WiraDbContext context, ILogger<LicitacionesController> logger, INotificacionService notificacionService)
         {
             _context = context;
             _logger = logger;
+            _notificacionService = notificacionService;
         }
 
         [HttpGet]
@@ -235,6 +238,13 @@ namespace Wira.Api.Controllers
 
                 _logger.LogInformation($"Licitación creada exitosamente con ID: {licitacion.LicitacionID}");
 
+                // Crear notificación para proveedores
+                await _notificacionService.CrearNotificacionLicitacionPublicada(
+                    licitacion.LicitacionID, 
+                    licitacion.Titulo, 
+                    licitacion.MineraID
+                );
+
                 // Retornar la licitación creada
                 return await GetLicitacion(licitacion.LicitacionID);
             }
@@ -381,6 +391,13 @@ namespace Wira.Api.Controllers
 
                 _logger.LogInformation($"Licitación cerrada y pasada a evaluación con ID: {id}");
 
+                // Crear notificación de cierre
+                await _notificacionService.CrearNotificacionLicitacionCerrada(
+                    id, 
+                    licitacion.Titulo, 
+                    licitacion.MineraID
+                );
+
                 return Ok(new { message = "Licitación cerrada exitosamente y pasada a evaluación" });
             }
             catch (Exception ex)
@@ -427,6 +444,13 @@ namespace Wira.Api.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Licitación adjudicada con ID: {id}");
+
+                // Crear notificación de adjudicación
+                await _notificacionService.CrearNotificacionLicitacionAdjudicada(
+                    id, 
+                    licitacion.Titulo, 
+                    licitacion.MineraID
+                );
 
                 return Ok(new { message = "Licitación adjudicada exitosamente" });
             }

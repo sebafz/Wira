@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Wira.Api.Data;
 using Wira.Api.Models;
+using Wira.Api.Services;
 
 namespace Wira.Api.Controllers
 {
@@ -11,11 +12,13 @@ namespace Wira.Api.Controllers
     {
         private readonly WiraDbContext _context;
         private readonly ILogger<PropuestasController> _logger;
+        private readonly INotificacionService _notificacionService;
 
-        public PropuestasController(WiraDbContext context, ILogger<PropuestasController> logger)
+        public PropuestasController(WiraDbContext context, ILogger<PropuestasController> logger, INotificacionService notificacionService)
         {
             _context = context;
             _logger = logger;
+            _notificacionService = notificacionService;
         }
 
         [HttpGet]
@@ -301,6 +304,15 @@ namespace Wira.Api.Controllers
                         await _context.SaveChangesAsync();
                     }
                 }
+
+                // Crear notificación para la minera
+                await _notificacionService.CrearNotificacionNuevaPropuesta(
+                    propuesta.LicitacionID,
+                    licitacion.Titulo,
+                    propuesta.PropuestaID,
+                    proveedor.Nombre,
+                    licitacion.MineraID
+                );
 
                 return CreatedAtAction(nameof(GetPropuesta), new { id = propuesta.PropuestaID }, new 
                 { 
