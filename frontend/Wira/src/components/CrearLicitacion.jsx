@@ -920,9 +920,9 @@ const CrearLicitacion = () => {
         });
 
         const formDataFile = new FormData();
-        formDataFile.append("File", selectedFile); // Cambio: usar "File" en lugar de "archivo"
-        formDataFile.append("EntidadTipo", "LICITACION"); // Cambio: usar "EntidadTipo"
-        formDataFile.append("EntidadID", licitacionId.toString()); // Añadir el ID de la licitación
+        formDataFile.append("File", selectedFile);
+        formDataFile.append("EntidadTipo", "LICITACION");
+        formDataFile.append("EntidadID", licitacionId.toString());
 
         const fileResponse = await fetch(
           "http://localhost:5242/api/archivos/upload",

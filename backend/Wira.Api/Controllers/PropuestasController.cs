@@ -305,7 +305,9 @@ namespace Wira.Api.Controllers
                 return CreatedAtAction(nameof(GetPropuesta), new { id = propuesta.PropuestaID }, new 
                 { 
                     message = "Propuesta creada exitosamente", 
-                    propuestaId = propuesta.PropuestaID 
+                    propuestaId = propuesta.PropuestaID,
+                    propuestaID = propuesta.PropuestaID,
+                    PropuestaID = propuesta.PropuestaID
                 });
             }
             catch (Exception ex)

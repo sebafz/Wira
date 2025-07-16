@@ -494,6 +494,28 @@ const RemoveFileButton = styled.button`
   }
 `;
 
+const DownloadFileButton = styled.button`
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 8px;
+
+  &:hover {
+    background: #218838;
+  }
+`;
+
+const FileActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const FileErrorMessage = styled.div`
   color: #dc3545;
   font-size: 0.9rem;
@@ -599,10 +621,13 @@ const EditarPropuesta = () => {
           setCriteriosRespuestas(data.respuestasCriterios);
         }
 
-        // Si hay archivo adjunto, mostrarlo
-        if (data.archivoNombre) {
+        // Si hay archivos adjuntos, mostrar el primero
+        if (data.archivosAdjuntos && data.archivosAdjuntos.length > 0) {
+          const archivo = data.archivosAdjuntos[0];
           setSelectedFile({
-            name: data.archivoNombre,
+            name: archivo.nombreArchivo || archivo.NombreArchivo,
+            archivoID: archivo.archivoID || archivo.ArchivoID,
+            rutaArchivo: archivo.rutaArchivo || archivo.RutaArchivo,
             isExisting: true,
           });
         }
@@ -729,6 +754,35 @@ const EditarPropuesta = () => {
   const removeFile = () => {
     setSelectedFile(null);
     setUploadError("");
+  };
+
+  const downloadFile = async (archivoID, nombreArchivo) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/descargar/${archivoID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el archivo");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Error al descargar el archivo");
+    }
   };
 
   const validateForm = () => {
@@ -976,9 +1030,6 @@ const EditarPropuesta = () => {
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  onClick={() =>
-                    document.getElementById("propuestaFileInput").click()
-                  }
                 >
                   <FileInput
                     id="propuestaFileInput"
@@ -1006,14 +1057,37 @@ const EditarPropuesta = () => {
                             {formatFileSize(selectedFile.size)}
                           </FileSize>
                         )}
-                        {selectedFile.isExisting && (
+                        {selectedFile.isExisting && !selectedFile.size && (
                           <InfoText>Archivo actual</InfoText>
+                        )}
+                        {selectedFile.isExisting && selectedFile.size && (
+                          <InfoText>
+                            Archivo nuevo (reemplazará el actual)
+                          </InfoText>
                         )}
                       </FileDetails>
                     </FileInfo>
-                    <RemoveFileButton onClick={removeFile}>
-                      Quitar
-                    </RemoveFileButton>
+                    <FileActions>
+                      {selectedFile.isExisting &&
+                        selectedFile.archivoID &&
+                        !selectedFile.size && (
+                          <DownloadFileButton
+                            onClick={() =>
+                              downloadFile(
+                                selectedFile.archivoID,
+                                selectedFile.name
+                              )
+                            }
+                          >
+                            Descargar
+                          </DownloadFileButton>
+                        )}
+                      <RemoveFileButton onClick={removeFile}>
+                        {selectedFile.isExisting && !selectedFile.size
+                          ? "Quitar"
+                          : "Quitar"}
+                      </RemoveFileButton>
+                    </FileActions>
                   </SelectedFileContainer>
                 )}
 

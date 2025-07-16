@@ -532,8 +532,145 @@ const TooltipContent = styled.div`
   }
 `;
 
+const FileUploadSection = styled.div`
+  margin-top: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #e1e5e9;
+`;
+
+const FileUploadContainer = styled.div`
+  position: relative;
+`;
+
+const FileDropZone = styled.div`
+  border: 2px dashed ${(props) => (props.isDragOver ? "#fc6b0a" : "#e1e5e9")};
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: ${(props) => (props.isDragOver ? "#fff5f0" : "white")};
+
+  &:hover {
+    border-color: #fc6b0a;
+    background: #fff5f0;
+  }
+`;
+
+const FileInput = styled.input`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+`;
+
+const FileUploadIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 15px;
+  color: #fc6b0a;
+`;
+
+const FileUploadText = styled.div`
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+`;
+
+const FileUploadSubtext = styled.div`
+  color: #666;
+  font-size: 0.9rem;
+`;
+
+const SelectedFileContainer = styled.div`
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const FileInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const FileIcon = styled.div`
+  font-size: 1.5rem;
+  color: #fc6b0a;
+`;
+
+const FileDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const FileName = styled.div`
+  color: #333;
+  font-weight: 600;
+  font-size: 0.9rem;
+`;
+
+const FileSize = styled.div`
+  color: #666;
+  font-size: 0.8rem;
+`;
+
+const RemoveFileButton = styled.button`
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #c82333;
+  }
+`;
+
+const DownloadFileButton = styled.button`
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 8px;
+
+  &:hover {
+    background: #218838;
+  }
+`;
+
+const FileActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const FileErrorMessage = styled.div`
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  text-align: center;
+`;
+
 const EditarLicitacion = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -568,6 +705,11 @@ const EditarLicitacion = () => {
 
   // Estado para criterios de evaluación
   const [criterios, setCriterios] = useState([]);
+
+  // Estados para archivos
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -685,6 +827,15 @@ const EditarLicitacion = () => {
           },
         ]);
       }
+
+      // Si hay archivo adjunto, mostrarlo
+      if (licitacion.archivoNombre) {
+        setSelectedFile({
+          name: licitacion.archivoNombre,
+          archivoID: licitacion.archivoID,
+          isExisting: true,
+        });
+      }
     } catch (error) {
       console.error("Error al cargar licitación:", error);
       setError(error.message || "Error al cargar la licitación");
@@ -775,6 +926,111 @@ const EditarLicitacion = () => {
         ...prev,
         [name]: "",
       }));
+    }
+  };
+
+  // Funciones para manejo de archivos
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const validateFile = (file) => {
+    const maxSize = 50 * 1024 * 1024; // 50MB para licitaciones
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+    ];
+
+    if (file.size > maxSize) {
+      return "El archivo es demasiado grande. Máximo 50MB.";
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      return "Tipo de archivo no permitido. Use PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG o GIF.";
+    }
+
+    return null;
+  };
+
+  const handleFileSelect = (file) => {
+    const error = validateFile(file);
+    if (error) {
+      setUploadError(error);
+      return;
+    }
+
+    setSelectedFile(file);
+    setUploadError("");
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setUploadError("");
+  };
+
+  const downloadFile = async (archivoID, nombreArchivo) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/descargar/${archivoID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el archivo");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Error al descargar el archivo");
     }
   };
 
@@ -937,6 +1193,38 @@ const EditarLicitacion = () => {
     setShowConfirmUpdate(false);
 
     try {
+      // Subir archivo si hay uno nuevo
+      let archivoID = null;
+      if (selectedFile && !selectedFile.isExisting) {
+        const formData = new FormData();
+        formData.append("File", selectedFile);
+        formData.append("EntidadTipo", "LICITACION");
+        formData.append("EntidadID", id);
+
+        const uploadResponse = await fetch(
+          "http://localhost:5242/api/archivos/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error("Error al subir el archivo");
+        }
+
+        const uploadResult = await uploadResponse.json();
+        archivoID = uploadResult.archivoID || uploadResult.ArchivoID;
+      }
+
+      // Actualizar licitación
+      const updateData = {
+        ...pendingFormData,
+        ArchivoID:
+          archivoID ||
+          (selectedFile?.isExisting ? selectedFile.archivoID : null),
+      };
+
       const response = await fetch(
         `http://localhost:5242/api/licitaciones/${id}`,
         {
@@ -944,7 +1232,7 @@ const EditarLicitacion = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(pendingFormData),
+          body: JSON.stringify(updateData),
         }
       );
 
@@ -1360,6 +1648,85 @@ const EditarLicitacion = () => {
                 </ErrorText>
               )}
             </CriteriosSection>
+
+            <FileUploadSection>
+              <FormLabel>Archivo adjunto</FormLabel>
+              <InfoText style={{ marginBottom: "15px" }}>
+                Puede adjuntar un documento que complemente la información de la
+                licitación
+              </InfoText>
+
+              <FileUploadContainer>
+                <FileDropZone
+                  isDragOver={isDragOver}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <FileInput
+                    id="licitacionFileInput"
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif"
+                  />
+                  <FileUploadIcon>📎</FileUploadIcon>
+                  <FileUploadText>
+                    Haga clic aquí o arrastre un archivo
+                  </FileUploadText>
+                  <FileUploadSubtext>
+                    PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG, GIF (máx. 50MB)
+                  </FileUploadSubtext>
+                </FileDropZone>
+
+                {selectedFile && (
+                  <SelectedFileContainer>
+                    <FileInfo>
+                      <FileIcon>📄</FileIcon>
+                      <FileDetails>
+                        <FileName>{selectedFile.name}</FileName>
+                        {selectedFile.size && (
+                          <FileSize>
+                            {formatFileSize(selectedFile.size)}
+                          </FileSize>
+                        )}
+                        {selectedFile.isExisting && (
+                          <InfoText>Archivo actual</InfoText>
+                        )}
+                        {selectedFile.size && (
+                          <InfoText>
+                            Archivo nuevo
+                            {selectedFile.isExisting
+                              ? " (reemplazará el actual)"
+                              : ""}
+                          </InfoText>
+                        )}
+                      </FileDetails>
+                    </FileInfo>
+                    <FileActions>
+                      {selectedFile.isExisting && selectedFile.archivoID && (
+                        <DownloadFileButton
+                          onClick={() =>
+                            downloadFile(
+                              selectedFile.archivoID,
+                              selectedFile.name
+                            )
+                          }
+                        >
+                          Descargar
+                        </DownloadFileButton>
+                      )}
+                      <RemoveFileButton onClick={removeFile}>
+                        Quitar
+                      </RemoveFileButton>
+                    </FileActions>
+                  </SelectedFileContainer>
+                )}
+
+                {uploadError && (
+                  <FileErrorMessage>{uploadError}</FileErrorMessage>
+                )}
+              </FileUploadContainer>
+            </FileUploadSection>
 
             <ButtonGroup>
               <PrimaryButton

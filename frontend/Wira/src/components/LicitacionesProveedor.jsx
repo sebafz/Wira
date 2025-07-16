@@ -1397,15 +1397,23 @@ const LicitacionesProveedor = () => {
       if (selectedFile) {
         try {
           const formData = new FormData();
-          formData.append("archivo", selectedFile);
-          formData.append("entidadTipo", "PROPUESTA");
-          formData.append(
-            "entidadId",
-            propuestaData.propuestaID || propuestaData.PropuestaID
-          );
+          formData.append("File", selectedFile);
+          formData.append("EntidadTipo", "PROPUESTA");
+
+          // Intentar diferentes formas de obtener el ID
+          const propuestaId =
+            propuestaData.propuestaID ||
+            propuestaData.PropuestaID ||
+            propuestaData.propuestaId;
+
+          if (!propuestaId) {
+            throw new Error("No se pudo obtener el ID de la propuesta");
+          }
+
+          formData.append("EntidadID", propuestaId.toString());
 
           const uploadResponse = await fetch(
-            "http://localhost:5242/api/archivos",
+            "http://localhost:5242/api/archivos/upload",
             {
               method: "POST",
               body: formData,
@@ -1413,10 +1421,13 @@ const LicitacionesProveedor = () => {
           );
 
           if (!uploadResponse.ok) {
-            console.error("Error al subir archivo:", uploadResponse.statusText);
+            const errorText = await uploadResponse.text();
+            console.error("Error al subir archivo:", errorText);
             toast.warn(
               "Propuesta creada, pero hubo un error al subir el archivo adjunto"
             );
+          } else {
+            toast.success("Archivo adjunto subido correctamente");
           }
         } catch (uploadError) {
           console.error("Error al subir archivo:", uploadError);
@@ -2148,9 +2159,6 @@ const LicitacionesProveedor = () => {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() =>
-                      document.getElementById("propuestaFileInput").click()
-                    }
                   >
                     <FileInput
                       id="propuestaFileInput"

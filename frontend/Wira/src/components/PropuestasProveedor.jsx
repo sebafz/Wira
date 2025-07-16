@@ -1241,6 +1241,25 @@ const PropuestasProveedor = () => {
                   </InfoCard>
                 </DetailSection>
               )}
+
+              {/* Archivos adjuntos */}
+              {(() => {
+                const archivosAdjuntos =
+                  selectedPropuesta.archivosAdjuntos ||
+                  selectedPropuesta.ArchivosAdjuntos;
+                return archivosAdjuntos && archivosAdjuntos.length > 0 ? (
+                  <DetailSection>
+                    <SectionTitle>Archivos adjuntos</SectionTitle>
+                    <DetailDescription>
+                      {archivosAdjuntos.map((archivo, index) => (
+                        <div key={index} style={{ marginBottom: "8px" }}>
+                          📎 {archivo.nombreArchivo || archivo.NombreArchivo}
+                        </div>
+                      ))}
+                    </DetailDescription>
+                  </DetailSection>
+                ) : null;
+              })()}
             </ModalBody>
 
             <ModalActions>
