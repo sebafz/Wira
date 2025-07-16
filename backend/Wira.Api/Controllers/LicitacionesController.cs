@@ -389,6 +389,53 @@ namespace Wira.Api.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
+
+        [HttpPut("{id}/adjudicar")]
+        public async Task<IActionResult> AdjudicarLicitacion(int id)
+        {
+            try
+            {
+                var licitacion = await _context.Licitaciones
+                    .Include(l => l.EstadoLicitacion)
+                    .Where(l => l.LicitacionID == id && !l.Eliminado)
+                    .FirstOrDefaultAsync();
+
+                if (licitacion == null)
+                {
+                    return NotFound(new { message = "Licitación no encontrada" });
+                }
+
+                // Verificar que la licitación esté en estado "En Evaluación"
+                if (licitacion.EstadoLicitacion.NombreEstado != "En Evaluación")
+                {
+                    return BadRequest(new { message = "La licitación debe estar en estado 'En Evaluación' para poder adjudicarla" });
+                }
+
+                // Buscar el estado "Adjudicada"
+                var estadoAdjudicada = await _context.EstadosLicitacion
+                    .Where(e => e.NombreEstado == "Adjudicada")
+                    .FirstOrDefaultAsync();
+
+                if (estadoAdjudicada == null)
+                {
+                    return BadRequest(new { message = "No se encontró el estado 'Adjudicada'" });
+                }
+
+                // Cambiar el estado de la licitación
+                licitacion.EstadoLicitacionID = estadoAdjudicada.EstadoLicitacionID;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Licitación adjudicada con ID: {id}");
+
+                return Ok(new { message = "Licitación adjudicada exitosamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al adjudicar licitación con ID: {id}");
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
     }
 
     public class CreateLicitacionRequest
