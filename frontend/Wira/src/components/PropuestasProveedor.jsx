@@ -676,6 +676,45 @@ const ConfirmDeleteButton = styled(ConfirmButton)`
   }
 `;
 
+// Styled components para criterios de evaluación
+const CriteriosSection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+`;
+
+const CriterioItem = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #8b8b8b;
+`;
+
+const CriterioName = styled.div`
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+  margin-bottom: 8px;
+`;
+
+const CriterioDescription = styled.div`
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  line-height: 1.3;
+`;
+
+const CriterioValue = styled.div`
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e1e5e9;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+`;
+
 const PropuestasProveedor = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -890,11 +929,31 @@ const PropuestasProveedor = () => {
     return user?.proveedor?.nombre || "Empresa Proveedora";
   };
 
-  const handlePropuestaClick = (propuestaId) => {
-    const propuesta = propuestas.find((p) => p.propuestaID === propuestaId);
-    if (propuesta) {
-      setSelectedPropuesta(propuesta);
-      setShowModal(true);
+  const handlePropuestaClick = async (propuestaId) => {
+    try {
+      // Primero mostrar la propuesta básica
+      const propuesta = propuestas.find((p) => p.propuestaID === propuestaId);
+      if (propuesta) {
+        setSelectedPropuesta(propuesta);
+        setShowModal(true);
+
+        // Luego cargar los detalles completos incluyendo criterios
+        const response = await fetch(
+          `http://localhost:5242/api/propuestas/${propuestaId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const detailedData = await response.json();
+          setSelectedPropuesta(detailedData);
+        }
+      }
+    } catch (error) {
+      console.error("Error al cargar detalles de la propuesta:", error);
     }
   };
 
@@ -1229,6 +1288,44 @@ const PropuestasProveedor = () => {
                   </DetailDescription>
                 </DetailSection>
               )}
+
+              {/* Criterios de evaluación */}
+              {(() => {
+                const respuestasCriterios =
+                  selectedPropuesta.respuestasCriterios ||
+                  selectedPropuesta.RespuestasCriterios;
+                return respuestasCriterios && respuestasCriterios.length > 0 ? (
+                  <DetailSection>
+                    <SectionTitle>Criterios de evaluación</SectionTitle>
+                    <CriteriosSection>
+                      {respuestasCriterios.map((respuesta, index) => (
+                        <CriterioItem key={index}>
+                          <CriterioName>
+                            {respuesta.criterioNombre ||
+                              respuesta.CriterioNombre ||
+                              "Criterio"}
+                          </CriterioName>
+
+                          {(respuesta.criterioDescripcion ||
+                            respuesta.CriterioDescripcion) && (
+                            <CriterioDescription>
+                              {respuesta.criterioDescripcion ||
+                                respuesta.CriterioDescripcion}
+                            </CriterioDescription>
+                          )}
+
+                          <InfoLabel>Valor ofrecido</InfoLabel>
+                          <CriterioValue>
+                            {respuesta.valorProveedor ||
+                              respuesta.ValorProveedor ||
+                              "No especificado"}
+                          </CriterioValue>
+                        </CriterioItem>
+                      ))}
+                    </CriteriosSection>
+                  </DetailSection>
+                ) : null;
+              })()}
 
               {selectedPropuesta.calificacionFinal && (
                 <DetailSection>

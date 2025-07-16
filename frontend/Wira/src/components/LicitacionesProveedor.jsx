@@ -670,7 +670,7 @@ const PropuestaModalContent = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 600px;
+  max-width: 900px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;

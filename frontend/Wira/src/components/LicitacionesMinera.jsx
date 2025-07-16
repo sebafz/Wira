@@ -208,6 +208,13 @@ const LicitacionHeader = styled.div`
   gap: 10px;
 `;
 
+const LicitacionStatusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
 const LicitacionTitle = styled.h4`
   color: #333;
   font-size: 1.1rem;
@@ -237,6 +244,22 @@ const LicitacionStatus = styled.span`
         return "background: #e2e3e5; color: #383d41;";
     }
   }}
+`;
+
+const PropuestasCountBadge = styled.span`
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const PropuestasCountIcon = styled.span`
+  font-size: 0.8rem;
 `;
 
 const LicitacionMeta = styled.div`
@@ -632,8 +655,137 @@ const PropuestasSection = styled.div`
   background: #f8f9fa;
   padding: 20px;
   border-radius: 8px;
-  text-align: center;
+  margin-top: 20px;
+`;
+
+const PropuestasTitle = styled.h4`
+  color: #333;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const PropuestasList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const PropuestaCard = styled.div`
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+`;
+
+const PropuestaHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const PropuestaProveedor = styled.h5`
+  color: #333;
+  font-size: 1rem;
+  margin: 0;
+`;
+
+const PropuestaEstado = styled.span`
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  ${(props) => {
+    switch (props.status) {
+      case "Enviada":
+        return "background: #e3f2fd; color: #1976d2;";
+      case "En Revisión":
+        return "background: #fff3e0; color: #f57c00;";
+      case "Aprobada":
+        return "background: #e8f5e8; color: #2e7d32;";
+      case "Adjudicada":
+        return "background: #e8f5e8; color: #2e7d32;";
+      case "Rechazada":
+        return "background: #ffebee; color: #d32f2f;";
+      default:
+        return "background: #f5f5f5; color: #666;";
+    }
+  }}
+`;
+
+const PropuestaInfo = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  font-size: 0.9rem;
   color: #666;
+`;
+
+const PropuestaInfoItem = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const PropuestaInfoLabel = styled.span`
+  font-size: 0.8rem;
+  color: #999;
+  margin-bottom: 2px;
+`;
+
+const PropuestaInfoValue = styled.span`
+  color: #333;
+  font-weight: 500;
+`;
+
+const EmptyPropuestas = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+`;
+
+const EmptyPropuestasIcon = styled.div`
+  font-size: 2rem;
+  margin-bottom: 10px;
+`;
+
+const EmptyPropuestasText = styled.p`
+  margin: 0;
+  font-size: 1rem;
+`;
+
+const LoadingPropuestas = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+`;
+
+const LoadingPropuestasSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e1e5e9;
+  border-left: 2px solid #fc6b0a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 const PropuestasIcon = styled.div`
@@ -779,8 +931,231 @@ const CancelButton = styled(ConfirmButton)`
   }
 `;
 
+// Styled components para el modal de propuesta
+const PropuestaModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+`;
+
+const PropuestaModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const PropuestaModalHeader = styled.div`
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+`;
+
+const PropuestaModalTitle = styled.h2`
+  color: white;
+  font-size: 1.5rem;
+  margin: 0 40px 10px 0;
+  line-height: 1.3;
+`;
+
+const PropuestaModalSubtitle = styled.div`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-top: 8px;
+  font-weight: 400;
+`;
+
+const PropuestaModalBody = styled.div`
+  padding: 30px;
+`;
+
+const PropuestaDetailSection = styled.div`
+  margin-bottom: 30px;
+`;
+
+const PropuestaDetailGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+`;
+
+const PropuestaInfoCard = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+`;
+
+const PropuestaDetailInfoLabel = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+`;
+
+const PropuestaDetailInfoValue = styled.div`
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+`;
+
+const PropuestaStatusCard = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+  text-align: center;
+`;
+
+const PropuestaStatusIcon = styled.div`
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+`;
+
+const PropuestaStatusLabel = styled.div`
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 5px;
+`;
+
+const PropuestaStatusValue = styled.div`
+  font-size: 1rem;
+  font-weight: 600;
+  color: #28a745;
+`;
+
+const PropuestaDescription = styled.div`
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+`;
+
+const PropuestaArchivos = styled.div`
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+`;
+
+const ArchivoItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const ArchivoIcon = styled.span`
+  font-size: 1.2rem;
+`;
+
+const ArchivoName = styled.span`
+  flex: 1;
+  color: #333;
+`;
+
+// Styled components para criterios de evaluación en propuestas
+const PropuestaCriteriosSection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+`;
+
+const PropuestaCriterioItem = styled.div`
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #8b8b8b;
+`;
+
+const PropuestaCriterioName = styled.div`
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+  margin-bottom: 8px;
+`;
+
+const PropuestaCriterioDescription = styled.div`
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  line-height: 1.3;
+`;
+
+const PropuestaCriterioValue = styled.div`
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e1e5e9;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+`;
+
+const PropuestaActions = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  padding: 20px 30px;
+  background: #f8f9fa;
+  border-top: 1px solid #e1e5e9;
+`;
+
+const PropuestaActionButton = styled.button`
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const PropuestaCloseButton = styled(PropuestaActionButton)`
+  background: #6c757d;
+  color: white;
+
+  &:hover {
+    background: #5a6268;
+  }
+`;
+
 const LicitacionesMinera = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   // Estados para datos
@@ -799,6 +1174,15 @@ const LicitacionesMinera = () => {
   // Estado para el modal de confirmación de cierre
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [closingLicitacion, setClosingLicitacion] = useState(null);
+
+  // Estados para propuestas
+  const [propuestas, setPropuestas] = useState([]);
+  const [loadingPropuestas, setLoadingPropuestas] = useState(false);
+  const [selectedPropuesta, setSelectedPropuesta] = useState(null);
+  const [showPropuestaModal, setShowPropuestaModal] = useState(false);
+
+  // Estado para contar propuestas por licitación
+  const [propuestasCount, setPropuestasCount] = useState({});
 
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -968,6 +1352,9 @@ const LicitacionesMinera = () => {
       }
 
       setLicitaciones(licitacionesMinera);
+
+      // Obtener conteo de propuestas para cada licitación
+      await fetchPropuestasCount(licitacionesMinera);
     } catch (error) {
       console.error("Error al cargar licitaciones:", error);
       setError(
@@ -976,6 +1363,44 @@ const LicitacionesMinera = () => {
       toast.error("Error al cargar las licitaciones");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPropuestasCount = async (licitacionesList) => {
+    try {
+      const countPromises = licitacionesList.map(async (licitacion) => {
+        const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
+        try {
+          const response = await fetch(
+            `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (response.ok) {
+            const propuestas = await response.json();
+            return { licitacionId, count: propuestas.length };
+          }
+          return { licitacionId, count: 0 };
+        } catch (error) {
+          console.error(
+            `Error al cargar propuestas para licitación ${licitacionId}:`,
+            error
+          );
+          return { licitacionId, count: 0 };
+        }
+      });
+
+      const countResults = await Promise.all(countPromises);
+      const countMap = {};
+      countResults.forEach(({ licitacionId, count }) => {
+        countMap[licitacionId] = count;
+      });
+      setPropuestasCount(countMap);
+    } catch (error) {
+      console.error("Error al obtener conteo de propuestas:", error);
     }
   };
 
@@ -1050,12 +1475,15 @@ const LicitacionesMinera = () => {
     if (licitacion) {
       setSelectedLicitacion(licitacion);
       setShowModal(true);
+      // Cargar propuestas para esta licitación
+      fetchPropuestas(licitacionId);
     }
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedLicitacion(null);
+    setPropuestas([]);
   };
 
   const handleModalOverlayClick = (e) => {
@@ -1177,6 +1605,64 @@ const LicitacionesMinera = () => {
       user?.minera?.Nombre ||
       "Empresa Minera"
     );
+  };
+
+  const fetchPropuestas = async (licitacionId) => {
+    try {
+      setLoadingPropuestas(true);
+      const response = await fetch(
+        `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPropuestas(data);
+      } else {
+        console.error("Error al cargar propuestas:", response.statusText);
+        setPropuestas([]);
+      }
+    } catch (error) {
+      console.error("Error al cargar propuestas:", error);
+      setPropuestas([]);
+    } finally {
+      setLoadingPropuestas(false);
+    }
+  };
+
+  const handlePropuestaClick = async (propuesta) => {
+    try {
+      // Primero mostrar la propuesta básica
+      setSelectedPropuesta(propuesta);
+      setShowPropuestaModal(true);
+
+      // Luego cargar los detalles completos incluyendo criterios
+      const response = await fetch(
+        `http://localhost:5242/api/propuestas/${propuesta.propuestaID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const detailedData = await response.json();
+        setSelectedPropuesta(detailedData);
+      }
+    } catch (error) {
+      console.error("Error al cargar detalles de la propuesta:", error);
+    }
+  };
+
+  const handleClosePropuestaModal = () => {
+    setShowPropuestaModal(false);
+    setSelectedPropuesta(null);
+  };
+
+  const handleModalOverlayClickPropuesta = (e) => {
+    if (e.target === e.currentTarget) {
+      handleClosePropuestaModal();
+    }
   };
 
   return (
@@ -1360,13 +1846,22 @@ const LicitacionesMinera = () => {
                     <LicitacionTitle>
                       {licitacion.titulo || licitacion.Titulo}
                     </LicitacionTitle>
-                    <LicitacionStatus
-                      status={
-                        licitacion.estadoNombre || licitacion.EstadoNombre
-                      }
-                    >
-                      {licitacion.estadoNombre || licitacion.EstadoNombre}
-                    </LicitacionStatus>
+                    <LicitacionStatusContainer>
+                      <LicitacionStatus
+                        status={
+                          licitacion.estadoNombre || licitacion.EstadoNombre
+                        }
+                      >
+                        {licitacion.estadoNombre || licitacion.EstadoNombre}
+                      </LicitacionStatus>
+                      <PropuestasCountBadge>
+                        <PropuestasCountIcon>📄</PropuestasCountIcon>
+                        {propuestasCount[
+                          licitacion.licitacionID || licitacion.LicitacionID
+                        ] || 0}{" "}
+                        propuestas
+                      </PropuestasCountBadge>
+                    </LicitacionStatusContainer>
                   </LicitacionHeader>
 
                   <LicitacionMeta>
@@ -1563,13 +2058,83 @@ const LicitacionesMinera = () => {
               <DetailSection>
                 <SectionTitle>Propuestas</SectionTitle>
                 <PropuestasSection>
-                  <PropuestasIcon>📋</PropuestasIcon>
-                  <PropuestasText>
-                    La gestión de propuestas estará disponible próximamente.
-                    <br />
-                    Aquí podrá ver y evaluar todas las propuestas recibidas para
-                    esta licitación.
-                  </PropuestasText>
+                  {loadingPropuestas ? (
+                    <LoadingPropuestas>
+                      <LoadingPropuestasSpinner />
+                      <span>Cargando propuestas...</span>
+                    </LoadingPropuestas>
+                  ) : propuestas.length === 0 ? (
+                    <EmptyPropuestas>
+                      <EmptyPropuestasIcon>📋</EmptyPropuestasIcon>
+                      <EmptyPropuestasText>
+                        No hay propuestas enviadas para esta licitación.
+                      </EmptyPropuestasText>
+                    </EmptyPropuestas>
+                  ) : (
+                    <>
+                      <PropuestasTitle>
+                        <span>📋</span>
+                        {propuestas.length} propuesta
+                        {propuestas.length !== 1 ? "s" : ""} recibida
+                        {propuestas.length !== 1 ? "s" : ""}
+                      </PropuestasTitle>
+                      <PropuestasList>
+                        {propuestas.map((propuesta) => (
+                          <PropuestaCard
+                            key={propuesta.propuestaID}
+                            onClick={() => handlePropuestaClick(propuesta)}
+                          >
+                            <PropuestaHeader>
+                              <PropuestaProveedor>
+                                {propuesta.proveedorNombre}
+                              </PropuestaProveedor>
+                              <PropuestaEstado status={propuesta.estadoNombre}>
+                                {propuesta.estadoNombre}
+                              </PropuestaEstado>
+                            </PropuestaHeader>
+                            <PropuestaInfo>
+                              <PropuestaInfoItem>
+                                <PropuestaInfoLabel>
+                                  Fecha de envío
+                                </PropuestaInfoLabel>
+                                <PropuestaInfoValue>
+                                  {formatDate(propuesta.fechaEnvio)}
+                                </PropuestaInfoValue>
+                              </PropuestaInfoItem>
+                              <PropuestaInfoItem>
+                                <PropuestaInfoLabel>
+                                  Monto ofrecido
+                                </PropuestaInfoLabel>
+                                <PropuestaInfoValue>
+                                  {formatCurrency(
+                                    propuesta.presupuestoOfrecido
+                                  )}
+                                </PropuestaInfoValue>
+                              </PropuestaInfoItem>
+                              <PropuestaInfoItem>
+                                <PropuestaInfoLabel>
+                                  Fecha de entrega
+                                </PropuestaInfoLabel>
+                                <PropuestaInfoValue>
+                                  {formatDate(propuesta.fechaEntrega)}
+                                </PropuestaInfoValue>
+                              </PropuestaInfoItem>
+                              {propuesta.calificacionFinal && (
+                                <PropuestaInfoItem>
+                                  <PropuestaInfoLabel>
+                                    Calificación
+                                  </PropuestaInfoLabel>
+                                  <PropuestaInfoValue>
+                                    {propuesta.calificacionFinal}/10
+                                  </PropuestaInfoValue>
+                                </PropuestaInfoItem>
+                              )}
+                            </PropuestaInfo>
+                          </PropuestaCard>
+                        ))}
+                      </PropuestasList>
+                    </>
+                  )}
                 </PropuestasSection>
               </DetailSection>
             </ModalBody>
@@ -1671,6 +2236,178 @@ const LicitacionesMinera = () => {
             </ConfirmActions>
           </ConfirmContent>
         </ConfirmModal>
+      )}
+
+      {/* Modal de detalle de propuesta */}
+      {showPropuestaModal && selectedPropuesta && (
+        <PropuestaModalOverlay onClick={handleModalOverlayClickPropuesta}>
+          <PropuestaModalContent>
+            <PropuestaModalHeader>
+              <PropuestaModalTitle>
+                Propuesta de {selectedPropuesta.proveedorNombre}
+              </PropuestaModalTitle>
+              <PropuestaModalSubtitle>
+                Estado: {selectedPropuesta.estadoNombre} • Enviada el{" "}
+                {formatDate(selectedPropuesta.fechaEnvio)}
+              </PropuestaModalSubtitle>
+              <CloseButton onClick={handleClosePropuestaModal}>×</CloseButton>
+            </PropuestaModalHeader>
+
+            <PropuestaModalBody>
+              <PropuestaDetailSection>
+                <SectionTitle>Información general</SectionTitle>
+                <PropuestaDetailGrid style={{ gridTemplateColumns: "1fr 1fr" }}>
+                  {/* Primera columna */}
+                  <div>
+                    <PropuestaInfoCard style={{ marginBottom: "15px" }}>
+                      <PropuestaDetailInfoLabel>
+                        Fecha de envío
+                      </PropuestaDetailInfoLabel>
+                      <PropuestaDetailInfoValue>
+                        {formatDate(selectedPropuesta.fechaEnvio)}
+                      </PropuestaDetailInfoValue>
+                    </PropuestaInfoCard>
+                    <PropuestaInfoCard>
+                      <PropuestaDetailInfoLabel>
+                        Monto ofrecido
+                      </PropuestaDetailInfoLabel>
+                      <PropuestaDetailInfoValue>
+                        {formatCurrency(selectedPropuesta.presupuestoOfrecido)}
+                      </PropuestaDetailInfoValue>
+                    </PropuestaInfoCard>
+                  </div>
+
+                  {/* Segunda columna */}
+                  <div>
+                    <PropuestaStatusCard
+                      style={{
+                        borderLeftColor: "#28a745",
+                        marginBottom: "15px",
+                      }}
+                    >
+                      <PropuestaDetailInfoLabel>
+                        Estado actual
+                      </PropuestaDetailInfoLabel>
+                      <PropuestaDetailInfoValue style={{ color: "#28a745" }}>
+                        {selectedPropuesta.estadoNombre}
+                      </PropuestaDetailInfoValue>
+                    </PropuestaStatusCard>
+                    <PropuestaInfoCard>
+                      <PropuestaDetailInfoLabel>
+                        Fecha de entrega
+                      </PropuestaDetailInfoLabel>
+                      <PropuestaDetailInfoValue>
+                        {formatDate(selectedPropuesta.fechaEntrega)}
+                      </PropuestaDetailInfoValue>
+                    </PropuestaInfoCard>
+                  </div>
+                </PropuestaDetailGrid>
+              </PropuestaDetailSection>
+
+              <PropuestaDetailSection>
+                <SectionTitle>Proveedor</SectionTitle>
+                <PropuestaDetailGrid>
+                  <PropuestaInfoCard>
+                    <PropuestaDetailInfoLabel>Empresa</PropuestaDetailInfoLabel>
+                    <PropuestaDetailInfoValue>
+                      {selectedPropuesta.proveedorNombre}
+                    </PropuestaDetailInfoValue>
+                  </PropuestaInfoCard>
+                  <PropuestaInfoCard>
+                    <PropuestaDetailInfoLabel>
+                      Cumple requisitos
+                    </PropuestaDetailInfoLabel>
+                    <PropuestaDetailInfoValue>
+                      {selectedPropuesta.cumpleRequisitos ? "Sí" : "No"}
+                    </PropuestaDetailInfoValue>
+                  </PropuestaInfoCard>
+                  {selectedPropuesta.calificacionFinal && (
+                    <PropuestaInfoCard>
+                      <PropuestaDetailInfoLabel>
+                        Calificación final
+                      </PropuestaDetailInfoLabel>
+                      <PropuestaDetailInfoValue>
+                        {selectedPropuesta.calificacionFinal}/10
+                      </PropuestaDetailInfoValue>
+                    </PropuestaInfoCard>
+                  )}
+                </PropuestaDetailGrid>
+              </PropuestaDetailSection>
+
+              {selectedPropuesta.descripcion && (
+                <PropuestaDetailSection>
+                  <SectionTitle>Descripción de la propuesta</SectionTitle>
+                  <PropuestaDescription>
+                    {selectedPropuesta.descripcion}
+                  </PropuestaDescription>
+                </PropuestaDetailSection>
+              )}
+
+              {/* Criterios de evaluación */}
+              {(() => {
+                const respuestasCriterios =
+                  selectedPropuesta.respuestasCriterios ||
+                  selectedPropuesta.RespuestasCriterios;
+                return respuestasCriterios && respuestasCriterios.length > 0 ? (
+                  <PropuestaDetailSection>
+                    <SectionTitle>Criterios de evaluación</SectionTitle>
+                    <PropuestaCriteriosSection>
+                      {respuestasCriterios.map((respuesta, index) => (
+                        <PropuestaCriterioItem key={index}>
+                          <PropuestaCriterioName>
+                            {respuesta.criterioNombre ||
+                              respuesta.CriterioNombre ||
+                              "Criterio"}
+                          </PropuestaCriterioName>
+
+                          {(respuesta.criterioDescripcion ||
+                            respuesta.CriterioDescripcion) && (
+                            <PropuestaCriterioDescription>
+                              {respuesta.criterioDescripcion ||
+                                respuesta.CriterioDescripcion}
+                            </PropuestaCriterioDescription>
+                          )}
+
+                          <PropuestaDetailInfoLabel>
+                            Valor ofrecido
+                          </PropuestaDetailInfoLabel>
+                          <PropuestaCriterioValue>
+                            {respuesta.valorProveedor ||
+                              respuesta.ValorProveedor ||
+                              "No especificado"}
+                          </PropuestaCriterioValue>
+                        </PropuestaCriterioItem>
+                      ))}
+                    </PropuestaCriteriosSection>
+                  </PropuestaDetailSection>
+                ) : null;
+              })()}
+
+              {selectedPropuesta.archivosAdjuntos &&
+                selectedPropuesta.archivosAdjuntos.length > 0 && (
+                  <PropuestaDetailSection>
+                    <SectionTitle>Archivos adjuntos</SectionTitle>
+                    <PropuestaArchivos>
+                      {selectedPropuesta.archivosAdjuntos.map(
+                        (archivo, index) => (
+                          <ArchivoItem key={index}>
+                            <ArchivoIcon>📎</ArchivoIcon>
+                            <ArchivoName>{archivo.nombreArchivo}</ArchivoName>
+                          </ArchivoItem>
+                        )
+                      )}
+                    </PropuestaArchivos>
+                  </PropuestaDetailSection>
+                )}
+            </PropuestaModalBody>
+
+            <PropuestaActions>
+              <PropuestaCloseButton onClick={handleClosePropuestaModal}>
+                Cerrar
+              </PropuestaCloseButton>
+            </PropuestaActions>
+          </PropuestaModalContent>
+        </PropuestaModalOverlay>
       )}
 
       <ToastContainer
