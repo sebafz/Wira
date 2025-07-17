@@ -1509,6 +1509,7 @@ const LicitacionesProveedor = () => {
 
         try {
           const contentType = response.headers.get("content-type");
+
           if (contentType && contentType.includes("application/json")) {
             const errorData = await response.json();
             errorMessage = errorData.message || errorMessage;
@@ -1520,7 +1521,6 @@ const LicitacionesProveedor = () => {
             }
           }
         } catch (parseError) {
-          console.error("Error al parsear respuesta de error:", parseError);
           // Usar el mensaje de error por defecto
         }
 
@@ -1530,14 +1530,15 @@ const LicitacionesProveedor = () => {
       let propuestaData;
       try {
         const contentType = response.headers.get("content-type");
+
         if (contentType && contentType.includes("application/json")) {
-          propuestaData = await response.json();
+          const responseText = await response.text();
+          propuestaData = JSON.parse(responseText);
         } else {
           // Si no es JSON, crear un objeto por defecto
           propuestaData = { success: true };
         }
       } catch (parseError) {
-        console.error("Error al parsear respuesta exitosa:", parseError);
         // Crear un objeto por defecto si hay error en el parsing
         propuestaData = { success: true };
       }
@@ -1549,16 +1550,9 @@ const LicitacionesProveedor = () => {
           formData.append("File", selectedFile);
           formData.append("EntidadTipo", "PROPUESTA");
 
-          // Intentar diferentes formas de obtener el ID
-          const propuestaId =
-            propuestaData?.propuestaID ||
-            propuestaData?.PropuestaID ||
-            propuestaData?.propuestaId;
+          const propuestaId = propuestaData?.PropuestaID;
 
           if (!propuestaId) {
-            console.warn(
-              "No se pudo obtener el ID de la propuesta para el archivo adjunto"
-            );
             toast.warn(
               "Propuesta creada exitosamente, pero no se pudo subir el archivo adjunto"
             );
@@ -1575,16 +1569,12 @@ const LicitacionesProveedor = () => {
 
             if (!uploadResponse.ok) {
               const errorText = await uploadResponse.text();
-              console.error("Error al subir archivo:", errorText);
               toast.warn(
                 "Propuesta creada, pero hubo un error al subir el archivo adjunto"
               );
-            } else {
-              console.log("Archivo adjunto subido correctamente");
             }
           }
         } catch (uploadError) {
-          console.error("Error al subir archivo:", uploadError);
           toast.warn(
             "Propuesta creada, pero hubo un error al subir el archivo adjunto"
           );
@@ -1764,11 +1754,19 @@ const LicitacionesProveedor = () => {
 
     switch (filters.estadoPostulacion) {
       case "postuladas":
-        return `${totalCount} licitación(es) ya postulada(s)`;
+      return totalCount === 1
+        ? "1 licitación ya postulada"
+        : `${totalCount} licitaciones ya postuladas`;
       case "no_postuladas":
-        return `${totalCount} licitación(es) disponible(s) para postular`;
+      return totalCount === 1
+        ? "1 licitación disponible para postular"
+        : `${totalCount} licitaciones disponibles para postular`;
       default:
-        return `${totalCount} licitación(es) activa(s) (${appliedCount} postuladas, ${notAppliedCount} disponibles)`;
+      const licSing = totalCount === 1 ? "licitación" : "licitaciones";
+      const postSing = appliedCount === 1 ? "postulada" : "postuladas";
+      const dispSing = notAppliedCount === 1 ? "disponible" : "disponibles";
+      const activaWord = totalCount === 1 ? "activa" : "activas";
+      return `${totalCount} ${licSing} ${activaWord} (${appliedCount} ${postSing}, ${notAppliedCount} ${dispSing})`;
     }
   };
 

@@ -69,8 +69,6 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  console.log("AuthProvider state:", state); // Debug log
-
   // Verificar si hay un token guardado al cargar la aplicación
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -84,7 +82,6 @@ export const AuthProvider = ({ children }) => {
           payload: { user, token },
         });
       } catch (error) {
-        console.error("Error parsing stored user info:", error);
         localStorage.removeItem("authToken");
         localStorage.removeItem("userInfo");
       }
@@ -153,7 +150,7 @@ export const AuthProvider = ({ children }) => {
         dispatch({ type: "SET_USER", payload: user });
       }
     } catch (error) {
-      console.error("Error refreshing user info:", error);
+      // Error silencioso para refresh de usuario
     }
   };
 

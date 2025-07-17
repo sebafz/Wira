@@ -719,7 +719,6 @@ const EditarLicitacion = () => {
       if (user?.MineraID || user?.mineraID) {
         promises.push(fetchProyectosMineros());
       } else {
-        console.log("Usuario sin MineraID, no se cargarán proyectos");
         setLoadingProyectos(false);
       }
 
@@ -837,7 +836,6 @@ const EditarLicitacion = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar licitación:", error);
       setError(error.message || "Error al cargar la licitación");
     } finally {
       setLoading(false);
@@ -858,7 +856,6 @@ const EditarLicitacion = () => {
         throw new Error("Error al cargar rubros");
       }
     } catch (error) {
-      console.error("Error al cargar rubros:", error);
       setRubrosError(
         "Error al cargar rubros. Algunos campos pueden no funcionar correctamente."
       );
@@ -872,13 +869,8 @@ const EditarLicitacion = () => {
       setLoadingProyectos(true);
       setProyectosError("");
 
-      console.log("Usuario completo:", user);
-      console.log("MineraID:", user?.MineraID);
-      console.log("mineraID:", user?.mineraID);
-
       const mineraId = user?.MineraID || user?.mineraID;
       if (!mineraId) {
-        console.log("No se encontró MineraID en el usuario");
         setProyectosError("No se pudo obtener el ID de la minera del usuario.");
         setProyectosMineros([]);
         return;
@@ -887,25 +879,18 @@ const EditarLicitacion = () => {
       const response = await fetch(
         `http://localhost:5242/api/proyectosmineros/minera/${mineraId}`
       );
-      console.log("Response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Proyectos mineros obtenidos:", data);
         setProyectosMineros(data);
       } else {
         const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
-        console.error("Error al cargar proyectos mineros:", errorMsg);
         setProyectosError(
           "Error al cargar proyectos mineros desde el servidor."
         );
         setProyectosMineros([]);
       }
     } catch (error) {
-      console.error(
-        "Error al conectar con la API de proyectos mineros:",
-        error
-      );
       setProyectosError("No se pudo conectar con el servidor.");
       setProyectosMineros([]);
     } finally {
@@ -1250,7 +1235,6 @@ const EditarLicitacion = () => {
         navigate("/mis-licitaciones");
       }, 1500);
     } catch (error) {
-      console.error("Error al actualizar licitación:", error);
       toast.error(
         "Error al actualizar la licitación. Por favor, intente nuevamente."
       );

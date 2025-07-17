@@ -681,12 +681,10 @@ const CrearLicitacion = () => {
           setRubros(data);
         } else {
           const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
-          console.error("Error al cargar rubros:", errorMsg);
           setRubrosError("Error al cargar rubros desde el servidor.");
           setRubros([]);
         }
       } catch (error) {
-        console.error("Error al conectar con la API de rubros:", error);
         setRubrosError("No se pudo conectar con el servidor.");
         setRubros([]);
       } finally {
@@ -718,17 +716,12 @@ const CrearLicitacion = () => {
           setProyectosMineros(data);
         } else {
           const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
-          console.error("Error al cargar proyectos mineros:", errorMsg);
           setProyectosError(
             "Error al cargar proyectos mineros desde el servidor."
           );
           setProyectosMineros([]);
         }
       } catch (error) {
-        console.error(
-          "Error al conectar con la API de proyectos mineros:",
-          error
-        );
         setProyectosError("No se pudo conectar con el servidor.");
         setProyectosMineros([]);
       } finally {
@@ -897,8 +890,6 @@ const CrearLicitacion = () => {
         })),
       };
 
-      console.log("Datos a enviar:", licitacionData);
-
       const response = await fetch("http://localhost:5242/api/licitaciones", {
         method: "POST",
         headers: {
@@ -909,7 +900,6 @@ const CrearLicitacion = () => {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error("Error response:", errorData);
         throw new Error(
           `Error al crear la licitación: ${response.status} - ${errorData}`
         );

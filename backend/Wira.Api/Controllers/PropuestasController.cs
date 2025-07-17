@@ -91,7 +91,6 @@ namespace Wira.Api.Controllers
                     .ToListAsync();
 
                 // Obtener respuestas a criterios de evaluación
-                _logger.LogInformation("Buscando respuestas a criterios para PropuestaID: {PropuestaId}", id);
                 var respuestasCriterios = await _context.RespuestasCriteriosLicitacion
                     .Where(r => r.PropuestaID == id)
                     .Include(r => r.Criterio)
@@ -106,17 +105,6 @@ namespace Wira.Api.Controllers
                         CriterioModoEvaluacion = r.Criterio.ModoEvaluacion
                     })
                     .ToListAsync();
-
-                _logger.LogInformation("Encontradas {Count} respuestas a criterios para PropuestaID: {PropuestaId}", respuestasCriterios.Count, id);
-                
-                if (respuestasCriterios.Any())
-                {
-                    foreach (var respuesta in respuestasCriterios)
-                    {
-                        _logger.LogInformation("Respuesta: CriterioID={CriterioID}, ValorProveedor={ValorProveedor}, Nombre={Nombre}", 
-                            respuesta.CriterioID, respuesta.ValorProveedor, respuesta.CriterioNombre);
-                    }
-                }
 
                 var result = new
                 {
@@ -306,21 +294,30 @@ namespace Wira.Api.Controllers
                 }
 
                 // Crear notificación para la minera
-                await _notificacionService.CrearNotificacionNuevaPropuesta(
-                    propuesta.LicitacionID,
-                    licitacion.Titulo,
-                    propuesta.PropuestaID,
-                    proveedor.Nombre,
-                    licitacion.MineraID
-                );
+                try
+                {
+                    await _notificacionService.CrearNotificacionNuevaPropuesta(
+                        propuesta.LicitacionID,
+                        licitacion.Titulo,
+                        propuesta.PropuestaID,
+                        proveedor.Nombre,
+                        licitacion.MineraID
+                    );
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogError(notifEx, "Error al enviar notificación, pero propuesta creada exitosamente");
+                    // No fallar la operación principal por error en notificación
+                }
 
-                return CreatedAtAction(nameof(GetPropuesta), new { id = propuesta.PropuestaID }, new 
+                var response = new 
                 { 
                     message = "Propuesta creada exitosamente", 
-                    propuestaId = propuesta.PropuestaID,
-                    propuestaID = propuesta.PropuestaID,
                     PropuestaID = propuesta.PropuestaID
-                });
+                };
+                
+                var location = Url.Action(nameof(GetPropuesta), new { id = propuesta.PropuestaID });
+                return Created(location ?? $"/api/propuestas/{propuesta.PropuestaID}", response);
             }
             catch (Exception ex)
             {

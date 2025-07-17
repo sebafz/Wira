@@ -1593,7 +1593,6 @@ const LicitacionesMinera = () => {
       // Obtener conteo de propuestas para cada licitación
       await fetchPropuestasCount(licitacionesMinera);
     } catch (error) {
-      console.error("Error al cargar licitaciones:", error);
       setError(
         "Error al cargar las licitaciones. Por favor, intente nuevamente."
       );
@@ -1622,10 +1621,6 @@ const LicitacionesMinera = () => {
           }
           return { licitacionId, count: 0 };
         } catch (error) {
-          console.error(
-            `Error al cargar propuestas para licitación ${licitacionId}:`,
-            error
-          );
           return { licitacionId, count: 0 };
         }
       });
@@ -1637,7 +1632,7 @@ const LicitacionesMinera = () => {
       });
       setPropuestasCount(countMap);
     } catch (error) {
-      console.error("Error al obtener conteo de propuestas:", error);
+      // Error silencioso para conteo de propuestas
     }
   };
 
@@ -1649,7 +1644,7 @@ const LicitacionesMinera = () => {
         setRubros(data);
       }
     } catch (error) {
-      console.error("Error al cargar rubros:", error);
+      // Error silencioso para rubros
     }
   };
 
@@ -1753,63 +1748,39 @@ const LicitacionesMinera = () => {
   };
 
   const handleSeleccionarGanador = async (licitacion) => {
-    console.log("Iniciando selección de ganador para licitación:", licitacion);
     setSeleccionandoGanador(licitacion);
 
     // Cargar las propuestas para mostrar la selección
     const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
-    console.log("LicitacionID extraído:", licitacionId);
 
     try {
-      console.log("Cargando propuestas...");
       const response = await fetch(
         `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
       );
 
-      console.log("Respuesta de propuestas:", {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText,
-      });
-
       if (response.ok) {
         const propuestasData = await response.json();
-        console.log("Propuestas cargadas:", propuestasData);
 
         // Rankear las propuestas si hay criterios
-        console.log("Cargando criterios...");
         const criteriosResponse = await fetch(
           `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
         );
 
-        console.log("Respuesta de criterios:", {
-          status: criteriosResponse.status,
-          ok: criteriosResponse.ok,
-          statusText: criteriosResponse.statusText,
-        });
-
         if (criteriosResponse.ok) {
           const criterios = await criteriosResponse.json();
-          console.log("Criterios cargados:", criterios);
 
           const propuestasRankeadas = await rankearPropuestas(
             propuestasData,
             criterios
           );
-          console.log("Propuestas rankeadas:", propuestasRankeadas);
 
           // Seleccionar el primero del ranking por defecto
           if (propuestasRankeadas.length > 0) {
             setSelectedGanador(propuestasRankeadas[0]);
-            console.log(
-              "Ganador seleccionado por defecto:",
-              propuestasRankeadas[0]
-            );
           }
 
           setPropuestas(propuestasRankeadas);
         } else {
-          console.log("Sin criterios, ordenando por presupuesto");
           // Ordenar por presupuesto (menor a mayor) y asignar scoreTotal como presupuesto
           const propuestasOrdenadas = propuestasData
             .sort((a, b) => {
@@ -1828,27 +1799,19 @@ const LicitacionesMinera = () => {
           setPropuestas(propuestasOrdenadas);
           if (propuestasOrdenadas.length > 0) {
             setSelectedGanador(propuestasOrdenadas[0]);
-            console.log(
-              "Ganador seleccionado por defecto (sin criterios):",
-              propuestasOrdenadas[0]
-            );
           }
         }
       } else {
         const errorText = await response.text();
-        console.error("Error al cargar propuestas:", errorText);
         throw new Error(
           `Error al cargar propuestas: ${response.status} - ${errorText}`
         );
       }
     } catch (error) {
-      console.error("Error completo al cargar propuestas:", error);
-      console.error("Stack trace:", error.stack);
       toast.error(`Error al cargar las propuestas: ${error.message}`);
       return;
     }
 
-    console.log("Mostrando modal de selección de ganador");
     setShowGanadorModal(true);
   };
 
@@ -1885,7 +1848,6 @@ const LicitacionesMinera = () => {
       // Recargar las licitaciones
       await fetchLicitaciones();
     } catch (error) {
-      console.error("Error al adjudicar licitación:", error);
       toast.error(
         "Error al adjudicar la licitación. Por favor, intente nuevamente."
       );
@@ -1899,7 +1861,6 @@ const LicitacionesMinera = () => {
 
   const confirmSeleccionarGanador = async () => {
     if (!seleccionandoGanador || !selectedGanador) {
-      console.error("Error: No hay licitación o ganador seleccionado");
       toast.error("Error: No hay licitación o ganador seleccionado");
       return;
     }
@@ -1910,13 +1871,6 @@ const LicitacionesMinera = () => {
       const proveedorId =
         selectedGanador.proveedorID || selectedGanador.ProveedorID;
 
-      console.log("Datos para seleccionar ganador:", {
-        licitacionId,
-        proveedorId,
-        seleccionandoGanador,
-        selectedGanador,
-      });
-
       // Crear registro en el historial
       const historialData = {
         ProveedorID: proveedorId,
@@ -1925,8 +1879,6 @@ const LicitacionesMinera = () => {
         Ganador: true,
         Observaciones: "Seleccionado como ganador de la licitación",
       };
-
-      console.log("Datos del historial a enviar:", historialData);
 
       const historialResponse = await fetch(
         "http://localhost:5242/api/historial-proveedor-licitacion",
@@ -1939,15 +1891,8 @@ const LicitacionesMinera = () => {
         }
       );
 
-      console.log("Respuesta del historial:", {
-        status: historialResponse.status,
-        ok: historialResponse.ok,
-        statusText: historialResponse.statusText,
-      });
-
       if (!historialResponse.ok) {
         const errorText = await historialResponse.text();
-        console.error("Error detallado del historial:", errorText);
         throw new Error(
           `Error al registrar el historial: ${historialResponse.status} - ${errorText}`
         );
@@ -1956,14 +1901,11 @@ const LicitacionesMinera = () => {
       let historialResult;
       try {
         historialResult = await historialResponse.json();
-        console.log("Historial creado exitosamente:", historialResult);
       } catch (jsonError) {
-        console.log("Respuesta del historial no es JSON, pero fue exitosa");
         historialResult = { success: true };
       }
 
       // Cambiar el estado de la licitación a "Cerrada"
-      console.log("Actualizando estado de licitación a 'Cerrada'...");
       const licitacionResponse = await fetch(
         `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
         {
@@ -1974,15 +1916,8 @@ const LicitacionesMinera = () => {
         }
       );
 
-      console.log("Respuesta del estado:", {
-        status: licitacionResponse.status,
-        ok: licitacionResponse.ok,
-        statusText: licitacionResponse.statusText,
-      });
-
       if (!licitacionResponse.ok) {
         const errorText = await licitacionResponse.text();
-        console.error("Error detallado del estado:", errorText);
         throw new Error(
           `Error al actualizar el estado de la licitación: ${licitacionResponse.status} - ${errorText}`
         );
@@ -1991,9 +1926,7 @@ const LicitacionesMinera = () => {
       let estadoResult;
       try {
         estadoResult = await licitacionResponse.json();
-        console.log("Estado actualizado exitosamente:", estadoResult);
       } catch (jsonError) {
-        console.log("Respuesta del estado no es JSON, pero fue exitosa");
         estadoResult = { success: true };
       }
 
@@ -2009,8 +1942,6 @@ const LicitacionesMinera = () => {
       // Recargar las licitaciones
       await fetchLicitaciones();
     } catch (error) {
-      console.error("Error completo al seleccionar ganador:", error);
-      console.error("Stack trace:", error.stack);
       toast.error(`Error al seleccionar el ganador: ${error.message}`);
     }
   };
