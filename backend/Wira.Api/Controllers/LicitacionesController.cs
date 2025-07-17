@@ -367,29 +367,45 @@ namespace Wira.Api.Controllers
                     return NotFound(new { message = "Licitación no encontrada" });
                 }
 
-                // Verificar que la licitación esté en estado "Publicada"
-                if (licitacion.EstadoLicitacion.NombreEstado != "Publicada")
+                string estadoActual = licitacion.EstadoLicitacion.NombreEstado;
+                string estadoDestino;
+                string mensajeNotificacion;
+
+                // Determinar el estado de destino basado en el estado actual
+                if (estadoActual == "Publicada")
                 {
-                    return BadRequest(new { message = "La licitación debe estar en estado 'Publicada' para poder cerrarla" });
+                    // Si está publicada, pasa a evaluación
+                    estadoDestino = "En Evaluación";
+                    mensajeNotificacion = "Licitación cerrada exitosamente y pasada a evaluación";
+                }
+                else if (estadoActual == "Adjudicada")
+                {
+                    // Si está adjudicada, pasa a cerrada (finalizada)
+                    estadoDestino = "Cerrada";
+                    mensajeNotificacion = "Licitación finalizada exitosamente";
+                }
+                else
+                {
+                    return BadRequest(new { message = $"La licitación debe estar en estado 'Publicada' o 'Adjudicada' para poder cerrarla. Estado actual: {estadoActual}" });
                 }
 
-                // Buscar el estado "En Evaluación"
-                var estadoEnEvaluacion = await _context.EstadosLicitacion
-                    .Where(e => e.NombreEstado == "En Evaluación")
+                // Buscar el estado de destino
+                var estadoNuevo = await _context.EstadosLicitacion
+                    .Where(e => e.NombreEstado == estadoDestino)
                     .FirstOrDefaultAsync();
 
-                if (estadoEnEvaluacion == null)
+                if (estadoNuevo == null)
                 {
-                    return BadRequest(new { message = "No se encontró el estado 'En Evaluación'" });
+                    return BadRequest(new { message = $"No se encontró el estado '{estadoDestino}'" });
                 }
 
                 // Cambiar el estado de la licitación y actualizar la fecha de cierre
-                licitacion.EstadoLicitacionID = estadoEnEvaluacion.EstadoLicitacionID;
+                licitacion.EstadoLicitacionID = estadoNuevo.EstadoLicitacionID;
                 licitacion.FechaCierre = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Licitación cerrada y pasada a evaluación con ID: {id}");
+                _logger.LogInformation($"Licitación cerrada con ID: {id}. Estado: {estadoActual} -> {estadoDestino}");
 
                 // Crear notificación de cierre
                 await _notificacionService.CrearNotificacionLicitacionCerrada(
@@ -398,7 +414,7 @@ namespace Wira.Api.Controllers
                     licitacion.MineraID
                 );
 
-                return Ok(new { message = "Licitación cerrada exitosamente y pasada a evaluación" });
+                return Ok(new { message = mensajeNotificacion });
             }
             catch (Exception ex)
             {

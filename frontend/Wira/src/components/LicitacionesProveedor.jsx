@@ -950,6 +950,91 @@ const FileErrorMessage = styled.div`
   font-size: 0.8rem;
 `;
 
+// Componentes para modal de confirmación - mismo estilo que CrearLicitacion
+const ConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+`;
+
+const ConfirmContent = styled.div`
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+`;
+
+const ConfirmTitle = styled.h3`
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ConfirmText = styled.p`
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 25px;
+  line-height: 1.5;
+`;
+
+const ConfirmActions = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+`;
+
+const ConfirmSubmitButton = styled.button`
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const CancelConfirmButton = styled.button`
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+  }
+`;
+
 const LicitacionesProveedor = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -980,6 +1065,9 @@ const LicitacionesProveedor = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadError, setUploadError] = useState("");
+
+  // Estado para modal de confirmación
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
 
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -1352,7 +1440,14 @@ const LicitacionesProveedor = () => {
   };
 
   const handleCreatePropuesta = async () => {
+    // Mostrar modal de confirmación
+    setShowConfirmSubmit(true);
+  };
+
+  const confirmSubmit = async () => {
     try {
+      // Cerrar modal de confirmación
+      setShowConfirmSubmit(false);
       setPostulando(true);
 
       const proveedorID =
@@ -1410,14 +1505,42 @@ const LicitacionesProveedor = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message ||
-            `Error ${response.status}: ${response.statusText}`
-        );
+        let errorMessage = `Error ${response.status}: ${response.statusText}`;
+
+        try {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } else {
+            // Si no es JSON, intentar leer como texto
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (parseError) {
+          console.error("Error al parsear respuesta de error:", parseError);
+          // Usar el mensaje de error por defecto
+        }
+
+        throw new Error(errorMessage);
       }
 
-      const propuestaData = await response.json();
+      let propuestaData;
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          propuestaData = await response.json();
+        } else {
+          // Si no es JSON, crear un objeto por defecto
+          propuestaData = { success: true };
+        }
+      } catch (parseError) {
+        console.error("Error al parsear respuesta exitosa:", parseError);
+        // Crear un objeto por defecto si hay error en el parsing
+        propuestaData = { success: true };
+      }
 
       // Si hay archivo adjunto, subirlo
       if (selectedFile) {
@@ -1428,32 +1551,37 @@ const LicitacionesProveedor = () => {
 
           // Intentar diferentes formas de obtener el ID
           const propuestaId =
-            propuestaData.propuestaID ||
-            propuestaData.PropuestaID ||
-            propuestaData.propuestaId;
+            propuestaData?.propuestaID ||
+            propuestaData?.PropuestaID ||
+            propuestaData?.propuestaId;
 
           if (!propuestaId) {
-            throw new Error("No se pudo obtener el ID de la propuesta");
-          }
-
-          formData.append("EntidadID", propuestaId.toString());
-
-          const uploadResponse = await fetch(
-            "http://localhost:5242/api/archivos/upload",
-            {
-              method: "POST",
-              body: formData,
-            }
-          );
-
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error("Error al subir archivo:", errorText);
+            console.warn(
+              "No se pudo obtener el ID de la propuesta para el archivo adjunto"
+            );
             toast.warn(
-              "Propuesta creada, pero hubo un error al subir el archivo adjunto"
+              "Propuesta creada exitosamente, pero no se pudo subir el archivo adjunto"
             );
           } else {
-            toast.success("Archivo adjunto subido correctamente");
+            formData.append("EntidadID", propuestaId.toString());
+
+            const uploadResponse = await fetch(
+              "http://localhost:5242/api/archivos/upload",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            if (!uploadResponse.ok) {
+              const errorText = await uploadResponse.text();
+              console.error("Error al subir archivo:", errorText);
+              toast.warn(
+                "Propuesta creada, pero hubo un error al subir el archivo adjunto"
+              );
+            } else {
+              console.log("Archivo adjunto subido correctamente");
+            }
           }
         } catch (uploadError) {
           console.error("Error al subir archivo:", uploadError);
@@ -1489,6 +1617,10 @@ const LicitacionesProveedor = () => {
     } finally {
       setPostulando(false);
     }
+  };
+
+  const cancelSubmit = () => {
+    setShowConfirmSubmit(false);
   };
 
   const handleCancelPropuesta = () => {
@@ -2295,6 +2427,38 @@ const LicitacionesProveedor = () => {
             </PropuestaModalActions>
           </PropuestaModalContent>
         </PropuestaModal>
+      )}
+
+      {/* Modal de confirmación para enviar propuesta */}
+      {showConfirmSubmit && selectedLicitacion && (
+        <ConfirmModal
+          onClick={(e) => e.target === e.currentTarget && cancelSubmit()}
+        >
+          <ConfirmContent>
+            <ConfirmTitle>⚠️ Confirmar envío de propuesta</ConfirmTitle>
+            <ConfirmText>
+              ¿Está seguro que desea enviar su propuesta para la licitación{" "}
+              <strong>
+                {selectedLicitacion.titulo || selectedLicitacion.Titulo}
+              </strong>
+              ?
+            </ConfirmText>
+            <ConfirmText>
+              Una vez enviada, no podrá modificar ni eliminar su propuesta.
+            </ConfirmText>
+            <ConfirmActions>
+              <CancelConfirmButton onClick={cancelSubmit}>
+                Cancelar
+              </CancelConfirmButton>
+              <ConfirmSubmitButton
+                onClick={confirmSubmit}
+                disabled={postulando}
+              >
+                {postulando ? "Enviando..." : "Confirmar y enviar"}
+              </ConfirmSubmitButton>
+            </ConfirmActions>
+          </ConfirmContent>
+        </ConfirmModal>
       )}
 
       <ToastContainer

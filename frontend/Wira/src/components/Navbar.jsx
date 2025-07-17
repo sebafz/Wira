@@ -430,7 +430,6 @@ const Navbar = () => {
 
         // Actualizar el conteo
         setUnreadCount(0);
-        toast.success("Todas las notificaciones marcadas como leídas");
       }
     } catch (error) {
       console.error(

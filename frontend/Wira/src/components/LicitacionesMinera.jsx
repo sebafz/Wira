@@ -1223,6 +1223,165 @@ const PropuestaCloseButton = styled(PropuestaActionButton)`
   }
 `;
 
+// Componentes para modal de selección de ganador
+const GanadorModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+`;
+
+const GanadorModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const GanadorModalHeader = styled.div`
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+`;
+
+const GanadorModalTitle = styled.h2`
+  color: white;
+  font-size: 1.5rem;
+  margin: 0 40px 0 0;
+  line-height: 1.3;
+`;
+
+const GanadorModalBody = styled.div`
+  padding: 30px;
+`;
+
+const GanadorInstruccion = styled.p`
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+`;
+
+const GanadorPropuestasList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+`;
+
+const GanadorPropuestaItem = styled.div`
+  border: 2px solid ${(props) => (props.selected ? "#28a745" : "#e1e5e9")};
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: ${(props) => (props.selected ? "#f8fff8" : "white")};
+
+  &:hover {
+    border-color: #28a745;
+    background: #f8fff8;
+  }
+`;
+
+const GanadorPropuestaHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const GanadorProveedorNombre = styled.div`
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+`;
+
+const GanadorPropuestaRanking = styled.div`
+  background: ${(props) =>
+    props.position === 1
+      ? "#ffd700"
+      : props.position === 2
+      ? "#c0c0c0"
+      : props.position === 3
+      ? "#cd7f32"
+      : "#f8f9fa"};
+  color: ${(props) => (props.position <= 3 ? "#333" : "#666")};
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+`;
+
+const GanadorPropuestaInfo = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #666;
+`;
+
+const GanadorModalActions = styled.div`
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  padding: 20px 30px;
+  background: #f8f9fa;
+  border-top: 1px solid #e1e5e9;
+`;
+
+const GanadorConfirmButton = styled.button`
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const GanadorCancelButton = styled.button`
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+  }
+`;
+
 const LicitacionesMinera = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -1247,6 +1406,11 @@ const LicitacionesMinera = () => {
   // Estado para el modal de confirmación de adjudicación
   const [showConfirmAdjudicar, setShowConfirmAdjudicar] = useState(false);
   const [adjudicandoLicitacion, setAdjudicandoLicitacion] = useState(null);
+
+  // Estado para el modal de selección de ganador
+  const [showGanadorModal, setShowGanadorModal] = useState(false);
+  const [seleccionandoGanador, setSeleccionandoGanador] = useState(null);
+  const [selectedGanador, setSelectedGanador] = useState(null);
 
   // Estados para propuestas
   const [propuestas, setPropuestas] = useState([]);
@@ -1588,6 +1752,106 @@ const LicitacionesMinera = () => {
     setShowConfirmAdjudicar(true);
   };
 
+  const handleSeleccionarGanador = async (licitacion) => {
+    console.log("Iniciando selección de ganador para licitación:", licitacion);
+    setSeleccionandoGanador(licitacion);
+
+    // Cargar las propuestas para mostrar la selección
+    const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
+    console.log("LicitacionID extraído:", licitacionId);
+
+    try {
+      console.log("Cargando propuestas...");
+      const response = await fetch(
+        `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+      );
+
+      console.log("Respuesta de propuestas:", {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText,
+      });
+
+      if (response.ok) {
+        const propuestasData = await response.json();
+        console.log("Propuestas cargadas:", propuestasData);
+
+        // Rankear las propuestas si hay criterios
+        console.log("Cargando criterios...");
+        const criteriosResponse = await fetch(
+          `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
+        );
+
+        console.log("Respuesta de criterios:", {
+          status: criteriosResponse.status,
+          ok: criteriosResponse.ok,
+          statusText: criteriosResponse.statusText,
+        });
+
+        if (criteriosResponse.ok) {
+          const criterios = await criteriosResponse.json();
+          console.log("Criterios cargados:", criterios);
+
+          const propuestasRankeadas = await rankearPropuestas(
+            propuestasData,
+            criterios
+          );
+          console.log("Propuestas rankeadas:", propuestasRankeadas);
+
+          // Seleccionar el primero del ranking por defecto
+          if (propuestasRankeadas.length > 0) {
+            setSelectedGanador(propuestasRankeadas[0]);
+            console.log(
+              "Ganador seleccionado por defecto:",
+              propuestasRankeadas[0]
+            );
+          }
+
+          setPropuestas(propuestasRankeadas);
+        } else {
+          console.log("Sin criterios, ordenando por presupuesto");
+          // Ordenar por presupuesto (menor a mayor) y asignar scoreTotal como presupuesto
+          const propuestasOrdenadas = propuestasData
+            .sort((a, b) => {
+              const presupuestoA =
+                a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
+              const presupuestoB =
+                b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
+              return presupuestoA - presupuestoB;
+            })
+            .map((propuesta) => ({
+              ...propuesta,
+              scoreTotal: 0, // Sin criterios, no hay score real
+              scoreCalculado: 0, // Sin criterios, no hay score real
+            }));
+
+          setPropuestas(propuestasOrdenadas);
+          if (propuestasOrdenadas.length > 0) {
+            setSelectedGanador(propuestasOrdenadas[0]);
+            console.log(
+              "Ganador seleccionado por defecto (sin criterios):",
+              propuestasOrdenadas[0]
+            );
+          }
+        }
+      } else {
+        const errorText = await response.text();
+        console.error("Error al cargar propuestas:", errorText);
+        throw new Error(
+          `Error al cargar propuestas: ${response.status} - ${errorText}`
+        );
+      }
+    } catch (error) {
+      console.error("Error completo al cargar propuestas:", error);
+      console.error("Stack trace:", error.stack);
+      toast.error(`Error al cargar las propuestas: ${error.message}`);
+      return;
+    }
+
+    console.log("Mostrando modal de selección de ganador");
+    setShowGanadorModal(true);
+  };
+
   const confirmAdjudicarLicitacion = async () => {
     if (!adjudicandoLicitacion) return;
 
@@ -1631,6 +1895,131 @@ const LicitacionesMinera = () => {
   const cancelAdjudicarLicitacion = () => {
     setShowConfirmAdjudicar(false);
     setAdjudicandoLicitacion(null);
+  };
+
+  const confirmSeleccionarGanador = async () => {
+    if (!seleccionandoGanador || !selectedGanador) {
+      console.error("Error: No hay licitación o ganador seleccionado");
+      toast.error("Error: No hay licitación o ganador seleccionado");
+      return;
+    }
+
+    try {
+      const licitacionId =
+        seleccionandoGanador.licitacionID || seleccionandoGanador.LicitacionID;
+      const proveedorId =
+        selectedGanador.proveedorID || selectedGanador.ProveedorID;
+
+      console.log("Datos para seleccionar ganador:", {
+        licitacionId,
+        proveedorId,
+        seleccionandoGanador,
+        selectedGanador,
+      });
+
+      // Crear registro en el historial
+      const historialData = {
+        ProveedorID: proveedorId,
+        LicitacionID: licitacionId,
+        Resultado: "GANADOR",
+        Ganador: true,
+        Observaciones: "Seleccionado como ganador de la licitación",
+      };
+
+      console.log("Datos del historial a enviar:", historialData);
+
+      const historialResponse = await fetch(
+        "http://localhost:5242/api/historial-proveedor-licitacion",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(historialData),
+        }
+      );
+
+      console.log("Respuesta del historial:", {
+        status: historialResponse.status,
+        ok: historialResponse.ok,
+        statusText: historialResponse.statusText,
+      });
+
+      if (!historialResponse.ok) {
+        const errorText = await historialResponse.text();
+        console.error("Error detallado del historial:", errorText);
+        throw new Error(
+          `Error al registrar el historial: ${historialResponse.status} - ${errorText}`
+        );
+      }
+
+      let historialResult;
+      try {
+        historialResult = await historialResponse.json();
+        console.log("Historial creado exitosamente:", historialResult);
+      } catch (jsonError) {
+        console.log("Respuesta del historial no es JSON, pero fue exitosa");
+        historialResult = { success: true };
+      }
+
+      // Cambiar el estado de la licitación a "Cerrada"
+      console.log("Actualizando estado de licitación a 'Cerrada'...");
+      const licitacionResponse = await fetch(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Respuesta del estado:", {
+        status: licitacionResponse.status,
+        ok: licitacionResponse.ok,
+        statusText: licitacionResponse.statusText,
+      });
+
+      if (!licitacionResponse.ok) {
+        const errorText = await licitacionResponse.text();
+        console.error("Error detallado del estado:", errorText);
+        throw new Error(
+          `Error al actualizar el estado de la licitación: ${licitacionResponse.status} - ${errorText}`
+        );
+      }
+
+      let estadoResult;
+      try {
+        estadoResult = await licitacionResponse.json();
+        console.log("Estado actualizado exitosamente:", estadoResult);
+      } catch (jsonError) {
+        console.log("Respuesta del estado no es JSON, pero fue exitosa");
+        estadoResult = { success: true };
+      }
+
+      toast.success("Ganador seleccionado y licitación cerrada exitosamente");
+
+      // Cerrar modales
+      setShowGanadorModal(false);
+      setShowModal(false);
+      setSeleccionandoGanador(null);
+      setSelectedGanador(null);
+      setSelectedLicitacion(null);
+
+      // Recargar las licitaciones
+      await fetchLicitaciones();
+    } catch (error) {
+      console.error("Error completo al seleccionar ganador:", error);
+      console.error("Stack trace:", error.stack);
+      toast.error(`Error al seleccionar el ganador: ${error.message}`);
+    }
+  };
+
+  const cancelSeleccionarGanador = () => {
+    setShowGanadorModal(false);
+    setSeleccionandoGanador(null);
+    setSelectedGanador(null);
+    setPropuestas([]);
   };
 
   const confirmCloseLicitacion = async () => {
@@ -1754,7 +2143,7 @@ const LicitacionesMinera = () => {
         if (estadosConRanking.includes(estadoLicitacion)) {
           // Cargar criterios de la licitación para el ranking
           const criteriosResponse = await fetch(
-            `http://localhost:5242/api/criterios/licitacion/${licitacionId}`
+            `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
           );
 
           if (criteriosResponse.ok) {
@@ -1765,7 +2154,21 @@ const LicitacionesMinera = () => {
             );
             setPropuestas(propuestasRankeadas);
           } else {
-            setPropuestas(data);
+            // Si no hay criterios, ordenar por presupuesto y asignar scores
+            const propuestasOrdenadas = data
+              .sort((a, b) => {
+                const presupuestoA =
+                  a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
+                const presupuestoB =
+                  b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
+                return presupuestoA - presupuestoB;
+              })
+              .map((propuesta) => ({
+                ...propuesta,
+                scoreCalculado: 0,
+                scoreTotal: 0,
+              }));
+            setPropuestas(propuestasOrdenadas);
           }
         } else {
           // Para otros estados, mantener orden de creación
@@ -1819,6 +2222,7 @@ const LicitacionesMinera = () => {
         return {
           ...propuesta,
           scoreCalculado: score,
+          scoreTotal: score, // Para compatibilidad con el modal
         };
       });
 
@@ -1938,6 +2342,107 @@ const LicitacionesMinera = () => {
   const handleModalOverlayClickPropuesta = (e) => {
     if (e.target === e.currentTarget) {
       handleClosePropuestaModal();
+    }
+  };
+
+  // Función simplificada para depurar
+  const confirmSeleccionarGanadorSimple = async () => {
+    console.log("=== INICIANDO SELECCIÓN DE GANADOR SIMPLE ===");
+
+    if (!seleccionandoGanador || !selectedGanador) {
+      console.error("Error: No hay licitación o ganador seleccionado");
+      toast.error("Error: No hay licitación o ganador seleccionado");
+      return;
+    }
+
+    const licitacionId =
+      seleccionandoGanador.licitacionID || seleccionandoGanador.LicitacionID;
+    const proveedorId =
+      selectedGanador.proveedorID || selectedGanador.ProveedorID;
+
+    console.log("IDs a utilizar:", { licitacionId, proveedorId });
+
+    try {
+      // Solo cambiar el estado de la licitación
+      console.log("=== PASO 1: Cambiar estado de licitación ===");
+      const licitacionResponse = await fetch(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Respuesta cambio estado:", {
+        status: licitacionResponse.status,
+        ok: licitacionResponse.ok,
+        statusText: licitacionResponse.statusText,
+      });
+
+      if (!licitacionResponse.ok) {
+        const errorText = await licitacionResponse.text();
+        console.error("Error en cambio de estado:", errorText);
+        throw new Error(
+          `Error al cambiar estado: ${licitacionResponse.status} - ${errorText}`
+        );
+      }
+
+      console.log("=== PASO 2: Crear historial ===");
+      // Crear registro en el historial
+      const historialData = {
+        ProveedorID: proveedorId,
+        LicitacionID: licitacionId,
+        Resultado: "GANADOR",
+        Ganador: true,
+        Observaciones: "Seleccionado como ganador de la licitación",
+      };
+
+      console.log("Datos historial:", historialData);
+
+      const historialResponse = await fetch(
+        "http://localhost:5242/api/historial-proveedor-licitacion",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(historialData),
+        }
+      );
+
+      console.log("Respuesta historial:", {
+        status: historialResponse.status,
+        ok: historialResponse.ok,
+        statusText: historialResponse.statusText,
+      });
+
+      if (!historialResponse.ok) {
+        const errorText = await historialResponse.text();
+        console.error("Error en historial:", errorText);
+        throw new Error(
+          `Error al crear historial: ${historialResponse.status} - ${errorText}`
+        );
+      }
+
+      console.log("=== ÉXITO: Ambas operaciones completadas ===");
+      toast.success("Ganador seleccionado exitosamente");
+
+      // Cerrar modales
+      setShowGanadorModal(false);
+      setShowModal(false);
+      setSeleccionandoGanador(null);
+      setSelectedGanador(null);
+      setSelectedLicitacion(null);
+
+      // Recargar las licitaciones
+      await fetchLicitaciones();
+    } catch (error) {
+      console.error("=== ERROR EN SELECCIÓN DE GANADOR ===");
+      console.error("Error:", error);
+      console.error("Stack:", error.stack);
+      toast.error(`Error: ${error.message}`);
     }
   };
 
@@ -2417,18 +2922,17 @@ const LicitacionesMinera = () => {
                                   <PropuestaProveedor>
                                     {propuesta.proveedorNombre}
                                   </PropuestaProveedor>
-                                  {mostrarRanking &&
-                                    propuesta.scoreCalculado && (
-                                      <PropuestaScore>
-                                        📊 {propuesta.scoreCalculado.toFixed(2)}
-                                      </PropuestaScore>
-                                    )}
+                                  {mostrarRanking && (
+                                    <PropuestaScore>
+                                      📊{" "}
+                                      {propuesta.scoreCalculado !== undefined
+                                        ? propuesta.scoreCalculado.toFixed(2)
+                                        : propuesta.scoreTotal !== undefined
+                                        ? propuesta.scoreTotal.toFixed(2)
+                                        : "0.00"}
+                                    </PropuestaScore>
+                                  )}
                                 </PropuestaHeaderLeft>
-                                <PropuestaEstado
-                                  status={propuesta.estadoNombre}
-                                >
-                                  {propuesta.estadoNombre}
-                                </PropuestaEstado>
                               </PropuestaHeader>
                               <PropuestaInfo>
                                 <PropuestaInfoItem>
@@ -2513,6 +3017,16 @@ const LicitacionesMinera = () => {
                   onClick={() => handleAdjudicarLicitacion(selectedLicitacion)}
                 >
                   🏆 Marcar como adjudicada
+                </AdjudicarButton>
+              )}
+
+              {/* Botón Seleccionar Ganador - Solo para estado Adjudicada */}
+              {(selectedLicitacion.estadoNombre === "Adjudicada" ||
+                selectedLicitacion.EstadoNombre === "Adjudicada") && (
+                <AdjudicarButton
+                  onClick={() => handleSeleccionarGanador(selectedLicitacion)}
+                >
+                  🎯 Seleccionar ganador
                 </AdjudicarButton>
               )}
 
@@ -2638,6 +3152,98 @@ const LicitacionesMinera = () => {
             </ConfirmActions>
           </ConfirmContent>
         </ConfirmModal>
+      )}
+
+      {/* Modal de selección de ganador */}
+      {showGanadorModal && seleccionandoGanador && (
+        <GanadorModal
+          onClick={(e) =>
+            e.target === e.currentTarget && cancelSeleccionarGanador()
+          }
+        >
+          <GanadorModalContent>
+            <GanadorModalHeader>
+              <GanadorModalTitle>
+                🎯 Seleccionar ganador de la licitación
+              </GanadorModalTitle>
+              <CloseButton onClick={cancelSeleccionarGanador}>×</CloseButton>
+            </GanadorModalHeader>
+
+            <GanadorModalBody>
+              <GanadorInstruccion>
+                Seleccione el proveedor ganador de la licitación{" "}
+                <strong>
+                  "{seleccionandoGanador.titulo || seleccionandoGanador.Titulo}"
+                </strong>
+                . Por defecto se selecciona el primero del ranking.
+              </GanadorInstruccion>
+
+              <GanadorPropuestasList>
+                {propuestas.map((propuesta, index) => (
+                  <GanadorPropuestaItem
+                    key={propuesta.propuestaID || propuesta.PropuestaID}
+                    selected={
+                      selectedGanador &&
+                      (selectedGanador.propuestaID ||
+                        selectedGanador.PropuestaID) ===
+                        (propuesta.propuestaID || propuesta.PropuestaID)
+                    }
+                    onClick={() => setSelectedGanador(propuesta)}
+                  >
+                    <GanadorPropuestaHeader>
+                      <GanadorProveedorNombre>
+                        {propuesta.proveedorNombre || propuesta.ProveedorNombre}
+                      </GanadorProveedorNombre>
+                      <GanadorPropuestaRanking position={index + 1}>
+                        #{index + 1}
+                        {index === 0 && " (Recomendado)"}
+                      </GanadorPropuestaRanking>
+                    </GanadorPropuestaHeader>
+                    <GanadorPropuestaInfo>
+                      <div>
+                        <strong>Presupuesto:</strong>{" "}
+                        {formatCurrency(
+                          propuesta.presupuestoOfrecido ||
+                            propuesta.PresupuestoOfrecido
+                        )}
+                      </div>
+                      <div>
+                        <strong>Puntaje:</strong>{" "}
+                        {propuesta.scoreCalculado
+                          ? propuesta.scoreCalculado.toFixed(2)
+                          : propuesta.scoreTotal
+                          ? propuesta.scoreTotal.toFixed(2)
+                          : "N/A"}
+                      </div>
+                      <div>
+                        <strong>Fecha envío:</strong>{" "}
+                        {formatDate(
+                          propuesta.fechaEnvio || propuesta.FechaEnvio
+                        )}
+                      </div>
+                      <div>
+                        <strong>Estado:</strong>{" "}
+                        {propuesta.estadoNombre || propuesta.EstadoNombre}
+                      </div>
+                    </GanadorPropuestaInfo>
+                  </GanadorPropuestaItem>
+                ))}
+              </GanadorPropuestasList>
+            </GanadorModalBody>
+
+            <GanadorModalActions>
+              <GanadorCancelButton onClick={cancelSeleccionarGanador}>
+                Cancelar
+              </GanadorCancelButton>
+              <GanadorConfirmButton
+                onClick={confirmSeleccionarGanadorSimple}
+                disabled={!selectedGanador}
+              >
+                Confirmar ganador y cerrar licitación
+              </GanadorConfirmButton>
+            </GanadorModalActions>
+          </GanadorModalContent>
+        </GanadorModal>
       )}
 
       {/* Modal de detalle de propuesta */}

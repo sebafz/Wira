@@ -18,6 +18,8 @@ namespace Wira.Api.Models
         [StringLength(100)]
         public string? Resultado { get; set; } // 'GANADOR', 'DESCALIFICADO', etc.
 
+        public bool Ganador { get; set; } = false;
+
         [Column(TypeName = "text")]
         public string? Observaciones { get; set; }
 
