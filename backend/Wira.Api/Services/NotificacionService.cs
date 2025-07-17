@@ -11,6 +11,7 @@ namespace Wira.Api.Services
         Task CrearNotificacionLicitacionAdjudicada(int licitacionId, string tituloLicitacion, int mineraId);
         Task CrearNotificacionNuevaPropuesta(int licitacionId, string tituloLicitacion, int propuestaId, string nombreProveedor, int mineraId);
         Task CrearNotificacionPersonalizada(string titulo, string mensaje, string? tipo = null, string? entidadTipo = null, int? entidadId = null, List<int>? usuarioIds = null, List<int>? rolIds = null, List<int>? mineraIds = null);
+        Task CrearNotificacionGanadorSeleccionado(int licitacionId, string tituloLicitacion, int proveedorGanadorId, string nombreProveedorGanador, int mineraId);
     }
 
     public class NotificacionService : INotificacionService
@@ -141,6 +142,70 @@ namespace Wira.Api.Services
                 propuestaId, 
                 mineraIds: new List<int> { mineraId }
             );
+        }
+
+        public async Task CrearNotificacionGanadorSeleccionado(int licitacionId, string tituloLicitacion, int proveedorGanadorId, string nombreProveedorGanador, int mineraId)
+        {
+            var titulo = "¡Felicitaciones! Ha ganado una licitación";
+            var mensaje = $"Tu empresa ha sido seleccionada como ganadora de la licitación '{tituloLicitacion}'";
+
+            // Notificar al proveedor ganador
+            var usuarioGanadorIds = await _context.Usuarios
+                .Where(u => u.ProveedorID == proveedorGanadorId)
+                .Select(u => u.UsuarioID)
+                .ToListAsync();
+
+            if (usuarioGanadorIds.Any())
+            {
+                await CrearNotificacionPersonalizada(
+                    titulo, 
+                    mensaje, 
+                    "GANADOR", 
+                    "LICITACION", 
+                    licitacionId, 
+                    usuarioIds: usuarioGanadorIds
+                );
+            }
+
+            // Notificar a la minera propietaria
+            var tituloMinera = "Ganador seleccionado";
+            var mensajeMinera = $"Se ha seleccionado a {nombreProveedorGanador} como ganador de la licitación '{tituloLicitacion}'";
+            
+            await CrearNotificacionPersonalizada(
+                tituloMinera, 
+                mensajeMinera, 
+                "GANADOR_SELECCIONADO", 
+                "LICITACION", 
+                licitacionId, 
+                mineraIds: new List<int> { mineraId }
+            );
+
+            // Notificar a los demás proveedores que participaron
+            var otrosProveedorIds = await _context.Propuestas
+                .Where(p => p.LicitacionID == licitacionId && p.ProveedorID != proveedorGanadorId && !p.Eliminado)
+                .Select(p => p.ProveedorID)
+                .Distinct()
+                .ToListAsync();
+
+            var usuariosOtrosProveedorIds = await _context.Usuarios
+                .Where(u => u.ProveedorID.HasValue && otrosProveedorIds.Contains(u.ProveedorID.Value))
+                .Select(u => u.UsuarioID)
+                .ToListAsync();
+
+            if (usuariosOtrosProveedorIds.Any())
+            {
+                var tituloOtros = "Resultado de licitación";
+                var mensajeOtros = $"La licitación '{tituloLicitacion}' en la que participaste ha sido adjudicada a {nombreProveedorGanador}";
+                
+                await CrearNotificacionPersonalizada(
+                    tituloOtros, 
+                    mensajeOtros, 
+                    "RESULTADO_LICITACION", 
+                    "LICITACION", 
+                    licitacionId, 
+                    usuarioIds: usuariosOtrosProveedorIds
+                );
+            }
         }
 
         public async Task CrearNotificacionPersonalizada(string titulo, string mensaje, string? tipo = null, string? entidadTipo = null, int? entidadId = null, List<int>? usuarioIds = null, List<int>? rolIds = null, List<int>? mineraIds = null)

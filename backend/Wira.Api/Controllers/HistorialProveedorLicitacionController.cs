@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Wira.Api.Data;
 using Wira.Api.Models;
+using Wira.Api.Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace Wira.Api.Controllers
@@ -12,11 +13,16 @@ namespace Wira.Api.Controllers
     {
         private readonly WiraDbContext _context;
         private readonly ILogger<HistorialProveedorLicitacionController> _logger;
+        private readonly INotificacionService _notificacionService;
 
-        public HistorialProveedorLicitacionController(WiraDbContext context, ILogger<HistorialProveedorLicitacionController> logger)
+        public HistorialProveedorLicitacionController(
+            WiraDbContext context, 
+            ILogger<HistorialProveedorLicitacionController> logger,
+            INotificacionService notificacionService)
         {
             _context = context;
             _logger = logger;
+            _notificacionService = notificacionService;
         }
 
         [HttpGet]
@@ -115,12 +121,34 @@ namespace Wira.Api.Controllers
                 if (historialExistente != null)
                 {
                     // Actualizar el historial existente
+                    var esNuevoGanador = !historialExistente.Ganador && request.Ganador;
+                    
                     historialExistente.Resultado = request.Resultado;
                     historialExistente.Ganador = request.Ganador;
                     historialExistente.Observaciones = request.Observaciones;
                     historialExistente.FechaParticipacion = DateTime.Now;
 
                     await _context.SaveChangesAsync();
+
+                    // Enviar notificación solo si se está marcando como ganador por primera vez
+                    if (esNuevoGanador)
+                    {
+                        try
+                        {
+                            await _notificacionService.CrearNotificacionGanadorSeleccionado(
+                                licitacion.LicitacionID,
+                                licitacion.Titulo,
+                                proveedor.ProveedorID,
+                                proveedor.Nombre,
+                                licitacion.MineraID
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error al enviar notificación de ganador seleccionado");
+                            // No fallar la operación principal por error en notificación
+                        }
+                    }
 
                     _logger.LogInformation($"Historial actualizado para Proveedor ID: {request.ProveedorID}, Licitación ID: {request.LicitacionID}");
 
@@ -151,6 +179,26 @@ namespace Wira.Api.Controllers
 
                     _context.HistorialProveedorLicitacion.Add(nuevoHistorial);
                     await _context.SaveChangesAsync();
+
+                    // Enviar notificación si se está marcando como ganador
+                    if (request.Ganador)
+                    {
+                        try
+                        {
+                            await _notificacionService.CrearNotificacionGanadorSeleccionado(
+                                licitacion.LicitacionID,
+                                licitacion.Titulo,
+                                proveedor.ProveedorID,
+                                proveedor.Nombre,
+                                licitacion.MineraID
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error al enviar notificación de ganador seleccionado");
+                            // No fallar la operación principal por error en notificación
+                        }
+                    }
 
                     _logger.LogInformation($"Historial creado para Proveedor ID: {request.ProveedorID}, Licitación ID: {request.LicitacionID}");
 
@@ -232,6 +280,111 @@ namespace Wira.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener historial por licitación: {LicitacionId}", licitacionId);
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
+
+        [HttpGet("licitacion/{licitacionId}/ganador")]
+        public async Task<ActionResult<object>> GetGanadorByLicitacion(int licitacionId)
+        {
+            try
+            {
+                var ganador = await _context.HistorialProveedorLicitacion
+                    .Include(h => h.Proveedor)
+                    .Include(h => h.Licitacion)
+                    .Where(h => h.LicitacionID == licitacionId && h.Ganador == true)
+                    .Select(h => new
+                    {
+                        h.HistorialID,
+                        h.ProveedorID,
+                        h.LicitacionID,
+                        h.Resultado,
+                        h.Ganador,
+                        h.Observaciones,
+                        h.FechaParticipacion,
+                        ProveedorNombre = h.Proveedor.Nombre,
+                        LicitacionTitulo = h.Licitacion.Titulo
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (ganador == null)
+                {
+                    return NotFound(new { message = "No se encontró un ganador para esta licitación" });
+                }
+
+                return Ok(ganador);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener ganador por licitación: {LicitacionId}", licitacionId);
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
+
+        [HttpGet("licitacion/{licitacionId}/propuesta-ganadora")]
+        public async Task<ActionResult<object>> GetPropuestaGanadoraByLicitacion(int licitacionId)
+        {
+            try
+            {
+                // Primero obtenemos el historial del ganador
+                var historialGanador = await _context.HistorialProveedorLicitacion
+                    .Where(h => h.LicitacionID == licitacionId && h.Ganador == true)
+                    .FirstOrDefaultAsync();
+
+                if (historialGanador == null)
+                {
+                    return NotFound(new { message = "No se encontró un ganador para esta licitación" });
+                }
+
+                // Luego obtenemos la propuesta completa del proveedor ganador
+                var propuestaGanadora = await _context.Propuestas
+                    .Include(p => p.Proveedor)
+                    .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.RespuestasCriterios)
+                        .ThenInclude(rc => rc.Criterio)
+                    .Where(p => p.LicitacionID == licitacionId && p.ProveedorID == historialGanador.ProveedorID)
+                    .Select(p => new
+                    {
+                        p.PropuestaID,
+                        p.LicitacionID,
+                        p.ProveedorID,
+                        ProveedorNombre = p.Proveedor.Nombre,
+                        p.FechaEnvio,
+                        p.FechaEntrega,
+                        p.PresupuestoOfrecido,
+                        p.Descripcion,
+                        p.CumpleRequisitos,
+                        p.CalificacionFinal,
+                        EstadoNombre = p.EstadoPropuesta.NombreEstado,
+                        RespuestasCriterios = p.RespuestasCriterios.Select(rc => new
+                        {
+                            rc.RespuestaID,
+                            rc.CriterioID,
+                            CriterioNombre = rc.Criterio.Nombre,
+                            CriterioDescripcion = rc.Criterio.Descripcion,
+                            rc.ValorProveedor
+                        }).ToList(),
+                        // Información del historial
+                        HistorialGanador = new
+                        {
+                            historialGanador.HistorialID,
+                            historialGanador.Resultado,
+                            historialGanador.Observaciones,
+                            historialGanador.FechaParticipacion
+                        }
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (propuestaGanadora == null)
+                {
+                    return NotFound(new { message = "No se encontró la propuesta del ganador" });
+                }
+
+                return Ok(propuestaGanadora);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener propuesta ganadora por licitación: {LicitacionId}", licitacionId);
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }

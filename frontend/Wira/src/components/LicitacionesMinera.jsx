@@ -2137,8 +2137,15 @@ const LicitacionesMinera = () => {
         const estadoLicitacion =
           licitacionActual?.estadoNombre || licitacionActual?.EstadoNombre;
 
-        // Estados que requieren ranking
-        const estadosConRanking = ["En Evaluación", "Adjudicada", "Cerrada"];
+        // Si la licitación está cerrada, obtener solo la propuesta ganadora
+        if (estadoLicitacion === "Cerrada") {
+          const propuestaGanadora = await fetchPropuestaGanadora(licitacionId);
+          setPropuestas(propuestaGanadora);
+          return;
+        }
+
+        // Estados que requieren ranking (excluyendo "Cerrada" ya que se maneja arriba)
+        const estadosConRanking = ["En Evaluación", "Adjudicada"];
 
         if (estadosConRanking.includes(estadoLicitacion)) {
           // Cargar criterios de la licitación para el ranking
@@ -2443,6 +2450,33 @@ const LicitacionesMinera = () => {
       console.error("Error:", error);
       console.error("Stack:", error.stack);
       toast.error(`Error: ${error.message}`);
+    }
+  };
+
+  // Función para obtener la propuesta ganadora desde el historial
+  const fetchPropuestaGanadora = async (licitacionId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+      );
+
+      if (response.ok) {
+        const propuestaGanadora = await response.json();
+        // Retornamos un array con la propuesta ganadora para mantener consistencia
+        return [propuestaGanadora];
+      } else if (response.status === 404) {
+        console.warn("No se encontró ganador para esta licitación");
+        return [];
+      } else {
+        console.error(
+          "Error al cargar propuesta ganadora:",
+          response.statusText
+        );
+        return [];
+      }
+    } catch (error) {
+      console.error("Error al cargar propuesta ganadora:", error);
+      return [];
     }
   };
 
@@ -2848,10 +2882,12 @@ const LicitacionesMinera = () => {
                           const licitacionEstado =
                             selectedLicitacion?.estadoNombre ||
                             selectedLicitacion?.EstadoNombre;
+                          if (licitacionEstado === "Cerrada") {
+                            return " y obteniendo ganador...";
+                          }
                           const estadosConRanking = [
                             "En Evaluación",
                             "Adjudicada",
-                            "Cerrada",
                           ];
                           return estadosConRanking.includes(licitacionEstado)
                             ? " y calculando rankings..."
@@ -2868,114 +2904,205 @@ const LicitacionesMinera = () => {
                     </EmptyPropuestas>
                   ) : (
                     <>
-                      <PropuestasTitle>
-                        <span>📋</span>
-                        {propuestas.length} propuesta
-                        {propuestas.length !== 1 ? "s" : ""} recibida
-                        {propuestas.length !== 1 ? "s" : ""}
-                        {(() => {
-                          const licitacionEstado =
-                            selectedLicitacion?.estadoNombre ||
-                            selectedLicitacion?.EstadoNombre;
-                          const estadosConRanking = [
-                            "En Evaluación",
-                            "Adjudicada",
-                            "Cerrada",
-                          ];
-                          return estadosConRanking.includes(licitacionEstado)
-                            ? " (rankeadas por criterios)"
-                            : "";
-                        })()}
-                      </PropuestasTitle>
-                      <PropuestasList>
-                        {propuestas.map((propuesta, index) => {
-                          const licitacionEstado =
-                            selectedLicitacion?.estadoNombre ||
-                            selectedLicitacion?.EstadoNombre;
-                          const estadosConRanking = [
-                            "En Evaluación",
-                            "Adjudicada",
-                            "Cerrada",
-                          ];
-                          const mostrarRanking =
-                            estadosConRanking.includes(licitacionEstado);
+                      {(() => {
+                        const licitacionEstado =
+                          selectedLicitacion?.estadoNombre ||
+                          selectedLicitacion?.EstadoNombre;
+
+                        // Si está cerrada, mostrar solo el ganador
+                        if (licitacionEstado === "Cerrada") {
+                          const propuestaGanadora = propuestas[0]; // Por ahora tomamos la primera como ganadora
 
                           return (
-                            <PropuestaCard
-                              key={propuesta.propuestaID}
-                              onClick={() => handlePropuestaClick(propuesta)}
-                            >
-                              <PropuestaHeader>
-                                <PropuestaHeaderLeft>
-                                  {mostrarRanking && (
-                                    <PropuestaRankingBadge position={index + 1}>
-                                      {index + 1 === 1
-                                        ? "🥇"
-                                        : index + 1 === 2
-                                        ? "🥈"
-                                        : index + 1 === 3
-                                        ? "🥉"
-                                        : ""}
-                                      #{index + 1}
-                                    </PropuestaRankingBadge>
-                                  )}
-                                  <PropuestaProveedor>
-                                    {propuesta.proveedorNombre}
-                                  </PropuestaProveedor>
-                                  {mostrarRanking && (
-                                    <PropuestaScore>
-                                      📊{" "}
-                                      {propuesta.scoreCalculado !== undefined
-                                        ? propuesta.scoreCalculado.toFixed(2)
-                                        : propuesta.scoreTotal !== undefined
-                                        ? propuesta.scoreTotal.toFixed(2)
-                                        : "0.00"}
-                                    </PropuestaScore>
-                                  )}
-                                </PropuestaHeaderLeft>
-                              </PropuestaHeader>
-                              <PropuestaInfo>
-                                <PropuestaInfoItem>
-                                  <PropuestaInfoLabel>
-                                    Fecha de envío
-                                  </PropuestaInfoLabel>
-                                  <PropuestaInfoValue>
-                                    {formatDate(propuesta.fechaEnvio)}
-                                  </PropuestaInfoValue>
-                                </PropuestaInfoItem>
-                                <PropuestaInfoItem>
-                                  <PropuestaInfoLabel>
-                                    Monto ofrecido
-                                  </PropuestaInfoLabel>
-                                  <PropuestaInfoValue>
-                                    {formatCurrency(
-                                      propuesta.presupuestoOfrecido
-                                    )}
-                                  </PropuestaInfoValue>
-                                </PropuestaInfoItem>
-                                <PropuestaInfoItem>
-                                  <PropuestaInfoLabel>
-                                    Fecha de entrega
-                                  </PropuestaInfoLabel>
-                                  <PropuestaInfoValue>
-                                    {formatDate(propuesta.fechaEntrega)}
-                                  </PropuestaInfoValue>
-                                </PropuestaInfoItem>
-                                {propuesta.calificacionFinal && (
-                                  <PropuestaInfoItem>
-                                    <PropuestaInfoLabel>
-                                      Calificación
-                                    </PropuestaInfoLabel>
-                                    <PropuestaInfoValue>
-                                      {propuesta.calificacionFinal}/10
-                                    </PropuestaInfoValue>
-                                  </PropuestaInfoItem>
-                                )}
-                              </PropuestaInfo>
-                            </PropuestaCard>
+                            <>
+                              <PropuestasTitle>
+                                Ganador de la licitación
+                              </PropuestasTitle>
+                              {propuestaGanadora && (
+                                <PropuestasList>
+                                  <PropuestaCard
+                                    key={propuestaGanadora.propuestaID}
+                                    onClick={() =>
+                                      handlePropuestaClick(propuestaGanadora)
+                                    }
+                                    style={{
+                                      border: "2px solid #28a745",
+                                      backgroundColor: "#f8fff9",
+                                    }}
+                                  >
+                                    <PropuestaHeader>
+                                      <PropuestaHeaderLeft>
+                                        <PropuestaRankingBadge
+                                          position={1}
+                                          style={{
+                                            backgroundColor: "#28a745",
+                                            color: "white",
+                                          }}
+                                        >
+                                          🏆 GANADOR
+                                        </PropuestaRankingBadge>
+                                        <PropuestaProveedor>
+                                          {propuestaGanadora.proveedorNombre}
+                                        </PropuestaProveedor>
+                                      </PropuestaHeaderLeft>
+                                    </PropuestaHeader>
+                                    <PropuestaInfo>
+                                      <PropuestaInfoItem>
+                                        <PropuestaInfoLabel>
+                                          Fecha de envío
+                                        </PropuestaInfoLabel>
+                                        <PropuestaInfoValue>
+                                          {formatDate(
+                                            propuestaGanadora.fechaEnvio
+                                          )}
+                                        </PropuestaInfoValue>
+                                      </PropuestaInfoItem>
+                                      <PropuestaInfoItem>
+                                        <PropuestaInfoLabel>
+                                          Monto ofrecido
+                                        </PropuestaInfoLabel>
+                                        <PropuestaInfoValue>
+                                          {formatCurrency(
+                                            propuestaGanadora.presupuestoOfrecido
+                                          )}
+                                        </PropuestaInfoValue>
+                                      </PropuestaInfoItem>
+                                      <PropuestaInfoItem>
+                                        <PropuestaInfoLabel>
+                                          Fecha de entrega
+                                        </PropuestaInfoLabel>
+                                        <PropuestaInfoValue>
+                                          {formatDate(
+                                            propuestaGanadora.fechaEntrega
+                                          )}
+                                        </PropuestaInfoValue>
+                                      </PropuestaInfoItem>
+                                      {propuestaGanadora.calificacionFinal && (
+                                        <PropuestaInfoItem>
+                                          <PropuestaInfoLabel>
+                                            Calificación
+                                          </PropuestaInfoLabel>
+                                          <PropuestaInfoValue>
+                                            {
+                                              propuestaGanadora.calificacionFinal
+                                            }
+                                            /10
+                                          </PropuestaInfoValue>
+                                        </PropuestaInfoItem>
+                                      )}
+                                    </PropuestaInfo>
+                                  </PropuestaCard>
+                                </PropuestasList>
+                              )}
+                            </>
                           );
-                        })}
-                      </PropuestasList>
+                        }
+
+                        // Para otros estados, mostrar todas las propuestas con ranking
+                        const estadosConRanking = [
+                          "En Evaluación",
+                          "Adjudicada",
+                        ];
+                        const mostrarRanking =
+                          estadosConRanking.includes(licitacionEstado);
+
+                        return (
+                          <>
+                            <PropuestasTitle>
+                              <span>📋</span>
+                              {propuestas.length} propuesta
+                              {propuestas.length !== 1 ? "s" : ""} recibida
+                              {propuestas.length !== 1 ? "s" : ""}
+                              {mostrarRanking
+                                ? " (rankeadas por criterios)"
+                                : ""}
+                            </PropuestasTitle>
+                            <PropuestasList>
+                              {propuestas.map((propuesta, index) => (
+                                <PropuestaCard
+                                  key={propuesta.propuestaID}
+                                  onClick={() =>
+                                    handlePropuestaClick(propuesta)
+                                  }
+                                >
+                                  <PropuestaHeader>
+                                    <PropuestaHeaderLeft>
+                                      {mostrarRanking && (
+                                        <PropuestaRankingBadge
+                                          position={index + 1}
+                                        >
+                                          {index + 1 === 1
+                                            ? "🥇"
+                                            : index + 1 === 2
+                                            ? "🥈"
+                                            : index + 1 === 3
+                                            ? "🥉"
+                                            : ""}
+                                          #{index + 1}
+                                        </PropuestaRankingBadge>
+                                      )}
+                                      <PropuestaProveedor>
+                                        {propuesta.proveedorNombre}
+                                      </PropuestaProveedor>
+                                      {mostrarRanking && (
+                                        <PropuestaScore>
+                                          📊{" "}
+                                          {propuesta.scoreCalculado !==
+                                          undefined
+                                            ? propuesta.scoreCalculado.toFixed(
+                                                2
+                                              )
+                                            : propuesta.scoreTotal !== undefined
+                                            ? propuesta.scoreTotal.toFixed(2)
+                                            : "0.00"}
+                                        </PropuestaScore>
+                                      )}
+                                    </PropuestaHeaderLeft>
+                                  </PropuestaHeader>
+                                  <PropuestaInfo>
+                                    <PropuestaInfoItem>
+                                      <PropuestaInfoLabel>
+                                        Fecha de envío
+                                      </PropuestaInfoLabel>
+                                      <PropuestaInfoValue>
+                                        {formatDate(propuesta.fechaEnvio)}
+                                      </PropuestaInfoValue>
+                                    </PropuestaInfoItem>
+                                    <PropuestaInfoItem>
+                                      <PropuestaInfoLabel>
+                                        Monto ofrecido
+                                      </PropuestaInfoLabel>
+                                      <PropuestaInfoValue>
+                                        {formatCurrency(
+                                          propuesta.presupuestoOfrecido
+                                        )}
+                                      </PropuestaInfoValue>
+                                    </PropuestaInfoItem>
+                                    <PropuestaInfoItem>
+                                      <PropuestaInfoLabel>
+                                        Fecha de entrega
+                                      </PropuestaInfoLabel>
+                                      <PropuestaInfoValue>
+                                        {formatDate(propuesta.fechaEntrega)}
+                                      </PropuestaInfoValue>
+                                    </PropuestaInfoItem>
+                                    {propuesta.calificacionFinal && (
+                                      <PropuestaInfoItem>
+                                        <PropuestaInfoLabel>
+                                          Calificación
+                                        </PropuestaInfoLabel>
+                                        <PropuestaInfoValue>
+                                          {propuesta.calificacionFinal}/10
+                                        </PropuestaInfoValue>
+                                      </PropuestaInfoItem>
+                                    )}
+                                  </PropuestaInfo>
+                                </PropuestaCard>
+                              ))}
+                            </PropuestasList>
+                          </>
+                        );
+                      })()}
                     </>
                   )}
                 </PropuestasSection>
@@ -3287,7 +3414,7 @@ const LicitacionesMinera = () => {
 
                   {/* Segunda columna */}
                   <div>
-                    <PropuestaStatusCard
+                    <PropuestaInfoCard
                       style={{
                         borderLeftColor: "#28a745",
                         marginBottom: "15px",
@@ -3299,7 +3426,7 @@ const LicitacionesMinera = () => {
                       <PropuestaDetailInfoValue style={{ color: "#28a745" }}>
                         {selectedPropuesta.estadoNombre}
                       </PropuestaDetailInfoValue>
-                    </PropuestaStatusCard>
+                    </PropuestaInfoCard>
                     <PropuestaInfoCard>
                       <PropuestaDetailInfoLabel>
                         Fecha de entrega
