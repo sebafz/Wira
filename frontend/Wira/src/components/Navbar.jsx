@@ -198,6 +198,22 @@ const LoadingNotifications = styled.div`
   font-size: 0.9rem;
 `;
 
+const ViewAllNotifications = styled.div`
+  padding: 12px 20px;
+  text-align: center;
+  border-top: 1px solid #f1f3f4;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #fc6b0a;
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  &:hover {
+    background-color: #e9ecef;
+  }
+`;
+
 const UserInfo = styled.div`
   display: flex;
   flex-direction: column;
@@ -575,30 +591,39 @@ const Navbar = () => {
                     No tienes notificaciones
                   </EmptyNotifications>
                 ) : (
-                  notifications.map((notification) => (
-                    <NotificationItem
-                      key={notification.notificacionID}
-                      read={notification.leido}
-                      onClick={() => handleNotificationItemClick(notification)}
-                    >
-                      <NotificationContent>
-                        <NotificationIcon>
-                          {getNotificationIcon(notification.tipo)}
-                        </NotificationIcon>
-                        <NotificationText>
-                          <NotificationTitleText read={notification.leido}>
-                            {notification.titulo}
-                          </NotificationTitleText>
-                          <NotificationMessage>
-                            {notification.mensaje}
-                          </NotificationMessage>
-                          <NotificationTime>
-                            {formatTimeAgo(notification.fechaCreacion)}
-                          </NotificationTime>
-                        </NotificationText>
-                      </NotificationContent>
-                    </NotificationItem>
-                  ))
+                  <>
+                    {notifications.slice(0, 10).map((notification) => (
+                      <NotificationItem
+                        key={notification.notificacionID}
+                        read={notification.leido}
+                        onClick={() =>
+                          handleNotificationItemClick(notification)
+                        }
+                      >
+                        <NotificationContent>
+                          <NotificationIcon>
+                            {getNotificationIcon(notification.tipo)}
+                          </NotificationIcon>
+                          <NotificationText>
+                            <NotificationTitleText read={notification.leido}>
+                              {notification.titulo}
+                            </NotificationTitleText>
+                            <NotificationMessage>
+                              {notification.mensaje}
+                            </NotificationMessage>
+                            <NotificationTime>
+                              {formatTimeAgo(notification.fechaCreacion)}
+                            </NotificationTime>
+                          </NotificationText>
+                        </NotificationContent>
+                      </NotificationItem>
+                    ))}
+                    {notifications.length > 10 && (
+                      <ViewAllNotifications>
+                        Ver todas las notificaciones
+                      </ViewAllNotifications>
+                    )}
+                  </>
                 )}
               </NotificationList>
             </NotificationDropdown>

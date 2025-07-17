@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { toast } from "react-toastify";
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -154,8 +155,48 @@ const StatLabel = styled.div`
 `;
 
 const DashboardMinera = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
+  const [kpis, setKpis] = useState({
+    licitacionesActivas: 0,
+    licitacionesEnEvaluacion: 0,
+    propuestasRecibidas: 0,
+    adjudicaciones: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.minera?.mineraID) {
+      fetchKpis();
+    }
+  }, [user]);
+
+  const fetchKpis = async () => {
+    try {
+      setLoading(true);
+      const mineraId = user?.minera.mineraID;
+
+      const response = await fetch(
+        `http://localhost:5242/api/dashboard/minera/${mineraId}/kpis`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setKpis(data);
+      } else {
+        toast.error("Error al cargar estadísticas del dashboard");
+      }
+    } catch (error) {
+      toast.error("Error al conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCrearLicitacion = () => {
     navigate("/crear-licitacion");
@@ -192,19 +233,25 @@ const DashboardMinera = () => {
 
         <StatsGrid>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>
+              {loading ? "..." : kpis.licitacionesActivas}
+            </StatNumber>
             <StatLabel>Licitaciones activas</StatLabel>
           </StatCard>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>
+              {loading ? "..." : kpis.licitacionesEnEvaluacion}
+            </StatNumber>
             <StatLabel>En evaluación</StatLabel>
           </StatCard>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>
+              {loading ? "..." : kpis.propuestasRecibidas}
+            </StatNumber>
             <StatLabel>Propuestas recibidas</StatLabel>
           </StatCard>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>{loading ? "..." : kpis.adjudicaciones}</StatNumber>
             <StatLabel>Adjudicaciones</StatLabel>
           </StatCard>
         </StatsGrid>

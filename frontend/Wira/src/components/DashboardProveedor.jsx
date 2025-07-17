@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { toast } from "react-toastify";
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -162,8 +163,48 @@ const RubroBadge = styled.span`
 `;
 
 const DashboardProveedor = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
+  const [kpis, setKpis] = useState({
+    licitacionesDisponibles: 0,
+    propuestasEnviadas: 0,
+    propuestasEnEvaluacion: 0,
+    adjudicacionesGanadas: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.proveedor?.proveedorID) {
+      fetchKpis();
+    }
+  }, [user]);
+
+  const fetchKpis = async () => {
+    try {
+      setLoading(true);
+      const proveedorId = user?.proveedor?.proveedorID;
+
+      const response = await fetch(
+        `http://localhost:5242/api/dashboard/proveedor/${proveedorId}/kpis`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setKpis(data);
+      } else {
+        toast.error("Error al cargar estadísticas del dashboard");
+      }
+    } catch (error) {
+      toast.error("Error al conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVerLicitaciones = () => {
     navigate("/licitaciones-activas");
@@ -214,19 +255,25 @@ const DashboardProveedor = () => {
 
         <StatsGrid>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>
+              {loading ? "..." : kpis.licitacionesDisponibles}
+            </StatNumber>
             <StatLabel>Licitaciones disponibles</StatLabel>
           </StatCard>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>{loading ? "..." : kpis.propuestasEnviadas}</StatNumber>
             <StatLabel>Propuestas enviadas</StatLabel>
           </StatCard>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>
+              {loading ? "..." : kpis.propuestasEnEvaluacion}
+            </StatNumber>
             <StatLabel>En evaluación</StatLabel>
           </StatCard>
           <StatCard>
-            <StatNumber>0</StatNumber>
+            <StatNumber>
+              {loading ? "..." : kpis.adjudicacionesGanadas}
+            </StatNumber>
             <StatLabel>Adjudicaciones ganadas</StatLabel>
           </StatCard>
         </StatsGrid>
