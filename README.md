@@ -123,8 +123,9 @@ Por defecto: `http://localhost:5173`
 
 **Nombre:** Sebastián Fernandez Zavalía  
 **Carrera:** Ingeniería Informática  
-**Universidad:** Universidad Católica de Salta
+**Universidad:** Universidad Católica de Salta  
 **Fecha:** 2025
+
 
 ## Estado actual
 
