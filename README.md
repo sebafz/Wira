@@ -14,7 +14,7 @@ En el norte argentino, particularmente en Salta, la actividad minera ha crecido 
 
 ```
 /Wira
-├── backend/            # API RESTful en .NET Core 8
+├── backend/            # API RESTful en .NET Core 9
 │   ├── Controllers/
 │   ├── Models/
 │   ├── Repositories/
@@ -37,7 +37,7 @@ En el norte argentino, particularmente en Salta, la actividad minera ha crecido 
 
 ## Tecnologías Utilizadas
 
-### Backend (.NET Core 8)
+### Backend (.NET Core 9)
 
 - C#
 - ASP.NET Core Web API
@@ -47,7 +47,7 @@ En el norte argentino, particularmente en Salta, la actividad minera ha crecido 
 
 ### Frontend (React)
 
-- React 18 + Vite
+- React 19 + Vite
 - Styled Components
 - Axios (para conexión con API)
 - Eslint y config modular
@@ -76,16 +76,16 @@ En el norte argentino, particularmente en Salta, la actividad minera ha crecido 
 ## Requisitos para ejecutar el proyecto
 
 ### Backend
-- .NET 8 SDK
+- .NET 9 SDK
 - SQL Server o base de datos relacional compatible
 
 ```bash
-cd backend
+cd backend/Wira.Api
 dotnet restore
 dotnet run
 ```
 
-Por defecto: `https://localhost:5001/swagger`
+Por defecto: `https://localhost:5242/swagger`
 
 ---
 
@@ -93,7 +93,7 @@ Por defecto: `https://localhost:5001/swagger`
 - Node.js >= 18
 
 ```bash
-cd frontend
+cd frontend/Wira
 npm install
 npm run dev
 ```
@@ -121,19 +121,20 @@ Por defecto: `http://localhost:5173`
 
 ## Autor
 
-**Nombre:** [Tu nombre aquí]  
+**Nombre:** Sebastián Fernandez Zavalía  
 **Carrera:** Ingeniería Informática  
-**Universidad:** [Tu universidad]  
+**Universidad:** Universidad Católica de Salta  
 **Fecha:** 2025
+
 
 ## Estado actual
 
 - [x] Estructura inicial
-- [ ] Incremento 1 – Autenticación y carga de licitaciones
-- [ ] Incremento 2 – Parámetros de licitaciones y recepción de ofertas
-- [ ] Incremento 3 – Generación de ranking de propuestas
-- [ ] Incremento 4 – Notificaciones y auditoría
-- [ ] Incremento 5 – Historial de participación y calificación post-licitación
-- [ ] Validaciones y pruebas
+- [x] Incremento 1 – Autenticación y carga de licitaciones
+- [x] Incremento 2 – Parámetros de licitaciones y recepción de ofertas
+- [x] Incremento 3 – Generación de ranking de propuestas
+- [x] Incremento 4 – Notificaciones y auditoría
+- [x] Incremento 5 – Historial de participación y calificación post-licitación
+- [x] Validaciones y pruebas
 - [ ] Integraciones finales
 - [ ] CI/CD y producción
