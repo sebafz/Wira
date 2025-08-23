@@ -715,6 +715,17 @@ const CriterioValue = styled.div`
   font-weight: 500;
 `;
 
+// Styled component para archivos clickeables
+const ArchivoName = styled.span`
+  color: #333;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: #fc6b0a;
+  }
+`;
+
 const PropuestasProveedor = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -953,7 +964,7 @@ const PropuestasProveedor = () => {
         }
       }
     } catch (error) {
-      console.error("Error al cargar detalles de la propuesta:", error);
+      toast.error("Error al descargar detalles de la propuesta");
     }
   };
 
@@ -1010,7 +1021,6 @@ const PropuestasProveedor = () => {
       setDeletingPropuesta(null);
       setSelectedPropuesta(null);
     } catch (error) {
-      console.error("Error al eliminar propuesta:", error);
       toast.error(error.message || "Error al eliminar la propuesta");
     }
   };
@@ -1018,6 +1028,56 @@ const PropuestasProveedor = () => {
   const cancelDeletePropuesta = () => {
     setShowConfirmDelete(false);
     setDeletingPropuesta(null);
+  };
+
+  const handleDownloadArchivo = async (ArchivoID, nombreArchivo) => {
+    try {
+      // Validar que el ID del archivo existe
+      if (!ArchivoID) {
+        toast.error("ID de archivo no disponible - descarga no disponible");
+        return;
+      }
+
+      // Validar que el token existe
+      if (!token) {
+        toast.error("No autorizado - por favor inicie sesión nuevamente");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el archivo");
+      }
+
+      // Crear blob con el contenido del archivo
+      const blob = await response.blob();
+
+      // Crear URL temporal para el blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Crear elemento de descarga temporal
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = nombreArchivo || "archivo_descargado";
+      document.body.appendChild(link);
+
+      // Ejecutar descarga
+      link.click();
+
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Error al descargar el archivo");
+    }
   };
 
   if (loading) {
@@ -1348,11 +1408,25 @@ const PropuestasProveedor = () => {
                   <DetailSection>
                     <SectionTitle>Archivos adjuntos</SectionTitle>
                     <DetailDescription>
-                      {archivosAdjuntos.map((archivo, index) => (
-                        <div key={index} style={{ marginBottom: "8px" }}>
-                          📎 {archivo.nombreArchivo || archivo.NombreArchivo}
-                        </div>
-                      ))}
+                      {archivosAdjuntos.map((archivo, index) => {
+                        const archivoId =
+                          archivo.archivoID || archivo.ArchivoID;
+                        const nombreArchivo =
+                          archivo.nombreArchivo || archivo.NombreArchivo;
+
+                        return (
+                          <div key={index} style={{ marginBottom: "8px" }}>
+                            📎{" "}
+                            <ArchivoName
+                              onClick={() =>
+                                handleDownloadArchivo(archivoId, nombreArchivo)
+                              }
+                            >
+                              {nombreArchivo}
+                            </ArchivoName>
+                          </div>
+                        );
+                      })}
                     </DetailDescription>
                   </DetailSection>
                 ) : null;

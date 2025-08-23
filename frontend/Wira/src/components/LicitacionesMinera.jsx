@@ -1143,6 +1143,12 @@ const ArchivoIcon = styled.span`
 const ArchivoName = styled.span`
   flex: 1;
   color: #333;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: #fc6b0a;
+  }
 `;
 
 // Styled components para criterios de evaluación en propuestas
@@ -1434,6 +1440,46 @@ const LicitacionesMinera = () => {
   const [sortBy, setSortBy] = useState("fechaCreacion");
   const [sortOrder, setSortOrder] = useState("desc");
 
+  // Función para descargar archivos
+  const handleDownloadArchivo = async (ArchivoID, nombreArchivo) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el archivo");
+      }
+
+      // Crear blob con el contenido del archivo
+      const blob = await response.blob();
+
+      // Crear URL temporal para el blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Crear elemento de descarga temporal
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = nombreArchivo;
+      document.body.appendChild(link);
+
+      // Ejecutar descarga
+      link.click();
+
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar archivo:", error);
+      toast.error("Error al descargar el archivo");
+    }
+  };
+
   // Estados para datos adicionales
   const [estados] = useState([
     "Borrador",
@@ -1709,6 +1755,53 @@ const LicitacionesMinera = () => {
       setShowModal(true);
       // Cargar propuestas para esta licitación
       fetchPropuestas(licitacionId);
+      // Cargar archivos adjuntos para esta licitación
+      fetchArchivosLicitacion(licitacionId);
+    }
+  };
+
+  // Función para obtener archivos adjuntos de una licitación
+  const fetchArchivosLicitacion = async (licitacionId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const archivos = await response.json();
+        console.log("Archivos de licitación encontrados:", archivos);
+
+        // Actualizar la licitación seleccionada con los archivos
+        setSelectedLicitacion((prev) => {
+          if (prev) {
+            const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
+            return {
+              ...prev,
+              archivosAdjuntos: archivos,
+              // Para mantener compatibilidad con el código existente
+              archivoNombre:
+                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+              ArchivoNombre:
+                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+              archivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+              ArchivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+            };
+          }
+          return prev;
+        });
+      } else {
+        console.log(
+          "No se encontraron archivos para la licitación:",
+          licitacionId
+        );
+      }
+    } catch (error) {
+      console.error("Error al cargar archivos de licitación:", error);
     }
   };
 
@@ -2793,10 +2886,21 @@ const LicitacionesMinera = () => {
                 const archivoNombre =
                   selectedLicitacion.archivoNombre ||
                   selectedLicitacion.ArchivoNombre;
+                const archivoId =
+                  selectedLicitacion.archivoID || selectedLicitacion.ArchivoID;
                 return archivoNombre ? (
                   <DetailSection>
                     <SectionTitle>Archivo adjunto</SectionTitle>
-                    <DetailDescription>📎 {archivoNombre}</DetailDescription>
+                    <DetailDescription>
+                      📎{" "}
+                      <ArchivoName
+                        onClick={() =>
+                          handleDownloadArchivo(archivoId, archivoNombre)
+                        }
+                      >
+                        {archivoNombre}
+                      </ArchivoName>
+                    </DetailDescription>
                   </DetailSection>
                 ) : null;
               })()}
@@ -3458,7 +3562,16 @@ const LicitacionesMinera = () => {
                         (archivo, index) => (
                           <ArchivoItem key={index}>
                             <ArchivoIcon>📎</ArchivoIcon>
-                            <ArchivoName>{archivo.nombreArchivo}</ArchivoName>
+                            <ArchivoName
+                              onClick={() =>
+                                handleDownloadArchivo(
+                                  archivo.archivoID || archivo.ArchivoID,
+                                  archivo.nombreArchivo || archivo.NombreArchivo
+                                )
+                              }
+                            >
+                              {archivo.nombreArchivo || archivo.NombreArchivo}
+                            </ArchivoName>
                           </ArchivoItem>
                         )
                       )}

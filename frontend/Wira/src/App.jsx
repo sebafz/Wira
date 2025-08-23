@@ -22,6 +22,7 @@ import LicitacionesProveedor from "./components/LicitacionesProveedor";
 import PropuestasProveedor from "./components/PropuestasProveedor";
 import EditarPropuesta from "./components/EditarPropuesta";
 import Profile from "./components/Profile";
+import ColorPalette from "./components/ColorPalette";
 import "./App.css";
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/color-palette" element={<ColorPalette />} />
 
             {/* Rutas protegidas */}
             <Route

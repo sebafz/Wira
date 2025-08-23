@@ -835,6 +835,17 @@ const CriterioInput = styled.div`
 `;
 
 // Styled components para archivo adjunto
+const ArchivoName = styled.span`
+  flex: 1;
+  color: #333;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: #fc6b0a;
+  }
+`;
+
 const FileUploadContainer = styled.div`
   margin-top: 20px;
 `;
@@ -1036,7 +1047,7 @@ const CancelConfirmButton = styled.button`
 `;
 
 const LicitacionesProveedor = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   // Estados para datos
@@ -1412,6 +1423,49 @@ const LicitacionesProveedor = () => {
     if (licitacion) {
       setSelectedLicitacion(licitacion);
       setShowModal(true);
+      // Cargar archivos adjuntos para esta licitación
+      fetchArchivosLicitacion(licitacionId);
+    }
+  };
+
+  // Función para obtener archivos adjuntos de una licitación
+  const fetchArchivosLicitacion = async (licitacionId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const archivos = await response.json();
+
+        // Actualizar la licitación seleccionada con los archivos
+        setSelectedLicitacion((prev) => {
+          if (prev) {
+            const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
+            return {
+              ...prev,
+              archivosAdjuntos: archivos,
+              // Para mantener compatibilidad con el código existente
+              archivoNombre:
+                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+              ArchivoNombre:
+                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+              archivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+              ArchivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+            };
+          }
+          return prev;
+        });
+      } else {
+        // No se encontraron archivos para la licitación
+      }
+    } catch (error) {
+      console.error("Error al cargar archivos de licitación:", error);
     }
   };
 
@@ -1527,61 +1581,75 @@ const LicitacionesProveedor = () => {
         throw new Error(errorMessage);
       }
 
-      let propuestaData;
-      try {
-        const contentType = response.headers.get("content-type");
+      // Obtener la respuesta de la propuesta creada
+      const propuestaData = await response.json();
 
-        if (contentType && contentType.includes("application/json")) {
-          const responseText = await response.text();
-          propuestaData = JSON.parse(responseText);
-        } else {
-          // Si no es JSON, crear un objeto por defecto
-          propuestaData = { success: true };
-        }
-      } catch (parseError) {
-        // Crear un objeto por defecto si hay error en el parsing
-        propuestaData = { success: true };
-      }
+      // Intentar múltiples variaciones del campo ID
+      const propuestaId =
+        propuestaData?.PropuestaID ||
+        propuestaData?.propuestaID ||
+        propuestaData?.id ||
+        propuestaData?.ID;
 
       // Si hay archivo adjunto, subirlo
-      if (selectedFile) {
+      if (selectedFile && propuestaId) {
         try {
+          // Mostrar notificación de subida
+          toast.info("📎 Subiendo archivo adjunto...", {
+            position: "top-right",
+            autoClose: false,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: false,
+            draggable: false,
+            toastId: "uploading-propuesta",
+          });
+
           const formData = new FormData();
           formData.append("File", selectedFile);
           formData.append("EntidadTipo", "PROPUESTA");
+          formData.append("EntidadID", propuestaId.toString());
 
-          const propuestaId = propuestaData?.PropuestaID;
+          const uploadResponse = await fetch(
+            "http://localhost:5242/api/archivos/upload",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
+            }
+          );
 
-          if (!propuestaId) {
+          // Cerrar la notificación de subida
+          toast.dismiss("uploading-propuesta");
+
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
             toast.warn(
-              "Propuesta creada exitosamente, pero no se pudo subir el archivo adjunto"
+              "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
             );
           } else {
-            formData.append("EntidadID", propuestaId.toString());
-
-            const uploadResponse = await fetch(
-              "http://localhost:5242/api/archivos/upload",
-              {
-                method: "POST",
-                body: formData,
-              }
-            );
-
-            if (!uploadResponse.ok) {
-              const errorText = await uploadResponse.text();
-              toast.warn(
-                "Propuesta creada, pero hubo un error al subir el archivo adjunto"
-              );
-            }
+            const fileResult = await uploadResponse.json();
+            toast.success("✅ Propuesta y archivo enviados exitosamente!");
           }
         } catch (uploadError) {
           toast.warn(
-            "Propuesta creada, pero hubo un error al subir el archivo adjunto"
+            "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
           );
         }
+      } else if (selectedFile && !propuestaId) {
+        toast.warn(
+          "Propuesta creada exitosamente, pero no se pudo subir el archivo adjunto (ID no disponible)"
+        );
       }
 
-      toast.success("¡Propuesta enviada exitosamente!");
+      // Mostrar mensaje de éxito general
+      if (selectedFile && propuestaId) {
+        // El mensaje de éxito se muestra después de subir el archivo
+      } else {
+        toast.success("¡Propuesta enviada exitosamente!");
+      }
       setShowPropuestaModal(false);
       handleCloseModal();
 
@@ -1599,7 +1667,6 @@ const LicitacionesProveedor = () => {
       // Recargar las propuestas del usuario
       await fetchUserPropuestas();
     } catch (error) {
-      console.error("Error al postularse:", error);
       toast.error(
         error.message ||
           "Error al enviar la propuesta. Por favor, intente nuevamente."
@@ -1709,6 +1776,56 @@ const LicitacionesProveedor = () => {
     setUploadError("");
   };
 
+  const handleDownloadArchivo = async (ArchivoID, nombreArchivo) => {
+    try {
+      // Validar que el ID del archivo existe
+      if (!ArchivoID) {
+        toast.error("ID de archivo no disponible - descarga no disponible");
+        return;
+      }
+
+      // Validar que el token existe
+      if (!token) {
+        toast.error("No autorizado - por favor inicie sesión nuevamente");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el archivo");
+      }
+
+      // Crear blob con el contenido del archivo
+      const blob = await response.blob();
+
+      // Crear URL temporal para el blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Crear elemento de descarga temporal
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = nombreArchivo || "archivo_descargado";
+      document.body.appendChild(link);
+
+      // Ejecutar descarga
+      link.click();
+
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Error al descargar el archivo");
+    }
+  };
+
   const getCompanyName = () => {
     return (
       user?.Proveedor?.Nombre ||
@@ -1754,19 +1871,19 @@ const LicitacionesProveedor = () => {
 
     switch (filters.estadoPostulacion) {
       case "postuladas":
-      return totalCount === 1
-        ? "1 licitación ya postulada"
-        : `${totalCount} licitaciones ya postuladas`;
+        return totalCount === 1
+          ? "1 licitación ya postulada"
+          : `${totalCount} licitaciones ya postuladas`;
       case "no_postuladas":
-      return totalCount === 1
-        ? "1 licitación disponible para postular"
-        : `${totalCount} licitaciones disponibles para postular`;
+        return totalCount === 1
+          ? "1 licitación disponible para postular"
+          : `${totalCount} licitaciones disponibles para postular`;
       default:
-      const licSing = totalCount === 1 ? "licitación" : "licitaciones";
-      const postSing = appliedCount === 1 ? "postulada" : "postuladas";
-      const dispSing = notAppliedCount === 1 ? "disponible" : "disponibles";
-      const activaWord = totalCount === 1 ? "activa" : "activas";
-      return `${totalCount} ${licSing} ${activaWord} (${appliedCount} ${postSing}, ${notAppliedCount} ${dispSing})`;
+        const licSing = totalCount === 1 ? "licitación" : "licitaciones";
+        const postSing = appliedCount === 1 ? "postulada" : "postuladas";
+        const dispSing = notAppliedCount === 1 ? "disponible" : "disponibles";
+        const activaWord = totalCount === 1 ? "activa" : "activas";
+        return `${totalCount} ${licSing} ${activaWord} (${appliedCount} ${postSing}, ${notAppliedCount} ${dispSing})`;
     }
   };
 
@@ -2158,10 +2275,21 @@ const LicitacionesProveedor = () => {
                 const archivoNombre =
                   selectedLicitacion.archivoNombre ||
                   selectedLicitacion.ArchivoNombre;
+                const archivoId =
+                  selectedLicitacion.archivoID || selectedLicitacion.ArchivoID;
                 return archivoNombre ? (
                   <DetailSection>
                     <SectionTitle>Archivo adjunto</SectionTitle>
-                    <DetailDescription>📎 {archivoNombre}</DetailDescription>
+                    <DetailDescription>
+                      📎{" "}
+                      <ArchivoName
+                        onClick={() =>
+                          handleDownloadArchivo(archivoId, archivoNombre)
+                        }
+                      >
+                        {archivoNombre}
+                      </ArchivoName>
+                    </DetailDescription>
                   </DetailSection>
                 ) : null;
               })()}
