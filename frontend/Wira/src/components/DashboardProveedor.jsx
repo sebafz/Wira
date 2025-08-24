@@ -140,18 +140,20 @@ const StatCard = styled.div`
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   text-align: center;
+  border-left: 4px solid ${(props) => props.color || "#fc6b0a"};
 `;
 
 const StatNumber = styled.div`
   font-size: 2.5rem;
   font-weight: bold;
-  color: #fc6b0a;
+  color: ${(props) => props.color || "#fc6b0a"};
   margin-bottom: 5px;
 `;
 
 const StatLabel = styled.div`
   color: #666;
   font-size: 1rem;
+  font-weight: 500;
 `;
 
 const RubroBadge = styled.span`
@@ -214,6 +216,10 @@ const DashboardProveedor = () => {
     navigate("/propuestas-proveedor");
   };
 
+  const handleVerHistorial = () => {
+    navigate("/historial-proveedor");
+  };
+
   const getUserName = () => {
     return user?.Nombre || user?.nombre || "Usuario";
   };
@@ -254,24 +260,26 @@ const DashboardProveedor = () => {
         </CompanyInfo>
 
         <StatsGrid>
-          <StatCard>
-            <StatNumber>
+          <StatCard color="#fc6b0a">
+            <StatNumber color="#fc6b0a">
               {loading ? "..." : kpis.licitacionesDisponibles}
             </StatNumber>
             <StatLabel>Licitaciones disponibles</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatNumber>{loading ? "..." : kpis.propuestasEnviadas}</StatNumber>
+          <StatCard color="#28a745">
+            <StatNumber color="#28a745">
+              {loading ? "..." : kpis.propuestasEnviadas}
+            </StatNumber>
             <StatLabel>Propuestas enviadas</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatNumber>
+          <StatCard color="#ffc107">
+            <StatNumber color="#ffc107">
               {loading ? "..." : kpis.propuestasEnEvaluacion}
             </StatNumber>
             <StatLabel>En evaluación</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatNumber>
+          <StatCard color="#17a2b8">
+            <StatNumber color="#17a2b8">
               {loading ? "..." : kpis.adjudicacionesGanadas}
             </StatNumber>
             <StatLabel>Adjudicaciones ganadas</StatLabel>
@@ -310,11 +318,8 @@ const DashboardProveedor = () => {
               Consulte tu historial de participaciones y calificaciones
               recibidas.
             </ActionDescription>
-            <ActionButton
-              disabled
-              style={{ opacity: 0.6, cursor: "not-allowed" }}
-            >
-              Próximamente
+            <ActionButton onClick={handleVerHistorial}>
+              Ver mi historial
             </ActionButton>
           </ActionCard>
         </ActionsSection>

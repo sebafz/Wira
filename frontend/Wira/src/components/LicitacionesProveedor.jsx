@@ -1591,6 +1591,38 @@ const LicitacionesProveedor = () => {
         propuestaData?.id ||
         propuestaData?.ID;
 
+      // Crear registro en historial con ganador como null (vacío)
+      try {
+        const historialResponse = await fetch(
+          "http://localhost:5242/api/historial-proveedor-licitacion",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              ProveedorID: proveedorID,
+              LicitacionID: licitacionId,
+              Resultado: "EN_PROCESO",
+              Observaciones: "Propuesta enviada - En proceso de evaluación",
+              FechaParticipacion: new Date().toISOString(),
+            }),
+          }
+        );
+
+        if (!historialResponse.ok) {
+          console.warn(
+            "Error al crear registro de historial:",
+            historialResponse.statusText
+          );
+          // No lanzamos error para no interrumpir el flujo principal
+        }
+      } catch (historialError) {
+        console.warn("Error al crear registro de historial:", historialError);
+        // No lanzamos error para no interrumpir el flujo principal
+      }
+
       // Si hay archivo adjunto, subirlo
       if (selectedFile && propuestaId) {
         try {

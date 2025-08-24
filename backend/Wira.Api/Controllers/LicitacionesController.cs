@@ -374,8 +374,8 @@ namespace Wira.Api.Controllers
                 // Determinar el estado de destino basado en el estado actual
                 if (estadoActual == "Publicada")
                 {
-                    // Si está publicada, pasa a evaluación
-                    estadoDestino = "En Evaluación";
+                    // Si está publicada, pasa a cerrada
+                    estadoDestino = "Cerrada";
                     mensajeNotificacion = "Licitación cerrada exitosamente y pasada a evaluación";
                 }
                 else if (estadoActual == "Adjudicada")
@@ -438,10 +438,10 @@ namespace Wira.Api.Controllers
                     return NotFound(new { message = "Licitación no encontrada" });
                 }
 
-                // Verificar que la licitación esté en estado "En Evaluación"
-                if (licitacion.EstadoLicitacion.NombreEstado != "En Evaluación")
+                // Verificar que la licitación esté en estado "Cerrada"
+                if (licitacion.EstadoLicitacion.NombreEstado != "Cerrada")
                 {
-                    return BadRequest(new { message = "La licitación debe estar en estado 'En Evaluación' para poder adjudicarla" });
+                    return BadRequest(new { message = "La licitación debe estar en estado 'Cerrada' para poder adjudicarla" });
                 }
 
                 // Buscar el estado "Adjudicada"

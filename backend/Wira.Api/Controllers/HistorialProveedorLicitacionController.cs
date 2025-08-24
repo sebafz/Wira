@@ -121,7 +121,7 @@ namespace Wira.Api.Controllers
                 if (historialExistente != null)
                 {
                     // Actualizar el historial existente
-                    var esNuevoGanador = !historialExistente.Ganador && request.Ganador;
+                    var esNuevoGanador = historialExistente.Ganador != true && request.Ganador == true;
                     
                     historialExistente.Resultado = request.Resultado;
                     historialExistente.Ganador = request.Ganador;
@@ -181,7 +181,7 @@ namespace Wira.Api.Controllers
                     await _context.SaveChangesAsync();
 
                     // Enviar notificación si se está marcando como ganador
-                    if (request.Ganador)
+                    if (request.Ganador == true)
                     {
                         try
                         {
@@ -401,7 +401,7 @@ namespace Wira.Api.Controllers
         [StringLength(100)]
         public string? Resultado { get; set; }
 
-        public bool Ganador { get; set; } = false;
+        public bool? Ganador { get; set; } = null;
 
         public string? Observaciones { get; set; }
     }

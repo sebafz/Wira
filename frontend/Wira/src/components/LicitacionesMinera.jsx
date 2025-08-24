@@ -558,7 +558,6 @@ const DateCard = styled.div`
   padding: 15px;
   border-radius: 8px;
   border-left: 4px solid #ff9206;
-  text-align: center;
 `;
 
 const DateIcon = styled.div`
@@ -567,15 +566,16 @@ const DateIcon = styled.div`
 `;
 
 const DateLabel = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #666;
   margin-bottom: 5px;
+  font-weight: 500;
 `;
 
 const DateValue = styled.div`
   font-size: 1rem;
+  color: #333;
   font-weight: 600;
-  color: #ff9206;
 `;
 
 const BudgetCard = styled.div`
@@ -680,10 +680,16 @@ const PropuestaCard = styled.div`
   padding: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+
+  &:hover .seleccionar-ganadora-btn {
+    opacity: 1;
+    pointer-events: auto;
   }
 `;
 
@@ -789,6 +795,29 @@ const PropuestaInfo = styled.div`
   gap: 10px;
   font-size: 0.9rem;
   color: #666;
+`;
+
+const SeleccionarGanadoraButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 10;
+
+  &:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e8e7a 100%);
+    transform: scale(1.05);
+  }
 `;
 
 const PropuestaInfoItem = styled.div`
@@ -955,6 +984,12 @@ const ConfirmTitle = styled.h3`
   margin-bottom: 15px;
 `;
 
+const ConfirmSuccessTitle = styled.h3`
+  color: #28a745;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+`;
+
 const ConfirmText = styled.p`
   color: #666;
   font-size: 1rem;
@@ -988,6 +1023,15 @@ const ConfirmDeleteButton = styled(ConfirmButton)`
 
   &:hover {
     background: #c82333;
+  }
+`;
+
+const ConfirmSuccessButton = styled(ConfirmButton)`
+  background: #28a745;
+  color: white;
+
+  &:hover {
+    background: #218838;
   }
 `;
 
@@ -1088,7 +1132,6 @@ const PropuestaStatusCard = styled.div`
   padding: 15px;
   border-radius: 8px;
   border-left: 4px solid #28a745;
-  text-align: center;
 `;
 
 const PropuestaStatusIcon = styled.div`
@@ -1097,15 +1140,16 @@ const PropuestaStatusIcon = styled.div`
 `;
 
 const PropuestaStatusLabel = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #666;
   margin-bottom: 5px;
+  font-weight: 500;
 `;
 
 const PropuestaStatusValue = styled.div`
   font-size: 1rem;
+  color: #333;
   font-weight: 600;
-  color: #28a745;
 `;
 
 const PropuestaDescription = styled.div`
@@ -1392,42 +1436,41 @@ const LicitacionesMinera = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
-  // Estados para datos
+  // Estados consolidados
   const [licitaciones, setLicitaciones] = useState([]);
+  const [originalLicitaciones, setOriginalLicitaciones] = useState([]);
+  const [propuestas, setPropuestas] = useState([]);
+  const [rubros, setRubros] = useState([]);
+  const [propuestasCount, setPropuestasCount] = useState({});
+  const [propuestasProveedor, setPropuestasProveedor] = useState([]);
+
+  // Estados de UI
   const [loading, setLoading] = useState(true);
+  const [loadingPropuestas, setLoadingPropuestas] = useState(false);
   const [error, setError] = useState("");
 
-  // Estado para el modal de detalle
+  // Estados de modales
   const [selectedLicitacion, setSelectedLicitacion] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-
-  // Estado para el modal de confirmación de eliminación
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [deletingLicitacion, setDeletingLicitacion] = useState(null);
-
-  // Estado para el modal de confirmación de cierre
-  const [showConfirmClose, setShowConfirmClose] = useState(false);
-  const [closingLicitacion, setClosingLicitacion] = useState(null);
-
-  // Estado para el modal de confirmación de adjudicación
-  const [showConfirmAdjudicar, setShowConfirmAdjudicar] = useState(false);
-  const [adjudicandoLicitacion, setAdjudicandoLicitacion] = useState(null);
-
-  // Estado para el modal de selección de ganador
-  const [showGanadorModal, setShowGanadorModal] = useState(false);
-  const [seleccionandoGanador, setSeleccionandoGanador] = useState(null);
+  const [selectedPropuesta, setSelectedPropuesta] = useState(null);
   const [selectedGanador, setSelectedGanador] = useState(null);
 
-  // Estados para propuestas
-  const [propuestas, setPropuestas] = useState([]);
-  const [loadingPropuestas, setLoadingPropuestas] = useState(false);
-  const [selectedPropuesta, setSelectedPropuesta] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const [showPropuestaModal, setShowPropuestaModal] = useState(false);
+  const [showGanadorModal, setShowGanadorModal] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [showConfirmAdjudicar, setShowConfirmAdjudicar] = useState(false);
+  const [showConfirmSeleccionarGanadora, setShowConfirmSeleccionarGanadora] =
+    useState(false);
 
-  // Estado para contar propuestas por licitación
-  const [propuestasCount, setPropuestasCount] = useState({});
+  // Estados de acciones pendientes
+  const [deletingLicitacion, setDeletingLicitacion] = useState(null);
+  const [closingLicitacion, setClosingLicitacion] = useState(null);
+  const [adjudicandoLicitacion, setAdjudicandoLicitacion] = useState(null);
+  const [seleccionandoGanador, setSeleccionandoGanador] = useState(null);
+  const [propuestaGanadora, setPropuestaGanadora] = useState(null);
 
-  // Estados para filtros
+  // Estados para filtros y ordenamiento
   const [filters, setFilters] = useState({
     titulo: "",
     estado: "",
@@ -1435,295 +1478,37 @@ const LicitacionesMinera = () => {
     fechaHasta: "",
     rubro: "",
   });
-
-  // Estados para ordenamiento
   const [sortBy, setSortBy] = useState("fechaCreacion");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // Función para descargar archivos
-  const handleDownloadArchivo = async (ArchivoID, nombreArchivo) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      // Crear blob con el contenido del archivo
-      const blob = await response.blob();
-
-      // Crear URL temporal para el blob
-      const url = window.URL.createObjectURL(blob);
-
-      // Crear elemento de descarga temporal
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = nombreArchivo;
-      document.body.appendChild(link);
-
-      // Ejecutar descarga
-      link.click();
-
-      // Limpiar
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error al descargar archivo:", error);
-      toast.error("Error al descargar el archivo");
-    }
-  };
-
-  // Estados para datos adicionales
-  const [estados] = useState([
+  // Constantes
+  const estados = [
     "Borrador",
     "Publicada",
     "En Evaluación",
     "Adjudicada",
     "Cancelada",
     "Cerrada",
-  ]);
-  const [rubros, setRubros] = useState([]);
+  ];
 
-  // Cargar datos iniciales
-  useEffect(() => {
-    fetchLicitaciones();
-    fetchRubros();
-  }, [user]);
+  // Utilidades consolidadas
+  const getUserMineraID = () =>
+    user?.MineraID ||
+    user?.Minera?.MineraID ||
+    user?.minera?.mineraID ||
+    user?.minera?.MineraID;
 
-  // Aplicar filtros y ordenamiento cuando cambien
-  useEffect(() => {
-    if (user) {
-      fetchLicitaciones();
-    }
-  }, [filters, sortBy, sortOrder, user]);
-
-  // Efecto para cerrar modal con Escape
-  useEffect(() => {
-    const handleEscapeKey = (e) => {
-      if (e.key === "Escape" && showModal) {
-        handleCloseModal();
-      }
-    };
-
-    if (showModal) {
-      document.addEventListener("keydown", handleEscapeKey);
-      document.body.style.overflow = "hidden"; // Prevenir scroll del fondo
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscapeKey);
-      document.body.style.overflow = "unset";
-    };
-  }, [showModal]);
-
-  const fetchLicitaciones = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      // Obtener MineraID manejando tanto PascalCase como camelCase
-      const mineraID =
-        user?.MineraID ||
-        user?.Minera?.MineraID ||
-        user?.minera?.mineraID ||
-        user?.minera?.MineraID;
-
-      const response = await fetch("http://localhost:5242/api/licitaciones");
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      // Filtrar por minera del usuario autenticado
-      let licitacionesMinera = [];
-
-      if (mineraID) {
-        licitacionesMinera = data.filter((licitacion) => {
-          // La API devuelve con camelCase, no PascalCase
-          const licitacionMineraID = licitacion.mineraID || licitacion.MineraID;
-          const userMineraID = mineraID;
-
-          // Comparar tanto como números como strings
-          return (
-            licitacionMineraID === userMineraID ||
-            parseInt(licitacionMineraID) === parseInt(userMineraID) ||
-            String(licitacionMineraID) === String(userMineraID)
-          );
-        });
-
-        // Aplicar filtros adicionales
-        if (filters.titulo) {
-          licitacionesMinera = licitacionesMinera.filter((l) =>
-            (l.titulo || l.Titulo || "")
-              .toLowerCase()
-              .includes(filters.titulo.toLowerCase())
-          );
-        }
-
-        if (filters.estado) {
-          licitacionesMinera = licitacionesMinera.filter(
-            (l) => (l.estadoNombre || l.EstadoNombre) === filters.estado
-          );
-        }
-
-        if (filters.fechaDesde) {
-          licitacionesMinera = licitacionesMinera.filter(
-            (l) =>
-              new Date(l.fechaInicio || l.FechaInicio) >=
-              new Date(filters.fechaDesde)
-          );
-        }
-
-        if (filters.fechaHasta) {
-          licitacionesMinera = licitacionesMinera.filter(
-            (l) =>
-              new Date(l.fechaCierre || l.FechaCierre) <=
-              new Date(filters.fechaHasta)
-          );
-        }
-
-        if (filters.rubro) {
-          licitacionesMinera = licitacionesMinera.filter(
-            (l) => (l.rubroNombre || l.RubroNombre) === filters.rubro
-          );
-        }
-
-        // Aplicar ordenamiento
-        licitacionesMinera.sort((a, b) => {
-          let valueA, valueB;
-
-          switch (sortBy) {
-            case "titulo":
-              valueA = (a.titulo || a.Titulo || "").toLowerCase();
-              valueB = (b.titulo || b.Titulo || "").toLowerCase();
-              break;
-            case "fechaInicio":
-              valueA = new Date(a.fechaInicio || a.FechaInicio);
-              valueB = new Date(b.fechaInicio || b.FechaInicio);
-              break;
-            case "fechaCierre":
-              valueA = new Date(a.fechaCierre || a.FechaCierre);
-              valueB = new Date(b.fechaCierre || b.FechaCierre);
-              break;
-            case "estado":
-              valueA = a.estadoNombre || a.EstadoNombre || "";
-              valueB = b.estadoNombre || b.EstadoNombre || "";
-              break;
-            case "rubro":
-              valueA = a.rubroNombre || a.RubroNombre || "";
-              valueB = b.rubroNombre || b.RubroNombre || "";
-              break;
-            case "fechaCreacion":
-            default:
-              valueA = new Date(a.fechaCreacion || a.FechaCreacion);
-              valueB = new Date(b.fechaCreacion || b.FechaCreacion);
-              break;
-          }
-
-          if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
-          if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
-          return 0;
-        });
-      }
-
-      setLicitaciones(licitacionesMinera);
-
-      // Obtener conteo de propuestas para cada licitación
-      await fetchPropuestasCount(licitacionesMinera);
-    } catch (error) {
-      setError(
-        "Error al cargar las licitaciones. Por favor, intente nuevamente."
-      );
-      toast.error("Error al cargar las licitaciones");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPropuestasCount = async (licitacionesList) => {
-    try {
-      const countPromises = licitacionesList.map(async (licitacion) => {
-        const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
-        try {
-          const response = await fetch(
-            `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (response.ok) {
-            const propuestas = await response.json();
-            return { licitacionId, count: propuestas.length };
-          }
-          return { licitacionId, count: 0 };
-        } catch (error) {
-          return { licitacionId, count: 0 };
-        }
-      });
-
-      const countResults = await Promise.all(countPromises);
-      const countMap = {};
-      countResults.forEach(({ licitacionId, count }) => {
-        countMap[licitacionId] = count;
-      });
-      setPropuestasCount(countMap);
-    } catch (error) {
-      // Error silencioso para conteo de propuestas
-    }
-  };
-
-  const fetchRubros = async () => {
-    try {
-      const response = await fetch("http://localhost:5242/api/rubros");
-      if (response.ok) {
-        const data = await response.json();
-        setRubros(data);
-      }
-    } catch (error) {
-      // Error silencioso para rubros
-    }
-  };
-
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      titulo: "",
-      estado: "",
-      fechaDesde: "",
-      fechaHasta: "",
-      rubro: "",
-    });
-  };
-
-  const handleSortChange = (value) => {
-    const [field, order] = value.split("-");
-    setSortBy(field);
-    setSortOrder(order);
-  };
+  const getCompanyName = () =>
+    user?.Minera?.Nombre ||
+    user?.minera?.nombre ||
+    user?.minera?.Nombre ||
+    "Empresa Minera";
 
   const formatDate = (dateString) => {
     if (!dateString) return "No especificada";
-
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Fecha inválida";
-
       return date.toLocaleDateString("es-AR", {
         year: "numeric",
         month: "short",
@@ -1746,44 +1531,250 @@ const LicitacionesMinera = () => {
     }
   };
 
-  const handleLicitacionClick = (licitacionId) => {
-    const licitacion = licitaciones.find(
-      (l) => (l.licitacionID || l.LicitacionID) === licitacionId
-    );
-    if (licitacion) {
-      setSelectedLicitacion(licitacion);
-      setShowModal(true);
-      // Cargar propuestas para esta licitación
-      fetchPropuestas(licitacionId);
-      // Cargar archivos adjuntos para esta licitación
-      fetchArchivosLicitacion(licitacionId);
+  // Funciones de API consolidadas
+  const apiRequest = async (url, options = {}) => {
+    const defaultHeaders = { "Content-Type": "application/json" };
+    if (token) defaultHeaders.Authorization = `Bearer ${token}`;
+
+    return fetch(url, {
+      headers: { ...defaultHeaders, ...options.headers },
+      ...options,
+    });
+  };
+
+  const handleDownloadArchivo = async (archivoID, nombreArchivo) => {
+    try {
+      const response = await apiRequest(
+        `http://localhost:5242/api/archivos/${archivoID}/download`
+      );
+      if (!response.ok) throw new Error("Error al descargar el archivo");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = nombreArchivo;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar archivo:", error);
+      toast.error("Error al descargar el archivo");
     }
   };
 
-  // Función para obtener archivos adjuntos de una licitación
+  const fetchRubros = async () => {
+    try {
+      const response = await apiRequest("http://localhost:5242/api/rubros");
+      if (response.ok) {
+        const data = await response.json();
+        setRubros(data);
+      }
+    } catch (error) {
+      console.error("Error al cargar rubros:", error);
+    }
+  };
+
+  const fetchPropuestasProveedor = async () => {
+    try {
+      const proveedorId = user?.proveedor?.proveedorID;
+      if (!proveedorId) return;
+
+      const response = await apiRequest(
+        `http://localhost:5242/api/propuestas/proveedor/${proveedorId}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPropuestasProveedor(data);
+      }
+    } catch (error) {
+      console.error("Error al cargar propuestas del proveedor:", error);
+    }
+  };
+
+  const getLicitacionesStats = () => {
+    const totalActivas = filteredLicitaciones.length;
+
+    // Obtener IDs de licitaciones a las que ya se postuló
+    const licitacionesPostuladas = propuestasProveedor.map(
+      (propuesta) => propuesta.licitacionID || propuesta.LicitacionID
+    );
+
+    // Contar postuladas
+    const postuladas = filteredLicitaciones.filter((licitacion) => {
+      const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
+      return licitacionesPostuladas.includes(licitacionId);
+    }).length;
+
+    // Contar disponibles (activas menos postuladas)
+    const disponibles = totalActivas - postuladas;
+
+    return {
+      total: totalActivas,
+      postuladas,
+      disponibles,
+    };
+  };
+
+  const fetchPropuestasCount = async (licitacionesList) => {
+    try {
+      const countPromises = licitacionesList.map(async (licitacion) => {
+        const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
+        try {
+          const response = await apiRequest(
+            `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+          );
+          if (response.ok) {
+            const propuestas = await response.json();
+            return { licitacionId, count: propuestas.length };
+          }
+          return { licitacionId, count: 0 };
+        } catch (error) {
+          return { licitacionId, count: 0 };
+        }
+      });
+
+      const countResults = await Promise.all(countPromises);
+      const countMap = {};
+      countResults.forEach(({ licitacionId, count }) => {
+        countMap[licitacionId] = count;
+      });
+      setPropuestasCount(countMap);
+    } catch (error) {
+      console.error("Error al contar propuestas:", error);
+    }
+  };
+
+  const applyFiltersAndSorting = (data) => {
+    let filtered = [...data];
+
+    // Aplicar filtros
+    if (filters.titulo) {
+      filtered = filtered.filter((l) =>
+        (l.titulo || l.Titulo || "")
+          .toLowerCase()
+          .includes(filters.titulo.toLowerCase())
+      );
+    }
+    if (filters.estado) {
+      filtered = filtered.filter(
+        (l) => (l.estadoNombre || l.EstadoNombre) === filters.estado
+      );
+    }
+    if (filters.fechaDesde) {
+      filtered = filtered.filter(
+        (l) =>
+          new Date(l.fechaInicio || l.FechaInicio) >=
+          new Date(filters.fechaDesde)
+      );
+    }
+    if (filters.fechaHasta) {
+      filtered = filtered.filter(
+        (l) =>
+          new Date(l.fechaCierre || l.FechaCierre) <=
+          new Date(filters.fechaHasta)
+      );
+    }
+    if (filters.rubro) {
+      filtered = filtered.filter(
+        (l) => (l.rubroNombre || l.RubroNombre) === filters.rubro
+      );
+    }
+
+    // Aplicar ordenamiento
+    filtered.sort((a, b) => {
+      let valueA, valueB;
+      switch (sortBy) {
+        case "titulo":
+          valueA = (a.titulo || a.Titulo || "").toLowerCase();
+          valueB = (b.titulo || b.Titulo || "").toLowerCase();
+          break;
+        case "fechaInicio":
+          valueA = new Date(a.fechaInicio || a.FechaInicio);
+          valueB = new Date(b.fechaInicio || b.FechaInicio);
+          break;
+        case "fechaCierre":
+          valueA = new Date(a.fechaCierre || a.FechaCierre);
+          valueB = new Date(b.fechaCierre || b.FechaCierre);
+          break;
+        case "estado":
+          valueA = a.estadoNombre || a.EstadoNombre || "";
+          valueB = b.estadoNombre || b.EstadoNombre || "";
+          break;
+        case "rubro":
+          valueA = a.rubroNombre || a.RubroNombre || "";
+          valueB = b.rubroNombre || b.RubroNombre || "";
+          break;
+        default:
+          valueA = new Date(a.fechaCreacion || a.FechaCreacion);
+          valueB = new Date(b.fechaCreacion || b.FechaCreacion);
+      }
+      if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+      if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  };
+
+  const fetchLicitaciones = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const mineraID = getUserMineraID();
+      const response = await apiRequest(
+        "http://localhost:5242/api/licitaciones"
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      let licitacionesMinera = [];
+
+      if (mineraID) {
+        licitacionesMinera = data.filter((licitacion) => {
+          const licitacionMineraID = licitacion.mineraID || licitacion.MineraID;
+          return (
+            licitacionMineraID === mineraID ||
+            parseInt(licitacionMineraID) === parseInt(mineraID) ||
+            String(licitacionMineraID) === String(mineraID)
+          );
+        });
+      }
+
+      // Guardar datos originales sin filtros
+      setOriginalLicitaciones(licitacionesMinera);
+      setLicitaciones(licitacionesMinera);
+      await fetchPropuestasCount(licitacionesMinera);
+    } catch (error) {
+      setError(
+        "Error al cargar las licitaciones. Por favor, intente nuevamente."
+      );
+      toast.error("Error al cargar las licitaciones");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchArchivosLicitacion = async (licitacionId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await apiRequest(
+        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`
       );
 
       if (response.ok) {
         const archivos = await response.json();
-        console.log("Archivos de licitación encontrados:", archivos);
-
-        // Actualizar la licitación seleccionada con los archivos
         setSelectedLicitacion((prev) => {
           if (prev) {
             const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
             return {
               ...prev,
               archivosAdjuntos: archivos,
-              // Para mantener compatibilidad con el código existente
               archivoNombre:
                 archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
               ArchivoNombre:
@@ -1794,476 +1785,9 @@ const LicitacionesMinera = () => {
           }
           return prev;
         });
-      } else {
-        console.log(
-          "No se encontraron archivos para la licitación:",
-          licitacionId
-        );
       }
     } catch (error) {
       console.error("Error al cargar archivos de licitación:", error);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedLicitacion(null);
-    setPropuestas([]);
-  };
-
-  const handleModalOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      handleCloseModal();
-    }
-  };
-
-  const handleCrearLicitacion = () => {
-    navigate("/crear-licitacion");
-  };
-
-  const handleEditarLicitacion = (licitacionId) => {
-    navigate(`/editar-licitacion/${licitacionId}`);
-  };
-
-  const handleDeleteLicitacion = (licitacion) => {
-    setDeletingLicitacion(licitacion);
-    setShowConfirmDelete(true);
-  };
-
-  const handleCloseLicitacion = (licitacion) => {
-    setClosingLicitacion(licitacion);
-    setShowConfirmClose(true);
-  };
-
-  const handleAdjudicarLicitacion = (licitacion) => {
-    setAdjudicandoLicitacion(licitacion);
-    setShowConfirmAdjudicar(true);
-  };
-
-  const handleSeleccionarGanador = async (licitacion) => {
-    setSeleccionandoGanador(licitacion);
-
-    // Cargar las propuestas para mostrar la selección
-    const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
-
-    try {
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
-      );
-
-      if (response.ok) {
-        const propuestasData = await response.json();
-
-        // Rankear las propuestas si hay criterios
-        const criteriosResponse = await fetch(
-          `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-        );
-
-        if (criteriosResponse.ok) {
-          const criterios = await criteriosResponse.json();
-
-          const propuestasRankeadas = await rankearPropuestas(
-            propuestasData,
-            criterios
-          );
-
-          // Seleccionar el primero del ranking por defecto
-          if (propuestasRankeadas.length > 0) {
-            setSelectedGanador(propuestasRankeadas[0]);
-          }
-
-          setPropuestas(propuestasRankeadas);
-        } else {
-          // Ordenar por presupuesto (menor a mayor) y asignar scoreTotal como presupuesto
-          const propuestasOrdenadas = propuestasData
-            .sort((a, b) => {
-              const presupuestoA =
-                a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
-              const presupuestoB =
-                b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
-              return presupuestoA - presupuestoB;
-            })
-            .map((propuesta) => ({
-              ...propuesta,
-              scoreTotal: 0, // Sin criterios, no hay score real
-              scoreCalculado: 0, // Sin criterios, no hay score real
-            }));
-
-          setPropuestas(propuestasOrdenadas);
-          if (propuestasOrdenadas.length > 0) {
-            setSelectedGanador(propuestasOrdenadas[0]);
-          }
-        }
-      } else {
-        const errorText = await response.text();
-        throw new Error(
-          `Error al cargar propuestas: ${response.status} - ${errorText}`
-        );
-      }
-    } catch (error) {
-      toast.error(`Error al cargar las propuestas: ${error.message}`);
-      return;
-    }
-
-    setShowGanadorModal(true);
-  };
-
-  const confirmAdjudicarLicitacion = async () => {
-    if (!adjudicandoLicitacion) return;
-
-    try {
-      const licitacionId =
-        adjudicandoLicitacion.licitacionID ||
-        adjudicandoLicitacion.LicitacionID;
-
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/adjudicar`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      toast.success("Licitación marcada como adjudicada exitosamente");
-
-      // Cerrar modales
-      setShowConfirmAdjudicar(false);
-      setShowModal(false);
-      setAdjudicandoLicitacion(null);
-      setSelectedLicitacion(null);
-
-      // Recargar las licitaciones
-      await fetchLicitaciones();
-    } catch (error) {
-      toast.error(
-        "Error al adjudicar la licitación. Por favor, intente nuevamente."
-      );
-    }
-  };
-
-  const cancelAdjudicarLicitacion = () => {
-    setShowConfirmAdjudicar(false);
-    setAdjudicandoLicitacion(null);
-  };
-
-  const confirmSeleccionarGanador = async () => {
-    if (!seleccionandoGanador || !selectedGanador) {
-      toast.error("Error: No hay licitación o ganador seleccionado");
-      return;
-    }
-
-    try {
-      const licitacionId =
-        seleccionandoGanador.licitacionID || seleccionandoGanador.LicitacionID;
-      const proveedorId =
-        selectedGanador.proveedorID || selectedGanador.ProveedorID;
-
-      // Crear registro en el historial
-      const historialData = {
-        ProveedorID: proveedorId,
-        LicitacionID: licitacionId,
-        Resultado: "GANADOR",
-        Ganador: true,
-        Observaciones: "Seleccionado como ganador de la licitación",
-      };
-
-      const historialResponse = await fetch(
-        "http://localhost:5242/api/historial-proveedor-licitacion",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(historialData),
-        }
-      );
-
-      if (!historialResponse.ok) {
-        const errorText = await historialResponse.text();
-        throw new Error(
-          `Error al registrar el historial: ${historialResponse.status} - ${errorText}`
-        );
-      }
-
-      let historialResult;
-      try {
-        historialResult = await historialResponse.json();
-      } catch (jsonError) {
-        historialResult = { success: true };
-      }
-
-      // Cambiar el estado de la licitación a "Cerrada"
-      const licitacionResponse = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!licitacionResponse.ok) {
-        const errorText = await licitacionResponse.text();
-        throw new Error(
-          `Error al actualizar el estado de la licitación: ${licitacionResponse.status} - ${errorText}`
-        );
-      }
-
-      let estadoResult;
-      try {
-        estadoResult = await licitacionResponse.json();
-      } catch (jsonError) {
-        estadoResult = { success: true };
-      }
-
-      toast.success("Ganador seleccionado y licitación cerrada exitosamente");
-
-      // Cerrar modales
-      setShowGanadorModal(false);
-      setShowModal(false);
-      setSeleccionandoGanador(null);
-      setSelectedGanador(null);
-      setSelectedLicitacion(null);
-
-      // Recargar las licitaciones
-      await fetchLicitaciones();
-    } catch (error) {
-      toast.error(`Error al seleccionar el ganador: ${error.message}`);
-    }
-  };
-
-  const cancelSeleccionarGanador = () => {
-    setShowGanadorModal(false);
-    setSeleccionandoGanador(null);
-    setSelectedGanador(null);
-    setPropuestas([]);
-  };
-
-  const confirmCloseLicitacion = async () => {
-    if (!closingLicitacion) return;
-
-    try {
-      const licitacionId =
-        closingLicitacion.licitacionID || closingLicitacion.LicitacionID;
-
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      toast.success("Licitación cerrada y pasada a evaluación exitosamente");
-
-      // Cerrar modales
-      setShowConfirmClose(false);
-      setShowModal(false);
-      setClosingLicitacion(null);
-      setSelectedLicitacion(null);
-
-      // Recargar las licitaciones
-      await fetchLicitaciones();
-    } catch (error) {
-      console.error("Error al cerrar licitación:", error);
-      toast.error(
-        "Error al cerrar la licitación. Por favor, intente nuevamente."
-      );
-    }
-  };
-
-  const cancelCloseLicitacion = () => {
-    setShowConfirmClose(false);
-    setClosingLicitacion(null);
-  };
-
-  const confirmDeleteLicitacion = async () => {
-    if (!deletingLicitacion) return;
-
-    try {
-      const licitacionId =
-        deletingLicitacion.licitacionID || deletingLicitacion.LicitacionID;
-
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      toast.success("Licitación eliminada exitosamente");
-
-      // Cerrar modales
-      setShowConfirmDelete(false);
-      setShowModal(false);
-      setDeletingLicitacion(null);
-      setSelectedLicitacion(null);
-
-      // Recargar las licitaciones
-      await fetchLicitaciones();
-    } catch (error) {
-      console.error("Error al eliminar licitación:", error);
-      toast.error(
-        "Error al eliminar la licitación. Por favor, intente nuevamente."
-      );
-    }
-  };
-
-  const cancelDeleteLicitacion = () => {
-    setShowConfirmDelete(false);
-    setDeletingLicitacion(null);
-  };
-
-  const getCompanyName = () => {
-    return (
-      user?.Minera?.Nombre ||
-      user?.minera?.nombre ||
-      user?.minera?.Nombre ||
-      "Empresa Minera"
-    );
-  };
-
-  const fetchPropuestas = async (licitacionId) => {
-    try {
-      setLoadingPropuestas(true);
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Obtener el estado de la licitación para decidir si rankear
-        const licitacionActual = licitaciones.find(
-          (l) => (l.licitacionID || l.LicitacionID) === licitacionId
-        );
-
-        const estadoLicitacion =
-          licitacionActual?.estadoNombre || licitacionActual?.EstadoNombre;
-
-        // Si la licitación está cerrada, obtener solo la propuesta ganadora
-        if (estadoLicitacion === "Cerrada") {
-          const propuestaGanadora = await fetchPropuestaGanadora(licitacionId);
-          setPropuestas(propuestaGanadora);
-          return;
-        }
-
-        // Estados que requieren ranking (excluyendo "Cerrada" ya que se maneja arriba)
-        const estadosConRanking = ["En Evaluación", "Adjudicada"];
-
-        if (estadosConRanking.includes(estadoLicitacion)) {
-          // Cargar criterios de la licitación para el ranking
-          const criteriosResponse = await fetch(
-            `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-          );
-
-          if (criteriosResponse.ok) {
-            const criterios = await criteriosResponse.json();
-            const propuestasRankeadas = await rankearPropuestas(
-              data,
-              criterios
-            );
-            setPropuestas(propuestasRankeadas);
-          } else {
-            // Si no hay criterios, ordenar por presupuesto y asignar scores
-            const propuestasOrdenadas = data
-              .sort((a, b) => {
-                const presupuestoA =
-                  a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
-                const presupuestoB =
-                  b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
-                return presupuestoA - presupuestoB;
-              })
-              .map((propuesta) => ({
-                ...propuesta,
-                scoreCalculado: 0,
-                scoreTotal: 0,
-              }));
-            setPropuestas(propuestasOrdenadas);
-          }
-        } else {
-          // Para otros estados, mantener orden de creación
-          setPropuestas(data);
-        }
-      } else {
-        console.error("Error al cargar propuestas:", response.statusText);
-        setPropuestas([]);
-      }
-    } catch (error) {
-      console.error("Error al cargar propuestas:", error);
-      setPropuestas([]);
-    } finally {
-      setLoadingPropuestas(false);
-    }
-  };
-
-  const rankearPropuestas = async (propuestas, criterios) => {
-    try {
-      // Cargar detalles completos de cada propuesta con criterios
-      const propuestasDetalladas = await Promise.all(
-        propuestas.map(async (propuesta) => {
-          try {
-            const response = await fetch(
-              `http://localhost:5242/api/propuestas/${propuesta.propuestaID}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            if (response.ok) {
-              const detalles = await response.json();
-              return detalles;
-            }
-            return propuesta;
-          } catch (error) {
-            console.error(
-              `Error al cargar detalles de propuesta ${propuesta.propuestaID}:`,
-              error
-            );
-            return propuesta;
-          }
-        })
-      );
-
-      // Calcular score para cada propuesta
-      const propuestasConScore = propuestasDetalladas.map((propuesta) => {
-        const score = calcularScorePropuesta(propuesta, criterios);
-        return {
-          ...propuesta,
-          scoreCalculado: score,
-          scoreTotal: score, // Para compatibilidad con el modal
-        };
-      });
-
-      // Ordenar por score descendente (mayor score primero)
-      return propuestasConScore.sort(
-        (a, b) => b.scoreCalculado - a.scoreCalculado
-      );
-    } catch (error) {
-      console.error("Error al rankear propuestas:", error);
-      return propuestas;
     }
   };
 
@@ -2278,18 +1802,6 @@ const LicitacionesMinera = () => {
 
     let scoreTotal = 0;
     let pesoTotal = 0;
-    let criteriosEvaluados = 0;
-
-    // Primero, obtener todos los valores para normalización
-    const valoresPorCriterio = {};
-
-    criterios.forEach((criterio) => {
-      const criterioID = criterio.criterioID || criterio.CriterioID;
-      valoresPorCriterio[criterioID] = [];
-    });
-
-    // Recopilar todos los valores de todas las propuestas para cada criterio
-    // (esto se haría idealmente en el backend, pero por ahora usaremos una aproximación)
 
     criterios.forEach((criterio) => {
       const criterioID = criterio.criterioID || criterio.CriterioID;
@@ -2307,186 +1819,61 @@ const LicitacionesMinera = () => {
 
           let valorNormalizado;
           if (modoEvaluacion === "MENOR_MEJOR") {
-            // Para criterios donde menor es mejor (ej: precio, tiempo)
-            // Usar una función inversa suave
             valorNormalizado = 100 / (1 + valorNumerico);
           } else {
-            // Para criterios donde mayor es mejor (ej: calidad, experiencia)
-            // Usar el valor directamente, escalado
             valorNormalizado = valorNumerico;
           }
 
           scoreTotal += valorNormalizado * peso;
           pesoTotal += peso;
-          criteriosEvaluados++;
         }
       }
     });
 
-    // Retornar score promedio ponderado
-    if (pesoTotal > 0) {
-      const scoreFinal = scoreTotal / pesoTotal;
-
-      // Debug logging (remover en producción)
-      console.log(
-        `Score calculado para propuesta ${
-          propuesta.propuestaID
-        }: ${scoreFinal.toFixed(2)} (${criteriosEvaluados} criterios evaluados)`
-      );
-
-      return scoreFinal;
-    }
-
-    return 0;
+    return pesoTotal > 0 ? scoreTotal / pesoTotal : 0;
   };
 
-  const handlePropuestaClick = async (propuesta) => {
+  const rankearPropuestas = async (propuestas, criterios) => {
     try {
-      // Primero mostrar la propuesta básica
-      setSelectedPropuesta(propuesta);
-      setShowPropuestaModal(true);
-
-      // Luego cargar los detalles completos incluyendo criterios
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/${propuesta.propuestaID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const propuestasDetalladas = await Promise.all(
+        propuestas.map(async (propuesta) => {
+          try {
+            const response = await apiRequest(
+              `http://localhost:5242/api/propuestas/${propuesta.propuestaID}`
+            );
+            return response.ok ? await response.json() : propuesta;
+          } catch (error) {
+            console.error(
+              `Error al cargar detalles de propuesta ${propuesta.propuestaID}:`,
+              error
+            );
+            return propuesta;
+          }
+        })
       );
 
-      if (response.ok) {
-        const detailedData = await response.json();
-        setSelectedPropuesta(detailedData);
-      }
-    } catch (error) {
-      console.error("Error al cargar detalles de la propuesta:", error);
-    }
-  };
-
-  const handleClosePropuestaModal = () => {
-    setShowPropuestaModal(false);
-    setSelectedPropuesta(null);
-  };
-
-  const handleModalOverlayClickPropuesta = (e) => {
-    if (e.target === e.currentTarget) {
-      handleClosePropuestaModal();
-    }
-  };
-
-  // Función simplificada para depurar
-  const confirmSeleccionarGanadorSimple = async () => {
-    console.log("=== INICIANDO SELECCIÓN DE GANADOR SIMPLE ===");
-
-    if (!seleccionandoGanador || !selectedGanador) {
-      console.error("Error: No hay licitación o ganador seleccionado");
-      toast.error("Error: No hay licitación o ganador seleccionado");
-      return;
-    }
-
-    const licitacionId =
-      seleccionandoGanador.licitacionID || seleccionandoGanador.LicitacionID;
-    const proveedorId =
-      selectedGanador.proveedorID || selectedGanador.ProveedorID;
-
-    console.log("IDs a utilizar:", { licitacionId, proveedorId });
-
-    try {
-      // Solo cambiar el estado de la licitación
-      console.log("=== PASO 1: Cambiar estado de licitación ===");
-      const licitacionResponse = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("Respuesta cambio estado:", {
-        status: licitacionResponse.status,
-        ok: licitacionResponse.ok,
-        statusText: licitacionResponse.statusText,
+      const propuestasConScore = propuestasDetalladas.map((propuesta) => {
+        const score = calcularScorePropuesta(propuesta, criterios);
+        return { ...propuesta, scoreCalculado: score, scoreTotal: score };
       });
 
-      if (!licitacionResponse.ok) {
-        const errorText = await licitacionResponse.text();
-        console.error("Error en cambio de estado:", errorText);
-        throw new Error(
-          `Error al cambiar estado: ${licitacionResponse.status} - ${errorText}`
-        );
-      }
-
-      console.log("=== PASO 2: Crear historial ===");
-      // Crear registro en el historial
-      const historialData = {
-        ProveedorID: proveedorId,
-        LicitacionID: licitacionId,
-        Resultado: "GANADOR",
-        Ganador: true,
-        Observaciones: "Seleccionado como ganador de la licitación",
-      };
-
-      console.log("Datos historial:", historialData);
-
-      const historialResponse = await fetch(
-        "http://localhost:5242/api/historial-proveedor-licitacion",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(historialData),
-        }
+      return propuestasConScore.sort(
+        (a, b) => b.scoreCalculado - a.scoreCalculado
       );
-
-      console.log("Respuesta historial:", {
-        status: historialResponse.status,
-        ok: historialResponse.ok,
-        statusText: historialResponse.statusText,
-      });
-
-      if (!historialResponse.ok) {
-        const errorText = await historialResponse.text();
-        console.error("Error en historial:", errorText);
-        throw new Error(
-          `Error al crear historial: ${historialResponse.status} - ${errorText}`
-        );
-      }
-
-      console.log("=== ÉXITO: Ambas operaciones completadas ===");
-      toast.success("Ganador seleccionado exitosamente");
-
-      // Cerrar modales
-      setShowGanadorModal(false);
-      setShowModal(false);
-      setSeleccionandoGanador(null);
-      setSelectedGanador(null);
-      setSelectedLicitacion(null);
-
-      // Recargar las licitaciones
-      await fetchLicitaciones();
     } catch (error) {
-      console.error("=== ERROR EN SELECCIÓN DE GANADOR ===");
-      console.error("Error:", error);
-      console.error("Stack:", error.stack);
-      toast.error(`Error: ${error.message}`);
+      console.error("Error al rankear propuestas:", error);
+      return propuestas;
     }
   };
 
-  // Función para obtener la propuesta ganadora desde el historial
   const fetchPropuestaGanadora = async (licitacionId) => {
     try {
-      const response = await fetch(
+      const response = await apiRequest(
         `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
       );
 
       if (response.ok) {
         const propuestaGanadora = await response.json();
-        // Retornamos un array con la propuesta ganadora para mantener consistencia
         return [propuestaGanadora];
       } else if (response.status === 404) {
         console.warn("No se encontró ganador para esta licitación");
@@ -2504,26 +1891,534 @@ const LicitacionesMinera = () => {
     }
   };
 
+  const fetchPropuestas = async (licitacionId) => {
+    try {
+      setLoadingPropuestas(true);
+      const licitacionActual = licitaciones.find(
+        (l) => (l.licitacionID || l.LicitacionID) === licitacionId
+      );
+      const estadoLicitacion =
+        licitacionActual?.estadoNombre || licitacionActual?.EstadoNombre;
+
+      // Si está adjudicada, solo mostrar la propuesta ganadora
+      if (estadoLicitacion === "Adjudicada") {
+        const propuestaGanadoraResponse = await apiRequest(
+          `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+        );
+
+        if (propuestaGanadoraResponse.ok) {
+          const propuestaGanadora = await propuestaGanadoraResponse.json();
+          setPropuestas([propuestaGanadora]);
+        } else if (propuestaGanadoraResponse.status === 404) {
+          // No hay ganador registrado aún
+          setPropuestas([]);
+        } else {
+          console.error(
+            "Error al cargar propuesta ganadora:",
+            propuestaGanadoraResponse.statusText
+          );
+          setPropuestas([]);
+        }
+      } else {
+        // Para otros estados, cargar todas las propuestas
+        const response = await apiRequest(
+          `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Estados que muestran ranking completo
+          const estadosConRanking = ["Cerrada"];
+
+          if (estadosConRanking.includes(estadoLicitacion)) {
+            const criteriosResponse = await apiRequest(
+              `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
+            );
+
+            if (criteriosResponse.ok) {
+              const criterios = await criteriosResponse.json();
+              const propuestasRankeadas = await rankearPropuestas(
+                data,
+                criterios
+              );
+              setPropuestas(propuestasRankeadas);
+            } else {
+              // Si no hay criterios, ordenar por presupuesto
+              const propuestasOrdenadas = data
+                .sort((a, b) => {
+                  const presupuestoA =
+                    a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
+                  const presupuestoB =
+                    b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
+                  return presupuestoA - presupuestoB;
+                })
+                .map((propuesta) => ({
+                  ...propuesta,
+                  scoreCalculado: 0,
+                  scoreTotal: 0,
+                }));
+              setPropuestas(propuestasOrdenadas);
+            }
+          } else {
+            // Para otros estados (En Evaluación, Publicada, etc.) mostrar propuestas sin ranking
+            setPropuestas(data);
+          }
+        } else {
+          console.error("Error al cargar propuestas:", response.statusText);
+          setPropuestas([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error al cargar propuestas:", error);
+      setPropuestas([]);
+    } finally {
+      setLoadingPropuestas(false);
+    }
+  };
+
+  // Handlers de filtros y ordenamiento
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      titulo: "",
+      estado: "",
+      fechaDesde: "",
+      fechaHasta: "",
+      rubro: "",
+    });
+    setSortBy("fechaCreacion");
+    setSortOrder("desc");
+    // Restaurar datos originales
+    setLicitaciones(originalLicitaciones);
+  };
+
+  const handleSortChange = (value) => {
+    const [field, order] = value.split("-");
+    setSortBy(field);
+    setSortOrder(order);
+  };
+
+  // Handlers de navegación y modales
+  const handleCrearLicitacion = () => navigate("/crear-licitacion");
+
+  const handleEditarLicitacion = (licitacionId) =>
+    navigate(`/editar-licitacion/${licitacionId}`);
+
+  const handleLicitacionClick = (licitacionId) => {
+    const licitacion = licitaciones.find(
+      (l) => (l.licitacionID || l.LicitacionID) === licitacionId
+    );
+    if (licitacion) {
+      setSelectedLicitacion(licitacion);
+      setShowModal(true);
+      fetchPropuestas(licitacionId);
+      fetchArchivosLicitacion(licitacionId);
+    }
+  };
+
+  const handlePropuestaClick = async (propuesta) => {
+    try {
+      const propuestaId = propuesta.propuestaID || propuesta.PropuestaID;
+      const response = await apiRequest(
+        `http://localhost:5242/api/propuestas/${propuestaId}`
+      );
+
+      if (response.ok) {
+        const propuestaDetallada = await response.json();
+        setSelectedPropuesta(propuestaDetallada);
+        setShowPropuestaModal(true);
+      } else {
+        toast.error("Error al cargar los detalles de la propuesta");
+      }
+    } catch (error) {
+      console.error("Error al cargar propuesta:", error);
+      toast.error("Error al cargar los detalles de la propuesta");
+    }
+  };
+
+  // Handlers de cierre de modales
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedLicitacion(null);
+    setPropuestas([]);
+  };
+
+  const handleClosePropuestaModal = () => {
+    setShowPropuestaModal(false);
+    setSelectedPropuesta(null);
+  };
+
+  const handleModalOverlayClick = (e) => {
+    if (e.target === e.currentTarget) handleCloseModal();
+  };
+
+  const handleModalOverlayClickPropuesta = (e) => {
+    if (e.target === e.currentTarget) handleClosePropuestaModal();
+  };
+
+  // Handlers de acciones principales
+  const handleDeleteLicitacion = (licitacion) => {
+    setDeletingLicitacion(licitacion);
+    setShowConfirmDelete(true);
+  };
+
+  const handleCloseLicitacion = (licitacion) => {
+    setClosingLicitacion(licitacion);
+    setShowConfirmClose(true);
+  };
+
+  const handleAdjudicarLicitacion = (licitacion) => {
+    setAdjudicandoLicitacion(licitacion);
+    setShowConfirmAdjudicar(true);
+  };
+
+  const handleSeleccionarGanador = async (licitacion) => {
+    setSeleccionandoGanador(licitacion);
+    const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
+
+    try {
+      const response = await apiRequest(
+        `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+      );
+      if (!response.ok)
+        throw new Error(`Error al cargar propuestas: ${response.status}`);
+
+      const propuestasData = await response.json();
+      const criteriosResponse = await apiRequest(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
+      );
+
+      if (criteriosResponse.ok) {
+        const criterios = await criteriosResponse.json();
+        const propuestasRankeadas = await rankearPropuestas(
+          propuestasData,
+          criterios
+        );
+        setPropuestas(propuestasRankeadas);
+        setSelectedGanador(propuestasRankeadas[0] || null);
+      } else {
+        const propuestasOrdenadas = propuestasData
+          .sort((a, b) => {
+            const presupuestoA =
+              a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
+            const presupuestoB =
+              b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
+            return presupuestoA - presupuestoB;
+          })
+          .map((propuesta) => ({
+            ...propuesta,
+            scoreTotal: 0,
+            scoreCalculado: 0,
+          }));
+
+        setPropuestas(propuestasOrdenadas);
+        setSelectedGanador(propuestasOrdenadas[0] || null);
+      }
+      setShowGanadorModal(true);
+    } catch (error) {
+      toast.error(`Error al cargar las propuestas: ${error.message}`);
+    }
+  };
+
+  const handleSeleccionarPropuestaGanadora = (propuesta) => {
+    setPropuestaGanadora(propuesta);
+    setShowConfirmSeleccionarGanadora(true);
+  };
+
+  // Funciones de confirmación consolidadas
+  const executeAction = async (
+    action,
+    licitacionId,
+    successMessage,
+    errorMessage
+  ) => {
+    try {
+      const response = await apiRequest(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/${action}`,
+        {
+          method: action === "delete" ? "DELETE" : "PUT",
+        }
+      );
+
+      if (!response.ok)
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+
+      toast.success(successMessage);
+      await fetchLicitaciones();
+
+      // Cerrar todos los modales
+      setShowModal(false);
+      setSelectedLicitacion(null);
+
+      return true;
+    } catch (error) {
+      console.error(`Error en ${action}:`, error);
+      toast.error(errorMessage);
+      return false;
+    }
+  };
+
+  const confirmDeleteLicitacion = async () => {
+    if (!deletingLicitacion) return;
+
+    const licitacionId =
+      deletingLicitacion.licitacionID || deletingLicitacion.LicitacionID;
+    const success = await executeAction(
+      "delete",
+      licitacionId,
+      "Licitación eliminada exitosamente",
+      "Error al eliminar la licitación"
+    );
+
+    if (success) {
+      setShowConfirmDelete(false);
+      setDeletingLicitacion(null);
+    }
+  };
+
+  const confirmCloseLicitacion = async () => {
+    if (!closingLicitacion) return;
+
+    const licitacionId =
+      closingLicitacion.licitacionID || closingLicitacion.LicitacionID;
+    const success = await executeAction(
+      "cerrar",
+      licitacionId,
+      "Licitación cerrada y pasada a evaluación exitosamente",
+      "Error al cerrar la licitación"
+    );
+
+    if (success) {
+      setShowConfirmClose(false);
+      setClosingLicitacion(null);
+    }
+  };
+
+  const confirmAdjudicarLicitacion = async () => {
+    if (!adjudicandoLicitacion) return;
+
+    const licitacionId =
+      adjudicandoLicitacion.licitacionID || adjudicandoLicitacion.LicitacionID;
+    const success = await executeAction(
+      "adjudicar",
+      licitacionId,
+      "Licitación marcada como adjudicada exitosamente",
+      "Error al adjudicar la licitación"
+    );
+
+    if (success) {
+      setShowConfirmAdjudicar(false);
+      setAdjudicandoLicitacion(null);
+    }
+  };
+
+  const confirmSeleccionarGanador = async () => {
+    if (!seleccionandoGanador || !selectedGanador) {
+      toast.error("Error: No hay licitación o ganador seleccionado");
+      return;
+    }
+
+    try {
+      const licitacionId =
+        seleccionandoGanador.licitacionID || seleccionandoGanador.LicitacionID;
+      const proveedorId =
+        selectedGanador.proveedorID || selectedGanador.ProveedorID;
+
+      // Registrar en historial
+      const historialData = {
+        ProveedorID: proveedorId,
+        LicitacionID: licitacionId,
+        Resultado: "GANADOR",
+        Ganador: true,
+        Observaciones: "Seleccionado como ganador de la licitación",
+      };
+
+      const historialResponse = await apiRequest(
+        "http://localhost:5242/api/historial-proveedor-licitacion",
+        {
+          method: "POST",
+          body: JSON.stringify(historialData),
+        }
+      );
+
+      if (!historialResponse.ok) {
+        throw new Error(
+          `Error al registrar el historial: ${historialResponse.status}`
+        );
+      }
+
+      // Cerrar licitación
+      const licitacionResponse = await apiRequest(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
+        {
+          method: "PUT",
+        }
+      );
+
+      if (!licitacionResponse.ok) {
+        throw new Error(
+          `Error al actualizar el estado de la licitación: ${licitacionResponse.status}`
+        );
+      }
+
+      toast.success("Ganador seleccionado y licitación cerrada exitosamente");
+
+      // Cerrar modales y recargar
+      setShowGanadorModal(false);
+      setShowModal(false);
+      setSeleccionandoGanador(null);
+      setSelectedGanador(null);
+      setSelectedLicitacion(null);
+      await fetchLicitaciones();
+    } catch (error) {
+      toast.error(`Error al seleccionar el ganador: ${error.message}`);
+    }
+  };
+
+  const confirmSeleccionarPropuestaGanadora = async () => {
+    if (!propuestaGanadora || !selectedLicitacion) {
+      toast.error("Error: No hay propuesta o licitación seleccionada");
+      return;
+    }
+
+    try {
+      const licitacionId =
+        selectedLicitacion.licitacionID || selectedLicitacion.LicitacionID;
+      const proveedorId =
+        propuestaGanadora.proveedorID || propuestaGanadora.ProveedorID;
+
+      // Registrar en historial
+      const historialData = {
+        ProveedorID: proveedorId,
+        LicitacionID: licitacionId,
+        Resultado: "GANADOR",
+        Ganador: true,
+        Observaciones: "Seleccionado como ganador de la licitación",
+      };
+
+      const historialResponse = await apiRequest(
+        "http://localhost:5242/api/historial-proveedor-licitacion",
+        {
+          method: "POST",
+          body: JSON.stringify(historialData),
+        }
+      );
+
+      if (!historialResponse.ok) {
+        throw new Error(
+          `Error al registrar el historial: ${historialResponse.status}`
+        );
+      }
+
+      // Adjudicar licitación
+      const licitacionResponse = await apiRequest(
+        `http://localhost:5242/api/licitaciones/${licitacionId}/adjudicar`,
+        {
+          method: "PUT",
+        }
+      );
+
+      if (!licitacionResponse.ok) {
+        throw new Error(
+          `Error al adjudicar la licitación: ${licitacionResponse.status}`
+        );
+      }
+
+      toast.success(
+        "Propuesta seleccionada como ganadora y licitación adjudicada exitosamente"
+      );
+
+      // Cerrar modales y recargar
+      setShowConfirmSeleccionarGanadora(false);
+      setShowModal(false);
+      setPropuestaGanadora(null);
+      setSelectedLicitacion(null);
+      await fetchLicitaciones();
+    } catch (error) {
+      console.error("Error al seleccionar propuesta ganadora:", error);
+      toast.error(
+        `Error al seleccionar la propuesta ganadora: ${error.message}`
+      );
+    }
+  };
+
+  // Handlers de cancelación
+  const cancelDeleteLicitacion = () => {
+    setShowConfirmDelete(false);
+    setDeletingLicitacion(null);
+  };
+
+  const cancelCloseLicitacion = () => {
+    setShowConfirmClose(false);
+    setClosingLicitacion(null);
+  };
+
+  const cancelAdjudicarLicitacion = () => {
+    setShowConfirmAdjudicar(false);
+    setAdjudicandoLicitacion(null);
+  };
+
+  const cancelSeleccionarGanador = () => {
+    setShowGanadorModal(false);
+    setSeleccionandoGanador(null);
+    setSelectedGanador(null);
+    setPropuestas([]);
+  };
+
+  const cancelSeleccionarPropuestaGanadora = () => {
+    setShowConfirmSeleccionarGanadora(false);
+    setPropuestaGanadora(null);
+  };
+
+  // useEffect consolidado
+  useEffect(() => {
+    if (user && token) {
+      fetchLicitaciones();
+      fetchRubros();
+      // Solo cargar propuestas si es un proveedor
+      if (user?.proveedor?.proveedorID) {
+        fetchPropuestasProveedor();
+      }
+    }
+  }, [user, token]);
+
+  // useEffect para filtros y ordenamiento
+  useEffect(() => {
+    if (originalLicitaciones.length > 0) {
+      const filtered = applyFiltersAndSorting(originalLicitaciones);
+      setLicitaciones(filtered);
+    }
+  }, [filters, sortBy, sortOrder, originalLicitaciones]);
+
+  // Datos filtrados para renderizado
+  const filteredLicitaciones = licitaciones;
+
+  // Componente principal JSX
   return (
     <Container>
       <Navbar />
-
       <MainContent>
+        {/* Header */}
         <PageHeader>
           <PageTitle>Mis licitaciones</PageTitle>
           <PageSubtitle>
-            Gestione todas las licitaciones de {getCompanyName()}
+            Gestiona las licitaciones de {getCompanyName()}
           </PageSubtitle>
         </PageHeader>
 
+        {/* Filtros */}
         <FiltersContainer>
-          <FiltersTitle>Filtros</FiltersTitle>
+          <FiltersTitle>Filtros de búsqueda</FiltersTitle>
           <FiltersGrid>
             <FilterGroup>
-              <FilterLabel>Buscar por título</FilterLabel>
+              <FilterLabel>Título</FilterLabel>
               <FilterInput
                 type="text"
-                placeholder="Título de la licitación..."
+                placeholder="Buscar por título..."
                 value={filters.titulo}
                 onChange={(e) => handleFilterChange("titulo", e.target.value)}
               />
@@ -2563,7 +2458,7 @@ const LicitacionesMinera = () => {
             </FilterGroup>
 
             <FilterGroup>
-              <FilterLabel>Fecha inicio desde</FilterLabel>
+              <FilterLabel>Fecha desde</FilterLabel>
               <FilterInput
                 type="date"
                 value={filters.fechaDesde}
@@ -2574,7 +2469,7 @@ const LicitacionesMinera = () => {
             </FilterGroup>
 
             <FilterGroup>
-              <FilterLabel>Fecha cierre hasta</FilterLabel>
+              <FilterLabel>Fecha hasta</FilterLabel>
               <FilterInput
                 type="date"
                 value={filters.fechaHasta}
@@ -2589,1005 +2484,761 @@ const LicitacionesMinera = () => {
             <FilterButton onClick={fetchLicitaciones}>
               Aplicar filtros
             </FilterButton>
-            <ClearButton onClick={clearFilters}>Limpiar filtros</ClearButton>
+            <ClearButton onClick={clearFilters}>Limpiar</ClearButton>
           </FiltersActions>
         </FiltersContainer>
 
+        {/* Contenedor principal de licitaciones */}
         <LicitacionesContainer>
+          {/* Header con ordenamiento */}
           <LicitacionesHeader>
             <div>
               <LicitacionesTitle>Licitaciones</LicitacionesTitle>
               <ResultsInfo>
-                {loading
-                  ? "Cargando..."
-                  : `${licitaciones.length} licitación(es) encontrada(s)`}
+                {(() => {
+                  const stats = getLicitacionesStats();
+                  return `${stats.total} licitaciones activas (${stats.postuladas} postuladas, ${stats.disponibles} disponibles)`;
+                })()}
               </ResultsInfo>
             </div>
-
-            <SortContainer>
-              <SortLabel>Ordenar por:</SortLabel>
-              <SortSelect
-                value={`${sortBy}-${sortOrder}`}
-                onChange={(e) => handleSortChange(e.target.value)}
-              >
-                <option value="fechaCreacion-desc">
-                  Fecha creación (más reciente)
-                </option>
-                <option value="fechaCreacion-asc">
-                  Fecha creación (más antigua)
-                </option>
-                <option value="titulo-asc">Título (A-Z)</option>
-                <option value="titulo-desc">Título (Z-A)</option>
-                <option value="fechaInicio-desc">
-                  Fecha inicio (más reciente)
-                </option>
-                <option value="fechaInicio-asc">
-                  Fecha inicio (más antigua)
-                </option>
-                <option value="fechaCierre-desc">
-                  Fecha cierre (más reciente)
-                </option>
-                <option value="fechaCierre-asc">
-                  Fecha cierre (más antigua)
-                </option>
-                <option value="estado-asc">Estado (A-Z)</option>
-                <option value="rubro-asc">Rubro (A-Z)</option>
-              </SortSelect>
-            </SortContainer>
+            <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+              <SortContainer>
+                <SortLabel>Ordenar por:</SortLabel>
+                <SortSelect
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                >
+                  <option value="fechaCreacion-desc">
+                    Fecha creación (más reciente)
+                  </option>
+                  <option value="fechaCreacion-asc">
+                    Fecha creación (más antigua)
+                  </option>
+                  <option value="titulo-asc">Título (A-Z)</option>
+                  <option value="titulo-desc">Título (Z-A)</option>
+                  <option value="fechaInicio-desc">
+                    Fecha inicio (más reciente)
+                  </option>
+                  <option value="fechaInicio-asc">
+                    Fecha inicio (más antigua)
+                  </option>
+                  <option value="fechaCierre-desc">
+                    Fecha cierre (más reciente)
+                  </option>
+                  <option value="fechaCierre-asc">
+                    Fecha cierre (más antigua)
+                  </option>
+                  <option value="estado-asc">Estado (A-Z)</option>
+                  <option value="estado-desc">Estado (Z-A)</option>
+                </SortSelect>
+              </SortContainer>
+              <CreateButton onClick={handleCrearLicitacion}>
+                Nueva licitación
+              </CreateButton>
+            </div>
           </LicitacionesHeader>
 
-          <LicitacionesList>
-            {loading ? (
-              <LoadingContainer>
-                <LoadingSpinner />
-                <LoadingText>Cargando licitaciones...</LoadingText>
-              </LoadingContainer>
-            ) : error ? (
-              <ErrorContainer>
-                <ErrorIcon>⚠️</ErrorIcon>
-                <ErrorTitle>Error al cargar datos</ErrorTitle>
-                <ErrorDescription>{error}</ErrorDescription>
-                <RetryButton onClick={fetchLicitaciones}>
-                  Reintentar
-                </RetryButton>
-              </ErrorContainer>
-            ) : licitaciones.length === 0 ? (
-              <EmptyState>
-                <EmptyIcon>📝</EmptyIcon>
-                <EmptyTitle>No hay licitaciones</EmptyTitle>
-                <EmptyDescription>
-                  No se encontraron licitaciones que coincidan con los filtros
-                  aplicados.
-                  {Object.values(filters).every((f) => !f) && (
-                    <span>
-                      <br />
-                      Comience creando su primera licitación.
-                    </span>
-                  )}
-                </EmptyDescription>
-                {Object.values(filters).every((f) => !f) && (
-                  <CreateButton onClick={handleCrearLicitacion}>
-                    Crear primera licitación
-                  </CreateButton>
-                )}
-              </EmptyState>
-            ) : (
-              licitaciones.map((licitacion) => (
-                <LicitacionCard
-                  key={licitacion.licitacionID || licitacion.LicitacionID}
-                  onClick={() =>
-                    handleLicitacionClick(
-                      licitacion.licitacionID || licitacion.LicitacionID
-                    )
-                  }
-                >
-                  <LicitacionHeader>
-                    <LicitacionTitle>
-                      {licitacion.titulo || licitacion.Titulo}
-                    </LicitacionTitle>
-                    <LicitacionStatusContainer>
-                      <LicitacionStatus
-                        status={
-                          licitacion.estadoNombre || licitacion.EstadoNombre
-                        }
-                      >
-                        {licitacion.estadoNombre || licitacion.EstadoNombre}
-                      </LicitacionStatus>
-                      <PropuestasCountBadge>
-                        <PropuestasCountIcon>📄</PropuestasCountIcon>
-                        {propuestasCount[
-                          licitacion.licitacionID || licitacion.LicitacionID
-                        ] || 0}{" "}
-                        propuestas
-                      </PropuestasCountBadge>
-                    </LicitacionStatusContainer>
-                  </LicitacionHeader>
+          {/* Lista de licitaciones */}
+          {loading ? (
+            <LoadingContainer>
+              <LoadingSpinner />
+              <LoadingText>Cargando licitaciones...</LoadingText>
+            </LoadingContainer>
+          ) : error ? (
+            <ErrorContainer>
+              <ErrorIcon>⚠️</ErrorIcon>
+              <ErrorTitle>Error al cargar las licitaciones</ErrorTitle>
+              <ErrorDescription>{error}</ErrorDescription>
+              <RetryButton onClick={fetchLicitaciones}>
+                🔄 Reintentar
+              </RetryButton>
+            </ErrorContainer>
+          ) : filteredLicitaciones.length === 0 ? (
+            <EmptyState>
+              <EmptyIcon>📋</EmptyIcon>
+              <EmptyTitle>No hay licitaciones</EmptyTitle>
+              <EmptyDescription>
+                No tiene licitaciones creadas aún. ¡Cree su primera licitación!
+              </EmptyDescription>
+              <CreateButton onClick={handleCrearLicitacion}>
+                Crear primera licitación
+              </CreateButton>
+            </EmptyState>
+          ) : (
+            <LicitacionesList>
+              {filteredLicitaciones.map((licitacion) => {
+                const licitacionId =
+                  licitacion.licitacionID || licitacion.LicitacionID;
+                const titulo = licitacion.titulo || licitacion.Titulo;
+                const estadoNombre =
+                  licitacion.estadoNombre || licitacion.EstadoNombre;
+                const descripcion =
+                  licitacion.descripcion || licitacion.Descripcion;
+                const fechaInicio =
+                  licitacion.fechaInicio || licitacion.FechaInicio;
+                const fechaCierre =
+                  licitacion.fechaCierre || licitacion.FechaCierre;
+                const presupuestoMax =
+                  licitacion.presupuestoMaximo || licitacion.PresupuestoMaximo;
+                const rubroNombre =
+                  licitacion.rubroNombre || licitacion.RubroNombre;
+                const count = propuestasCount[licitacionId] || 0;
 
-                  <LicitacionMeta>
-                    <MetaItem>
-                      <MetaLabel>Rubro</MetaLabel>
-                      <MetaValue>
-                        {licitacion.rubroNombre ||
-                          licitacion.RubroNombre ||
-                          "No especificado"}
-                      </MetaValue>
-                    </MetaItem>
-                    {(licitacion.proyectoMineroNombre ||
-                      licitacion.ProyectoMineroNombre) && (
+                return (
+                  <LicitacionCard
+                    key={licitacionId}
+                    onClick={() => handleLicitacionClick(licitacionId)}
+                  >
+                    <LicitacionHeader>
+                      <LicitacionTitle>{titulo}</LicitacionTitle>
+                      <LicitacionStatusContainer>
+                        <LicitacionStatus status={estadoNombre}>
+                          {estadoNombre}
+                        </LicitacionStatus>
+                        <PropuestasCountBadge>
+                          {count} {count === 1 ? "propuesta" : "propuestas"}
+                        </PropuestasCountBadge>
+                      </LicitacionStatusContainer>
+                    </LicitacionHeader>
+
+                    <LicitacionMeta>
                       <MetaItem>
-                        <MetaLabel>Proyecto Minero</MetaLabel>
+                        <MetaLabel>Fecha de inicio</MetaLabel>
+                        <MetaValue>{formatDate(fechaInicio)}</MetaValue>
+                      </MetaItem>
+                      <MetaItem>
+                        <MetaLabel>Fecha de cierre</MetaLabel>
+                        <MetaValue>{formatDate(fechaCierre)}</MetaValue>
+                      </MetaItem>
+                      <MetaItem>
+                        <MetaLabel>Presupuesto máximo</MetaLabel>
+                        <MetaValue>{formatCurrency(presupuestoMax)}</MetaValue>
+                      </MetaItem>
+                      <MetaItem>
+                        <MetaLabel>Rubro</MetaLabel>
                         <MetaValue>
-                          {licitacion.proyectoMineroNombre ||
-                            licitacion.ProyectoMineroNombre}
+                          {rubroNombre || "No especificado"}
                         </MetaValue>
                       </MetaItem>
+                    </LicitacionMeta>
+
+                    {descripcion && (
+                      <LicitacionDescription>
+                        {descripcion}
+                      </LicitacionDescription>
                     )}
-                    <MetaItem>
-                      <MetaLabel>Fecha inicio</MetaLabel>
-                      <MetaValue>
-                        {formatDate(
-                          licitacion.fechaInicio || licitacion.FechaInicio
-                        )}
-                      </MetaValue>
-                    </MetaItem>
-                    <MetaItem>
-                      <MetaLabel>Fecha cierre</MetaLabel>
-                      <MetaValue>
-                        {formatDate(
-                          licitacion.fechaCierre || licitacion.FechaCierre
-                        )}
-                      </MetaValue>
-                    </MetaItem>
-                    <MetaItem>
-                      <MetaLabel>Presupuesto estimado</MetaLabel>
-                      <MetaValue>
-                        {formatCurrency(
-                          licitacion.presupuestoEstimado ||
-                            licitacion.PresupuestoEstimado
-                        )}
-                      </MetaValue>
-                    </MetaItem>
-                  </LicitacionMeta>
-
-                  {(licitacion.descripcion || licitacion.Descripcion) && (
-                    <LicitacionDescription>
-                      {licitacion.descripcion || licitacion.Descripcion}
-                    </LicitacionDescription>
-                  )}
-                </LicitacionCard>
-              ))
-            )}
-          </LicitacionesList>
+                  </LicitacionCard>
+                );
+              })}
+            </LicitacionesList>
+          )}
         </LicitacionesContainer>
-      </MainContent>
 
-      {/* Modal de detalle de licitación */}
-      {showModal && selectedLicitacion && (
-        <ModalOverlay onClick={handleModalOverlayClick}>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                {selectedLicitacion.titulo || selectedLicitacion.Titulo}
-              </ModalTitle>
-              <ModalDate>
-                Creada el{" "}
-                {formatDate(
-                  selectedLicitacion.fechaCreacion ||
-                    selectedLicitacion.FechaCreacion
-                )}
-              </ModalDate>
-              <CloseButton onClick={handleCloseModal}>×</CloseButton>
-            </ModalHeader>
-
-            <ModalBody>
-              <DetailSection>
-                <SectionTitle>Información general</SectionTitle>
-
-                {/* Primera fila - Estado y Rubro */}
-                <InfoGrid>
-                  <InfoCard>
-                    <DetailLabel>Estado</DetailLabel>
-                    <DetailValue>
-                      {selectedLicitacion.estadoNombre ||
-                        selectedLicitacion.EstadoNombre}
-                    </DetailValue>
-                  </InfoCard>
-                  <InfoCard>
-                    <DetailLabel>Rubro</DetailLabel>
-                    <DetailValue>
-                      {selectedLicitacion.rubroNombre ||
-                        selectedLicitacion.RubroNombre ||
-                        "No especificado"}
-                    </DetailValue>
-                  </InfoCard>
-                </InfoGrid>
-
-                {/* Segunda fila - Fechas importantes */}
-                <DatesGrid>
-                  <DateCard>
-                    <DateIcon>🚀</DateIcon>
-                    <DateLabel>Fecha de inicio</DateLabel>
-                    <DateValue>
-                      {formatDate(
-                        selectedLicitacion.fechaInicio ||
-                          selectedLicitacion.FechaInicio
-                      )}
-                    </DateValue>
-                  </DateCard>
-                  <DateCard>
-                    <DateIcon>⏰</DateIcon>
-                    <DateLabel>Fecha de cierre</DateLabel>
-                    <DateValue>
-                      {formatDate(
-                        selectedLicitacion.fechaCierre ||
-                          selectedLicitacion.FechaCierre
-                      )}
-                    </DateValue>
-                  </DateCard>
-                </DatesGrid>
-
-                {/* Tercera fila - Presupuesto y Proyecto Minero */}
-                <InfoGrid
-                  style={{
-                    gridTemplateColumns:
-                      selectedLicitacion.proyectoMineroNombre ||
-                      selectedLicitacion.ProyectoMineroNombre
-                        ? "1fr 1fr"
-                        : "1fr",
-                    marginTop: "15px",
-                  }}
-                >
-                  <BudgetCard>
-                    <BudgetLabel>Presupuesto estimado</BudgetLabel>
-                    <BudgetValue>
-                      {formatCurrency(
-                        selectedLicitacion.presupuestoEstimado ||
-                          selectedLicitacion.PresupuestoEstimado
-                      )}
-                    </BudgetValue>
-                  </BudgetCard>
-
-                  {(selectedLicitacion.proyectoMineroNombre ||
-                    selectedLicitacion.ProyectoMineroNombre) && (
-                    <ProjectCard>
-                      <ProjectLabel>Proyecto Minero</ProjectLabel>
-                      <ProjectValue>
-                        {selectedLicitacion.proyectoMineroNombre ||
-                          selectedLicitacion.ProyectoMineroNombre}
-                      </ProjectValue>
-                    </ProjectCard>
+        {/* Modal de detalle de licitación */}
+        {showModal && selectedLicitacion && (
+          <ModalOverlay onClick={handleModalOverlayClick}>
+            <ModalContent onClick={(e) => e.stopPropagation()}>
+              <ModalHeader>
+                <CloseButton onClick={handleCloseModal}>×</CloseButton>
+                <ModalTitle>
+                  {selectedLicitacion.titulo || selectedLicitacion.Titulo}
+                </ModalTitle>
+                <ModalDate>
+                  Creada el{" "}
+                  {formatDate(
+                    selectedLicitacion.fechaCreacion ||
+                      selectedLicitacion.FechaCreacion
                   )}
-                </InfoGrid>
-              </DetailSection>
+                </ModalDate>
+              </ModalHeader>
 
-              {(selectedLicitacion.descripcion ||
-                selectedLicitacion.Descripcion) && (
+              <ModalBody>
+                {/* Información general */}
                 <DetailSection>
-                  <SectionTitle>Descripción</SectionTitle>
-                  <DetailDescription>
-                    {selectedLicitacion.descripcion ||
-                      selectedLicitacion.Descripcion}
-                  </DetailDescription>
+                  <SectionTitle>Información General</SectionTitle>
+                  <DetailGrid>
+                    <BudgetCard>
+                      <BudgetLabel>Presupuesto máximo</BudgetLabel>
+                      <BudgetValue>
+                        {formatCurrency(
+                          selectedLicitacion.presupuestoMaximo ||
+                            selectedLicitacion.PresupuestoMaximo
+                        )}
+                      </BudgetValue>
+                    </BudgetCard>
+
+                    <ProjectCard>
+                      <ProjectLabel>Proyecto/Rubro</ProjectLabel>
+                      <ProjectValue>
+                        {selectedLicitacion.rubroNombre ||
+                          selectedLicitacion.RubroNombre ||
+                          "No especificado"}
+                      </ProjectValue>
+                      <ProjectLocation>
+                        {selectedLicitacion.ubicacion ||
+                          selectedLicitacion.Ubicacion ||
+                          "Ubicación no especificada"}
+                      </ProjectLocation>
+                    </ProjectCard>
+                  </DetailGrid>
+
+                  {/* Fechas importantes */}
+                  <DatesGrid>
+                    <DateCard>
+                      <DateLabel>Fecha de inicio</DateLabel>
+                      <DateValue>
+                        {formatDate(
+                          selectedLicitacion.fechaInicio ||
+                            selectedLicitacion.FechaInicio
+                        )}
+                      </DateValue>
+                    </DateCard>
+
+                    <DateCard>
+                      <DateLabel>Fecha de cierre</DateLabel>
+                      <DateValue>
+                        {formatDate(
+                          selectedLicitacion.fechaCierre ||
+                            selectedLicitacion.FechaCierre
+                        )}
+                      </DateValue>
+                    </DateCard>
+
+                    <DateCard>
+                      <DateLabel>Adjudicación</DateLabel>
+                      <DateValue>
+                        {formatDate(
+                          selectedLicitacion.fechaAdjudicacion ||
+                            selectedLicitacion.FechaAdjudicacion
+                        )}
+                      </DateValue>
+                    </DateCard>
+                  </DatesGrid>
+
+                  {/* Descripción */}
+                  {(selectedLicitacion.descripcion ||
+                    selectedLicitacion.Descripcion) && (
+                    <>
+                      <SectionTitle>Descripción</SectionTitle>
+                      <DetailDescription>
+                        {selectedLicitacion.descripcion ||
+                          selectedLicitacion.Descripcion}
+                      </DetailDescription>
+                    </>
+                  )}
+
+                  {/* Archivos adjuntos */}
+                  {selectedLicitacion.archivosAdjuntos &&
+                    selectedLicitacion.archivosAdjuntos.length > 0 && (
+                      <>
+                        <SectionTitle>Archivos Adjuntos</SectionTitle>
+                        <PropuestaArchivos>
+                          {selectedLicitacion.archivosAdjuntos.map(
+                            (archivo) => (
+                              <ArchivoItem
+                                key={archivo.archivoID || archivo.ArchivoID}
+                              >
+                                <ArchivoIcon>📎</ArchivoIcon>
+                                <ArchivoName
+                                  onClick={() =>
+                                    handleDownloadArchivo(
+                                      archivo.archivoID || archivo.ArchivoID,
+                                      archivo.nombreArchivo ||
+                                        archivo.NombreArchivo
+                                    )
+                                  }
+                                >
+                                  {archivo.nombreArchivo ||
+                                    archivo.NombreArchivo}
+                                </ArchivoName>
+                              </ArchivoItem>
+                            )
+                          )}
+                        </PropuestaArchivos>
+                      </>
+                    )}
                 </DetailSection>
-              )}
 
-              {(selectedLicitacion.condiciones ||
-                selectedLicitacion.Condiciones) && (
-                <DetailSection>
-                  <SectionTitle>Condiciones</SectionTitle>
-                  <DetailDescription>
-                    {selectedLicitacion.condiciones ||
-                      selectedLicitacion.Condiciones}
-                  </DetailDescription>
-                </DetailSection>
-              )}
-
-              {(() => {
-                const archivoNombre =
-                  selectedLicitacion.archivoNombre ||
-                  selectedLicitacion.ArchivoNombre;
-                const archivoId =
-                  selectedLicitacion.archivoID || selectedLicitacion.ArchivoID;
-                return archivoNombre ? (
-                  <DetailSection>
-                    <SectionTitle>Archivo adjunto</SectionTitle>
-                    <DetailDescription>
-                      📎{" "}
-                      <ArchivoName
-                        onClick={() =>
-                          handleDownloadArchivo(archivoId, archivoNombre)
-                        }
-                      >
-                        {archivoNombre}
-                      </ArchivoName>
-                    </DetailDescription>
-                  </DetailSection>
-                ) : null;
-              })()}
-
-              <DetailSection>
-                <SectionTitle>Propuestas</SectionTitle>
+                {/* Propuestas */}
                 <PropuestasSection>
+                  <PropuestasTitle>
+                    {(selectedLicitacion.estadoNombre ||
+                      selectedLicitacion.EstadoNombre) === "Adjudicada"
+                      ? `Propuesta ganadora (${
+                          propuestas.length === 0 ? "sin definir" : "1"
+                        })`
+                      : `Propuestas recibidas (${propuestas.length})`}
+                  </PropuestasTitle>
+
                   {loadingPropuestas ? (
                     <LoadingPropuestas>
                       <LoadingPropuestasSpinner />
-                      <span>
-                        Cargando propuestas
-                        {(() => {
-                          const licitacionEstado =
-                            selectedLicitacion?.estadoNombre ||
-                            selectedLicitacion?.EstadoNombre;
-                          if (licitacionEstado === "Cerrada") {
-                            return " y obteniendo ganador...";
-                          }
-                          const estadosConRanking = [
-                            "En Evaluación",
-                            "Adjudicada",
-                          ];
-                          return estadosConRanking.includes(licitacionEstado)
-                            ? " y calculando rankings..."
-                            : "...";
-                        })()}
-                      </span>
+                      <PropuestasText>Cargando propuestas...</PropuestasText>
                     </LoadingPropuestas>
                   ) : propuestas.length === 0 ? (
                     <EmptyPropuestas>
-                      <EmptyPropuestasIcon>📋</EmptyPropuestasIcon>
                       <EmptyPropuestasText>
-                        No hay propuestas enviadas para esta licitación.
+                        {(selectedLicitacion.estadoNombre ||
+                          selectedLicitacion.EstadoNombre) === "Adjudicada"
+                          ? "No se ha definido una propuesta ganadora aún."
+                          : "No hay propuestas recibidas aún."}
                       </EmptyPropuestasText>
                     </EmptyPropuestas>
                   ) : (
-                    <>
-                      {(() => {
-                        const licitacionEstado =
-                          selectedLicitacion?.estadoNombre ||
-                          selectedLicitacion?.EstadoNombre;
-
-                        // Si está cerrada, mostrar solo el ganador
-                        if (licitacionEstado === "Cerrada") {
-                          const propuestaGanadora = propuestas[0]; // Por ahora tomamos la primera como ganadora
-
-                          return (
-                            <>
-                              <PropuestasTitle>
-                                Ganador de la licitación
-                              </PropuestasTitle>
-                              {propuestaGanadora && (
-                                <PropuestasList>
-                                  <PropuestaCard
-                                    key={propuestaGanadora.propuestaID}
-                                    onClick={() =>
-                                      handlePropuestaClick(propuestaGanadora)
-                                    }
-                                    style={{
-                                      border: "2px solid #28a745",
-                                      backgroundColor: "#f8fff9",
-                                    }}
-                                  >
-                                    <PropuestaHeader>
-                                      <PropuestaHeaderLeft>
-                                        <PropuestaRankingBadge
-                                          position={1}
-                                          style={{
-                                            backgroundColor: "#28a745",
-                                            color: "white",
-                                          }}
-                                        >
-                                          🏆 GANADOR
-                                        </PropuestaRankingBadge>
-                                        <PropuestaProveedor>
-                                          {propuestaGanadora.proveedorNombre}
-                                        </PropuestaProveedor>
-                                      </PropuestaHeaderLeft>
-                                    </PropuestaHeader>
-                                    <PropuestaInfo>
-                                      <PropuestaInfoItem>
-                                        <PropuestaInfoLabel>
-                                          Fecha de envío
-                                        </PropuestaInfoLabel>
-                                        <PropuestaInfoValue>
-                                          {formatDate(
-                                            propuestaGanadora.fechaEnvio
-                                          )}
-                                        </PropuestaInfoValue>
-                                      </PropuestaInfoItem>
-                                      <PropuestaInfoItem>
-                                        <PropuestaInfoLabel>
-                                          Monto ofrecido
-                                        </PropuestaInfoLabel>
-                                        <PropuestaInfoValue>
-                                          {formatCurrency(
-                                            propuestaGanadora.presupuestoOfrecido
-                                          )}
-                                        </PropuestaInfoValue>
-                                      </PropuestaInfoItem>
-                                      <PropuestaInfoItem>
-                                        <PropuestaInfoLabel>
-                                          Fecha de entrega
-                                        </PropuestaInfoLabel>
-                                        <PropuestaInfoValue>
-                                          {formatDate(
-                                            propuestaGanadora.fechaEntrega
-                                          )}
-                                        </PropuestaInfoValue>
-                                      </PropuestaInfoItem>
-                                      {propuestaGanadora.calificacionFinal && (
-                                        <PropuestaInfoItem>
-                                          <PropuestaInfoLabel>
-                                            Calificación
-                                          </PropuestaInfoLabel>
-                                          <PropuestaInfoValue>
-                                            {
-                                              propuestaGanadora.calificacionFinal
-                                            }
-                                            /10
-                                          </PropuestaInfoValue>
-                                        </PropuestaInfoItem>
-                                      )}
-                                    </PropuestaInfo>
-                                  </PropuestaCard>
-                                </PropuestasList>
-                              )}
-                            </>
-                          );
-                        }
-
-                        // Para otros estados, mostrar todas las propuestas con ranking
-                        const estadosConRanking = [
-                          "En Evaluación",
-                          "Adjudicada",
-                        ];
-                        const mostrarRanking =
-                          estadosConRanking.includes(licitacionEstado);
+                    <PropuestasList>
+                      {propuestas.map((propuesta, index) => {
+                        const proveedorNombre =
+                          propuesta.proveedorNombre ||
+                          propuesta.ProveedorNombre ||
+                          "Proveedor desconocido";
+                        const presupuesto =
+                          propuesta.presupuestoOfrecido ||
+                          propuesta.PresupuestoOfrecido;
+                        const fechaEnvio =
+                          propuesta.fechaEnvio || propuesta.FechaEnvio;
+                        const estado =
+                          propuesta.estado || propuesta.Estado || "Enviada";
+                        const score =
+                          propuesta.scoreCalculado || propuesta.scoreTotal || 0;
+                        const esAdjudicada =
+                          (selectedLicitacion.estadoNombre ||
+                            selectedLicitacion.EstadoNombre) === "Adjudicada";
 
                         return (
-                          <>
-                            <PropuestasTitle>
-                              <span>📋</span>
-                              {propuestas.length} propuesta
-                              {propuestas.length !== 1 ? "s" : ""} recibida
-                              {propuestas.length !== 1 ? "s" : ""}
-                              {mostrarRanking
-                                ? " (rankeadas por criterios)"
-                                : ""}
-                            </PropuestasTitle>
-                            <PropuestasList>
-                              {propuestas.map((propuesta, index) => (
-                                <PropuestaCard
-                                  key={propuesta.propuestaID}
-                                  onClick={() =>
-                                    handlePropuestaClick(propuesta)
+                          <PropuestaCard
+                            key={propuesta.propuestaID || propuesta.PropuestaID}
+                            onClick={() => handlePropuestaClick(propuesta)}
+                            style={
+                              esAdjudicada
+                                ? {
+                                    background:
+                                      "linear-gradient(135deg, #f8fff8 0%, #e8f5e8 100%)",
+                                    border: "2px solid #28a745",
+                                    boxShadow:
+                                      "0 4px 15px rgba(40, 167, 69, 0.2)",
                                   }
-                                >
-                                  <PropuestaHeader>
-                                    <PropuestaHeaderLeft>
-                                      {mostrarRanking && (
-                                        <PropuestaRankingBadge
-                                          position={index + 1}
-                                        >
-                                          {index + 1 === 1
-                                            ? "🥇"
-                                            : index + 1 === 2
-                                            ? "🥈"
-                                            : index + 1 === 3
-                                            ? "🥉"
-                                            : ""}
-                                          #{index + 1}
-                                        </PropuestaRankingBadge>
-                                      )}
-                                      <PropuestaProveedor>
-                                        {propuesta.proveedorNombre}
-                                      </PropuestaProveedor>
-                                      {mostrarRanking && (
-                                        <PropuestaScore>
-                                          📊{" "}
-                                          {propuesta.scoreCalculado !==
-                                          undefined
-                                            ? propuesta.scoreCalculado.toFixed(
-                                                2
-                                              )
-                                            : propuesta.scoreTotal !== undefined
-                                            ? propuesta.scoreTotal.toFixed(2)
-                                            : "0.00"}
-                                        </PropuestaScore>
-                                      )}
-                                    </PropuestaHeaderLeft>
-                                  </PropuestaHeader>
-                                  <PropuestaInfo>
-                                    <PropuestaInfoItem>
-                                      <PropuestaInfoLabel>
-                                        Fecha de envío
-                                      </PropuestaInfoLabel>
-                                      <PropuestaInfoValue>
-                                        {formatDate(propuesta.fechaEnvio)}
-                                      </PropuestaInfoValue>
-                                    </PropuestaInfoItem>
-                                    <PropuestaInfoItem>
-                                      <PropuestaInfoLabel>
-                                        Monto ofrecido
-                                      </PropuestaInfoLabel>
-                                      <PropuestaInfoValue>
-                                        {formatCurrency(
-                                          propuesta.presupuestoOfrecido
-                                        )}
-                                      </PropuestaInfoValue>
-                                    </PropuestaInfoItem>
-                                    <PropuestaInfoItem>
-                                      <PropuestaInfoLabel>
-                                        Fecha de entrega
-                                      </PropuestaInfoLabel>
-                                      <PropuestaInfoValue>
-                                        {formatDate(propuesta.fechaEntrega)}
-                                      </PropuestaInfoValue>
-                                    </PropuestaInfoItem>
-                                    {propuesta.calificacionFinal && (
-                                      <PropuestaInfoItem>
-                                        <PropuestaInfoLabel>
-                                          Calificación
-                                        </PropuestaInfoLabel>
-                                        <PropuestaInfoValue>
-                                          {propuesta.calificacionFinal}/10
-                                        </PropuestaInfoValue>
-                                      </PropuestaInfoItem>
+                                : {}
+                            }
+                          >
+                            {/* Botón para seleccionar como ganadora - solo en estado "Cerrada" */}
+                            {(selectedLicitacion.estadoNombre ||
+                              selectedLicitacion.EstadoNombre) ===
+                              "Cerrada" && (
+                              <SeleccionarGanadoraButton
+                                className="seleccionar-ganadora-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSeleccionarPropuestaGanadora(propuesta);
+                                }}
+                              >
+                                🏆 Seleccionar ganadora
+                              </SeleccionarGanadoraButton>
+                            )}
+
+                            <PropuestaHeader>
+                              <PropuestaHeaderLeft>
+                                {esAdjudicada ? (
+                                  <PropuestaRankingBadge
+                                    position={1}
+                                    style={{
+                                      background:
+                                        "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                                      color: "white",
+                                      borderColor: "#28a745",
+                                    }}
+                                  >
+                                    👑 GANADORA
+                                  </PropuestaRankingBadge>
+                                ) : (
+                                  <PropuestaRankingBadge position={index + 1}>
+                                    #{index + 1}
+                                  </PropuestaRankingBadge>
+                                )}
+                                {score > 0 && (
+                                  <PropuestaScore>
+                                    ⭐ {score.toFixed(1)}
+                                  </PropuestaScore>
+                                )}
+                                <PropuestaProveedor>
+                                  {proveedorNombre}
+                                </PropuestaProveedor>
+                              </PropuestaHeaderLeft>
+                              <PropuestaEstado
+                                status={esAdjudicada ? "Adjudicada" : estado}
+                              >
+                                {esAdjudicada ? "Adjudicada" : estado}
+                              </PropuestaEstado>
+                            </PropuestaHeader>
+
+                            <PropuestaInfo>
+                              <PropuestaInfoItem>
+                                <PropuestaInfoLabel>
+                                  Presupuesto
+                                </PropuestaInfoLabel>
+                                <PropuestaInfoValue>
+                                  {formatCurrency(presupuesto)}
+                                </PropuestaInfoValue>
+                              </PropuestaInfoItem>
+                              <PropuestaInfoItem>
+                                <PropuestaInfoLabel>
+                                  Fecha de envío
+                                </PropuestaInfoLabel>
+                                <PropuestaInfoValue>
+                                  {formatDate(fechaEnvio)}
+                                </PropuestaInfoValue>
+                              </PropuestaInfoItem>
+                              {esAdjudicada && propuesta.HistorialGanador && (
+                                <PropuestaInfoItem>
+                                  <PropuestaInfoLabel>
+                                    Fecha de adjudicación
+                                  </PropuestaInfoLabel>
+                                  <PropuestaInfoValue>
+                                    {formatDate(
+                                      propuesta.HistorialGanador
+                                        .FechaParticipacion
                                     )}
-                                  </PropuestaInfo>
-                                </PropuestaCard>
-                              ))}
-                            </PropuestasList>
-                          </>
+                                  </PropuestaInfoValue>
+                                </PropuestaInfoItem>
+                              )}
+                            </PropuestaInfo>
+                          </PropuestaCard>
                         );
-                      })()}
-                    </>
+                      })}
+                    </PropuestasList>
                   )}
                 </PropuestasSection>
-              </DetailSection>
-            </ModalBody>
+              </ModalBody>
 
-            <ModalActions>
-              {/* Botón Editar - Solo para estados Publicada y Borrador */}
-              {(selectedLicitacion.estadoNombre === "Publicada" ||
-                selectedLicitacion.EstadoNombre === "Publicada" ||
-                selectedLicitacion.estadoNombre === "Borrador" ||
-                selectedLicitacion.EstadoNombre === "Borrador") && (
-                <EditButton
-                  onClick={() =>
-                    handleEditarLicitacion(
-                      selectedLicitacion.licitacionID ||
-                        selectedLicitacion.LicitacionID
-                    )
-                  }
-                >
-                  ✏️ Editar
-                </EditButton>
-              )}
-
-              {/* Botón Cerrar - Solo para estado Publicada */}
-              {(selectedLicitacion.estadoNombre === "Publicada" ||
-                selectedLicitacion.EstadoNombre === "Publicada") && (
-                <CloseLicitacionButton
-                  onClick={() => handleCloseLicitacion(selectedLicitacion)}
-                >
-                  ⏸️ Cerrar
-                </CloseLicitacionButton>
-              )}
-
-              {/* Botón Adjudicar - Solo para estado En Evaluación */}
-              {(selectedLicitacion.estadoNombre === "En Evaluación" ||
-                selectedLicitacion.EstadoNombre === "En Evaluación") && (
-                <AdjudicarButton
-                  onClick={() => handleAdjudicarLicitacion(selectedLicitacion)}
-                >
-                  🏆 Marcar como adjudicada
-                </AdjudicarButton>
-              )}
-
-              {/* Botón Seleccionar Ganador - Solo para estado Adjudicada */}
-              {(selectedLicitacion.estadoNombre === "Adjudicada" ||
-                selectedLicitacion.EstadoNombre === "Adjudicada") && (
-                <AdjudicarButton
-                  onClick={() => handleSeleccionarGanador(selectedLicitacion)}
-                >
-                  🎯 Seleccionar ganador
-                </AdjudicarButton>
-              )}
-
-              {/* Botón Eliminar - Solo para estados Publicada y Borrador */}
-              {(selectedLicitacion.estadoNombre === "Publicada" ||
-                selectedLicitacion.EstadoNombre === "Publicada" ||
-                selectedLicitacion.estadoNombre === "Borrador" ||
-                selectedLicitacion.EstadoNombre === "Borrador") && (
-                <DeleteButton
-                  onClick={() => handleDeleteLicitacion(selectedLicitacion)}
-                >
-                  🗑️ Eliminar
-                </DeleteButton>
-              )}
-            </ModalActions>
-          </ModalContent>
-        </ModalOverlay>
-      )}
-
-      {/* Modal de confirmación de eliminación */}
-      {showConfirmDelete && deletingLicitacion && (
-        <ConfirmModal
-          onClick={(e) =>
-            e.target === e.currentTarget && cancelDeleteLicitacion()
-          }
-        >
-          <ConfirmContent>
-            <ConfirmTitle>⚠️ Confirmar eliminación</ConfirmTitle>
-            <ConfirmText>
-              ¿Está seguro que desea eliminar la licitación
-              <strong>
-                {" "}
-                "{deletingLicitacion.titulo || deletingLicitacion.Titulo}"
-              </strong>
-              ?
-              <br />
-              <br />
-              Esta acción no se puede deshacer.
-            </ConfirmText>
-            <ConfirmActions>
-              <CancelButton onClick={cancelDeleteLicitacion}>
-                Cancelar
-              </CancelButton>
-              <ConfirmDeleteButton onClick={confirmDeleteLicitacion}>
-                Eliminar
-              </ConfirmDeleteButton>
-            </ConfirmActions>
-          </ConfirmContent>
-        </ConfirmModal>
-      )}
-
-      {/* Modal de confirmación de cierre */}
-      {showConfirmClose && closingLicitacion && (
-        <ConfirmModal
-          onClick={(e) =>
-            e.target === e.currentTarget && cancelCloseLicitacion()
-          }
-        >
-          <ConfirmContent>
-            <ConfirmTitle style={{ color: "#ffc107" }}>
-              ⏸️ Confirmar cierre de licitación
-            </ConfirmTitle>
-            <ConfirmText>
-              ¿Está seguro que desea cerrar antes de tiempo la licitación
-              <strong>
-                {" "}
-                "{closingLicitacion.titulo || closingLicitacion.Titulo}"
-              </strong>
-              ?
-              <br />
-              <br />
-              La licitación pasará al estado "En evaluación" y no se podrán
-              recibir más propuestas.
-            </ConfirmText>
-            <ConfirmActions>
-              <CancelButton onClick={cancelCloseLicitacion}>
-                Cancelar
-              </CancelButton>
-              <ConfirmDeleteButton
-                onClick={confirmCloseLicitacion}
-                style={{ background: "#ffc107", color: "#212529" }}
-              >
-                Cerrar licitación
-              </ConfirmDeleteButton>
-            </ConfirmActions>
-          </ConfirmContent>
-        </ConfirmModal>
-      )}
-
-      {/* Modal de confirmación de adjudicación */}
-      {showConfirmAdjudicar && adjudicandoLicitacion && (
-        <ConfirmModal
-          onClick={(e) =>
-            e.target === e.currentTarget && cancelAdjudicarLicitacion()
-          }
-        >
-          <ConfirmContent>
-            <ConfirmTitle style={{ color: "#28a745" }}>
-              🏆 Confirmar adjudicación de licitación
-            </ConfirmTitle>
-            <ConfirmText>
-              ¿Está seguro que desea marcar como adjudicada la licitación
-              <strong>
-                {" "}
-                "{adjudicandoLicitacion.titulo || adjudicandoLicitacion.Titulo}"
-              </strong>
-              ?
-              <br />
-              <br />
-              La licitación pasará al estado "Adjudicada" y se finalizará el
-              proceso de evaluación.
-            </ConfirmText>
-            <ConfirmActions>
-              <CancelButton onClick={cancelAdjudicarLicitacion}>
-                Cancelar
-              </CancelButton>
-              <ConfirmDeleteButton
-                onClick={confirmAdjudicarLicitacion}
-                style={{ background: "#28a745", color: "white" }}
-              >
-                Marcar como adjudicada
-              </ConfirmDeleteButton>
-            </ConfirmActions>
-          </ConfirmContent>
-        </ConfirmModal>
-      )}
-
-      {/* Modal de selección de ganador */}
-      {showGanadorModal && seleccionandoGanador && (
-        <GanadorModal
-          onClick={(e) =>
-            e.target === e.currentTarget && cancelSeleccionarGanador()
-          }
-        >
-          <GanadorModalContent>
-            <GanadorModalHeader>
-              <GanadorModalTitle>
-                🎯 Seleccionar ganador de la licitación
-              </GanadorModalTitle>
-              <CloseButton onClick={cancelSeleccionarGanador}>×</CloseButton>
-            </GanadorModalHeader>
-
-            <GanadorModalBody>
-              <GanadorInstruccion>
-                Seleccione el proveedor ganador de la licitación{" "}
-                <strong>
-                  "{seleccionandoGanador.titulo || seleccionandoGanador.Titulo}"
-                </strong>
-                . Por defecto se selecciona el primero del ranking.
-              </GanadorInstruccion>
-
-              <GanadorPropuestasList>
-                {propuestas.map((propuesta, index) => (
-                  <GanadorPropuestaItem
-                    key={propuesta.propuestaID || propuesta.PropuestaID}
-                    selected={
-                      selectedGanador &&
-                      (selectedGanador.propuestaID ||
-                        selectedGanador.PropuestaID) ===
-                        (propuesta.propuestaID || propuesta.PropuestaID)
+              {/* Acciones del modal */}
+              <ModalActions>
+                {!["Cerrada", "Adjudicada"].includes(
+                  selectedLicitacion.estadoNombre ||
+                    selectedLicitacion.EstadoNombre
+                ) && (
+                  <EditButton
+                    onClick={() =>
+                      handleEditarLicitacion(
+                        selectedLicitacion.licitacionID ||
+                          selectedLicitacion.LicitacionID
+                      )
                     }
-                    onClick={() => setSelectedGanador(propuesta)}
                   >
-                    <GanadorPropuestaHeader>
-                      <GanadorProveedorNombre>
-                        {propuesta.proveedorNombre || propuesta.ProveedorNombre}
-                      </GanadorProveedorNombre>
-                      <GanadorPropuestaRanking position={index + 1}>
-                        #{index + 1}
-                        {index === 0 && " (Recomendado)"}
-                      </GanadorPropuestaRanking>
-                    </GanadorPropuestaHeader>
-                    <GanadorPropuestaInfo>
-                      <div>
-                        <strong>Presupuesto:</strong>{" "}
-                        {formatCurrency(
-                          propuesta.presupuestoOfrecido ||
-                            propuesta.PresupuestoOfrecido
-                        )}
-                      </div>
-                      <div>
-                        <strong>Puntaje:</strong>{" "}
-                        {propuesta.scoreCalculado
-                          ? propuesta.scoreCalculado.toFixed(2)
-                          : propuesta.scoreTotal
-                          ? propuesta.scoreTotal.toFixed(2)
-                          : "N/A"}
-                      </div>
-                      <div>
-                        <strong>Fecha envío:</strong>{" "}
-                        {formatDate(
-                          propuesta.fechaEnvio || propuesta.FechaEnvio
-                        )}
-                      </div>
-                      <div>
-                        <strong>Estado:</strong>{" "}
-                        {propuesta.estadoNombre || propuesta.EstadoNombre}
-                      </div>
-                    </GanadorPropuestaInfo>
-                  </GanadorPropuestaItem>
-                ))}
-              </GanadorPropuestasList>
-            </GanadorModalBody>
-
-            <GanadorModalActions>
-              <GanadorCancelButton onClick={cancelSeleccionarGanador}>
-                Cancelar
-              </GanadorCancelButton>
-              <GanadorConfirmButton
-                onClick={confirmSeleccionarGanadorSimple}
-                disabled={!selectedGanador}
-              >
-                Confirmar ganador y cerrar licitación
-              </GanadorConfirmButton>
-            </GanadorModalActions>
-          </GanadorModalContent>
-        </GanadorModal>
-      )}
-
-      {/* Modal de detalle de propuesta */}
-      {showPropuestaModal && selectedPropuesta && (
-        <PropuestaModalOverlay onClick={handleModalOverlayClickPropuesta}>
-          <PropuestaModalContent>
-            <PropuestaModalHeader>
-              <PropuestaModalTitle>
-                Propuesta de {selectedPropuesta.proveedorNombre}
-              </PropuestaModalTitle>
-              <PropuestaModalSubtitle>
-                Estado: {selectedPropuesta.estadoNombre} • Enviada el{" "}
-                {formatDate(selectedPropuesta.fechaEnvio)}
-              </PropuestaModalSubtitle>
-              <CloseButton onClick={handleClosePropuestaModal}>×</CloseButton>
-            </PropuestaModalHeader>
-
-            <PropuestaModalBody>
-              <PropuestaDetailSection>
-                <SectionTitle>Información general</SectionTitle>
-                <PropuestaDetailGrid style={{ gridTemplateColumns: "1fr 1fr" }}>
-                  {/* Primera columna */}
-                  <div>
-                    <PropuestaInfoCard style={{ marginBottom: "15px" }}>
-                      <PropuestaDetailInfoLabel>
-                        Fecha de envío
-                      </PropuestaDetailInfoLabel>
-                      <PropuestaDetailInfoValue>
-                        {formatDate(selectedPropuesta.fechaEnvio)}
-                      </PropuestaDetailInfoValue>
-                    </PropuestaInfoCard>
-                    <PropuestaInfoCard>
-                      <PropuestaDetailInfoLabel>
-                        Monto ofrecido
-                      </PropuestaDetailInfoLabel>
-                      <PropuestaDetailInfoValue>
-                        {formatCurrency(selectedPropuesta.presupuestoOfrecido)}
-                      </PropuestaDetailInfoValue>
-                    </PropuestaInfoCard>
-                  </div>
-
-                  {/* Segunda columna */}
-                  <div>
-                    <PropuestaInfoCard
-                      style={{
-                        borderLeftColor: "#28a745",
-                        marginBottom: "15px",
-                      }}
-                    >
-                      <PropuestaDetailInfoLabel>
-                        Estado actual
-                      </PropuestaDetailInfoLabel>
-                      <PropuestaDetailInfoValue style={{ color: "#28a745" }}>
-                        {selectedPropuesta.estadoNombre}
-                      </PropuestaDetailInfoValue>
-                    </PropuestaInfoCard>
-                    <PropuestaInfoCard>
-                      <PropuestaDetailInfoLabel>
-                        Fecha de entrega
-                      </PropuestaDetailInfoLabel>
-                      <PropuestaDetailInfoValue>
-                        {formatDate(selectedPropuesta.fechaEntrega)}
-                      </PropuestaDetailInfoValue>
-                    </PropuestaInfoCard>
-                  </div>
-                </PropuestaDetailGrid>
-              </PropuestaDetailSection>
-
-              <PropuestaDetailSection>
-                <SectionTitle>Proveedor</SectionTitle>
-                <PropuestaDetailGrid>
-                  <PropuestaInfoCard>
-                    <PropuestaDetailInfoLabel>Empresa</PropuestaDetailInfoLabel>
-                    <PropuestaDetailInfoValue>
-                      {selectedPropuesta.proveedorNombre}
-                    </PropuestaDetailInfoValue>
-                  </PropuestaInfoCard>
-                  <PropuestaInfoCard>
-                    <PropuestaDetailInfoLabel>
-                      Cumple requisitos
-                    </PropuestaDetailInfoLabel>
-                    <PropuestaDetailInfoValue>
-                      {selectedPropuesta.cumpleRequisitos ? "Sí" : "No"}
-                    </PropuestaDetailInfoValue>
-                  </PropuestaInfoCard>
-                  {selectedPropuesta.calificacionFinal && (
-                    <PropuestaInfoCard>
-                      <PropuestaDetailInfoLabel>
-                        Calificación final
-                      </PropuestaDetailInfoLabel>
-                      <PropuestaDetailInfoValue>
-                        {selectedPropuesta.calificacionFinal}/10
-                      </PropuestaDetailInfoValue>
-                    </PropuestaInfoCard>
-                  )}
-                </PropuestaDetailGrid>
-              </PropuestaDetailSection>
-
-              {selectedPropuesta.descripcion && (
-                <PropuestaDetailSection>
-                  <SectionTitle>Descripción de la propuesta</SectionTitle>
-                  <PropuestaDescription>
-                    {selectedPropuesta.descripcion}
-                  </PropuestaDescription>
-                </PropuestaDetailSection>
-              )}
-
-              {/* Criterios de evaluación */}
-              {(() => {
-                const respuestasCriterios =
-                  selectedPropuesta.respuestasCriterios ||
-                  selectedPropuesta.RespuestasCriterios;
-                return respuestasCriterios && respuestasCriterios.length > 0 ? (
-                  <PropuestaDetailSection>
-                    <SectionTitle>Criterios de evaluación</SectionTitle>
-                    <PropuestaCriteriosSection>
-                      {respuestasCriterios.map((respuesta, index) => (
-                        <PropuestaCriterioItem key={index}>
-                          <PropuestaCriterioName>
-                            {respuesta.criterioNombre ||
-                              respuesta.CriterioNombre ||
-                              "Criterio"}
-                          </PropuestaCriterioName>
-
-                          {(respuesta.criterioDescripcion ||
-                            respuesta.CriterioDescripcion) && (
-                            <PropuestaCriterioDescription>
-                              {respuesta.criterioDescripcion ||
-                                respuesta.CriterioDescripcion}
-                            </PropuestaCriterioDescription>
-                          )}
-
-                          <PropuestaDetailInfoLabel>
-                            Valor ofrecido
-                          </PropuestaDetailInfoLabel>
-                          <PropuestaCriterioValue>
-                            {respuesta.valorProveedor ||
-                              respuesta.ValorProveedor ||
-                              "No especificado"}
-                          </PropuestaCriterioValue>
-                        </PropuestaCriterioItem>
-                      ))}
-                    </PropuestaCriteriosSection>
-                  </PropuestaDetailSection>
-                ) : null;
-              })()}
-
-              {selectedPropuesta.archivosAdjuntos &&
-                selectedPropuesta.archivosAdjuntos.length > 0 && (
-                  <PropuestaDetailSection>
-                    <SectionTitle>Archivos adjuntos</SectionTitle>
-                    <PropuestaArchivos>
-                      {selectedPropuesta.archivosAdjuntos.map(
-                        (archivo, index) => (
-                          <ArchivoItem key={index}>
-                            <ArchivoIcon>📎</ArchivoIcon>
-                            <ArchivoName
-                              onClick={() =>
-                                handleDownloadArchivo(
-                                  archivo.archivoID || archivo.ArchivoID,
-                                  archivo.nombreArchivo || archivo.NombreArchivo
-                                )
-                              }
-                            >
-                              {archivo.nombreArchivo || archivo.NombreArchivo}
-                            </ArchivoName>
-                          </ArchivoItem>
-                        )
-                      )}
-                    </PropuestaArchivos>
-                  </PropuestaDetailSection>
+                    ✏️ Editar
+                  </EditButton>
                 )}
-            </PropuestaModalBody>
 
-            <PropuestaActions>
-              <PropuestaCloseButton onClick={handleClosePropuestaModal}>
-                Cerrar
-              </PropuestaCloseButton>
-            </PropuestaActions>
-          </PropuestaModalContent>
-        </PropuestaModalOverlay>
-      )}
+                {(selectedLicitacion.estadoNombre ||
+                  selectedLicitacion.EstadoNombre) === "Publicada" && (
+                  <CloseLicitacionButton
+                    onClick={() => handleCloseLicitacion(selectedLicitacion)}
+                  >
+                    ⏰ Cerrar licitación
+                  </CloseLicitacionButton>
+                )}
+
+                {(selectedLicitacion.estadoNombre ||
+                  selectedLicitacion.EstadoNombre) === "En Evaluación" &&
+                  propuestas.length > 0 && (
+                    <>
+                      <AdjudicarButton
+                        onClick={() =>
+                          handleAdjudicarLicitacion(selectedLicitacion)
+                        }
+                      >
+                        ✅ Adjudicar
+                      </AdjudicarButton>
+                      <CloseLicitacionButton
+                        onClick={() =>
+                          handleSeleccionarGanador(selectedLicitacion)
+                        }
+                      >
+                        🏆 Seleccionar Ganador
+                      </CloseLicitacionButton>
+                    </>
+                  )}
+
+                {!["Cerrada", "Adjudicada"].includes(
+                  selectedLicitacion.estadoNombre ||
+                    selectedLicitacion.EstadoNombre
+                ) && (
+                  <DeleteButton
+                    onClick={() => handleDeleteLicitacion(selectedLicitacion)}
+                  >
+                    🗑️ Eliminar
+                  </DeleteButton>
+                )}
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+
+        {/* Modales de confirmación */}
+        {showConfirmDelete && (
+          <ConfirmModal>
+            <ConfirmContent>
+              <ConfirmTitle>⚠️ Confirmar eliminación</ConfirmTitle>
+              <ConfirmText>
+                ¿Estás seguro de que deseas eliminar la licitación "
+                {deletingLicitacion?.titulo || deletingLicitacion?.Titulo}"?
+                Esta acción no se puede deshacer.
+              </ConfirmText>
+              <ConfirmActions>
+                <ConfirmDeleteButton onClick={confirmDeleteLicitacion}>
+                  Eliminar
+                </ConfirmDeleteButton>
+                <CancelButton onClick={cancelDeleteLicitacion}>
+                  Cancelar
+                </CancelButton>
+              </ConfirmActions>
+            </ConfirmContent>
+          </ConfirmModal>
+        )}
+
+        {showConfirmClose && (
+          <ConfirmModal>
+            <ConfirmContent>
+              <ConfirmTitle>⏰ Confirmar cierre</ConfirmTitle>
+              <ConfirmText>
+                ¿Deseas cerrar la licitación "
+                {closingLicitacion?.titulo || closingLicitacion?.Titulo}" y
+                pasarla a evaluación?
+              </ConfirmText>
+              <ConfirmActions>
+                <ConfirmDeleteButton onClick={confirmCloseLicitacion}>
+                  Cerrar
+                </ConfirmDeleteButton>
+                <CancelButton onClick={cancelCloseLicitacion}>
+                  Cancelar
+                </CancelButton>
+              </ConfirmActions>
+            </ConfirmContent>
+          </ConfirmModal>
+        )}
+
+        {showConfirmAdjudicar && (
+          <ConfirmModal>
+            <ConfirmContent>
+              <ConfirmTitle>✅ Confirmar adjudicación</ConfirmTitle>
+              <ConfirmText>
+                ¿Deseas marcar la licitación "
+                {adjudicandoLicitacion?.titulo || adjudicandoLicitacion?.Titulo}
+                " como adjudicada?
+              </ConfirmText>
+              <ConfirmActions>
+                <ConfirmDeleteButton onClick={confirmAdjudicarLicitacion}>
+                  Adjudicar
+                </ConfirmDeleteButton>
+                <CancelButton onClick={cancelAdjudicarLicitacion}>
+                  Cancelar
+                </CancelButton>
+              </ConfirmActions>
+            </ConfirmContent>
+          </ConfirmModal>
+        )}
+
+        {/* Modal de confirmación para seleccionar propuesta ganadora */}
+        {showConfirmSeleccionarGanadora && (
+          <ConfirmModal>
+            <ConfirmContent>
+              <ConfirmSuccessTitle>
+                🏆 Confirmar selección de ganadora
+              </ConfirmSuccessTitle>
+              <ConfirmText>
+                ¿Deseas seleccionar la propuesta de "
+                {propuestaGanadora?.proveedorNombre ||
+                  propuestaGanadora?.ProveedorNombre}
+                " como ganadora? La licitación pasará a estado "Adjudicada".
+              </ConfirmText>
+              <ConfirmActions>
+                <ConfirmSuccessButton
+                  onClick={confirmSeleccionarPropuestaGanadora}
+                >
+                  Seleccionar ganadora
+                </ConfirmSuccessButton>
+                <CancelButton onClick={cancelSeleccionarPropuestaGanadora}>
+                  Cancelar
+                </CancelButton>
+              </ConfirmActions>
+            </ConfirmContent>
+          </ConfirmModal>
+        )}
+
+        {/* Modal de selección de ganador */}
+        {showGanadorModal && (
+          <GanadorModal>
+            <GanadorModalContent>
+              <GanadorModalHeader>
+                <CloseButton onClick={cancelSeleccionarGanador}>×</CloseButton>
+                <GanadorModalTitle>Seleccionar ganador</GanadorModalTitle>
+              </GanadorModalHeader>
+
+              <GanadorModalBody>
+                <GanadorInstruccion>
+                  Selecciona la propuesta ganadora de la licitación. Las
+                  propuestas están ordenadas por puntuación.
+                </GanadorInstruccion>
+
+                <GanadorPropuestasList>
+                  {propuestas.map((propuesta, index) => (
+                    <GanadorPropuestaItem
+                      key={propuesta.propuestaID || propuesta.PropuestaID}
+                      selected={
+                        selectedGanador &&
+                        (selectedGanador.propuestaID ||
+                          selectedGanador.PropuestaID) ===
+                          (propuesta.propuestaID || propuesta.PropuestaID)
+                      }
+                      onClick={() => setSelectedGanador(propuesta)}
+                    >
+                      <GanadorPropuestaHeader>
+                        <GanadorProveedorNombre>
+                          {propuesta.proveedorNombre ||
+                            propuesta.ProveedorNombre}
+                        </GanadorProveedorNombre>
+                        <GanadorPropuestaRanking position={index + 1}>
+                          Puesto #{index + 1}
+                        </GanadorPropuestaRanking>
+                      </GanadorPropuestaHeader>
+
+                      <GanadorPropuestaInfo>
+                        <div>
+                          <strong>Presupuesto:</strong>{" "}
+                          {formatCurrency(
+                            propuesta.presupuestoOfrecido ||
+                              propuesta.PresupuestoOfrecido
+                          )}
+                        </div>
+                        <div>
+                          <strong>Puntuación:</strong>{" "}
+                          {(
+                            propuesta.scoreCalculado ||
+                            propuesta.scoreTotal ||
+                            0
+                          ).toFixed(1)}
+                        </div>
+                      </GanadorPropuestaInfo>
+                    </GanadorPropuestaItem>
+                  ))}
+                </GanadorPropuestasList>
+              </GanadorModalBody>
+
+              <GanadorModalActions>
+                <GanadorConfirmButton
+                  onClick={confirmSeleccionarGanador}
+                  disabled={!selectedGanador}
+                >
+                  Confirmar Ganador
+                </GanadorConfirmButton>
+                <GanadorCancelButton onClick={cancelSeleccionarGanador}>
+                  Cancelar
+                </GanadorCancelButton>
+              </GanadorModalActions>
+            </GanadorModalContent>
+          </GanadorModal>
+        )}
+
+        {/* Modal de detalle de propuesta */}
+        {showPropuestaModal && selectedPropuesta && (
+          <PropuestaModalOverlay onClick={handleModalOverlayClickPropuesta}>
+            <PropuestaModalContent onClick={(e) => e.stopPropagation()}>
+              <PropuestaModalHeader>
+                <CloseButton onClick={handleClosePropuestaModal}>×</CloseButton>
+                <PropuestaModalTitle>
+                  Propuesta de{" "}
+                  {selectedPropuesta.proveedorNombre ||
+                    selectedPropuesta.ProveedorNombre}
+                </PropuestaModalTitle>
+                <PropuestaModalSubtitle>
+                  Enviada el{" "}
+                  {formatDate(
+                    selectedPropuesta.fechaEnvio || selectedPropuesta.FechaEnvio
+                  )}
+                </PropuestaModalSubtitle>
+              </PropuestaModalHeader>
+
+              <PropuestaModalBody>
+                <PropuestaDetailSection>
+                  <SectionTitle>Información de la propuesta</SectionTitle>
+                  <PropuestaDetailGrid>
+                    <PropuestaInfoCard>
+                      <PropuestaDetailInfoLabel>
+                        Presupuesto ofrecido
+                      </PropuestaDetailInfoLabel>
+                      <PropuestaDetailInfoValue>
+                        {formatCurrency(
+                          selectedPropuesta.presupuestoOfrecido ||
+                            selectedPropuesta.PresupuestoOfrecido
+                        )}
+                      </PropuestaDetailInfoValue>
+                    </PropuestaInfoCard>
+
+                    <PropuestaStatusCard>
+                      <PropuestaStatusLabel>Estado</PropuestaStatusLabel>
+                      <PropuestaStatusValue>
+                        {selectedPropuesta.estado ||
+                          selectedPropuesta.Estado ||
+                          "Enviada"}
+                      </PropuestaStatusValue>
+                    </PropuestaStatusCard>
+                  </PropuestaDetailGrid>
+
+                  {/* Descripción de la propuesta */}
+                  {(selectedPropuesta.descripcion ||
+                    selectedPropuesta.Descripcion) && (
+                    <>
+                      <SectionTitle>Descripción</SectionTitle>
+                      <PropuestaDescription>
+                        {selectedPropuesta.descripcion ||
+                          selectedPropuesta.Descripcion}
+                      </PropuestaDescription>
+                    </>
+                  )}
+
+                  {/* Criterios de evaluación */}
+                  {selectedPropuesta.respuestasCriterios &&
+                    selectedPropuesta.respuestasCriterios.length > 0 && (
+                      <>
+                        <SectionTitle>Criterios de evaluación</SectionTitle>
+                        <PropuestaCriteriosSection>
+                          {selectedPropuesta.respuestasCriterios.map(
+                            (respuesta) => (
+                              <PropuestaCriterioItem
+                                key={
+                                  respuesta.criterioID || respuesta.CriterioID
+                                }
+                              >
+                                <PropuestaCriterioName>
+                                  {respuesta.criterioNombre ||
+                                    respuesta.CriterioNombre ||
+                                    "Criterio"}
+                                </PropuestaCriterioName>
+                                <PropuestaCriterioDescription>
+                                  {respuesta.criterioDescripcion ||
+                                    respuesta.CriterioDescripcion ||
+                                    "Sin descripción"}
+                                </PropuestaCriterioDescription>
+                                <PropuestaCriterioValue>
+                                  {respuesta.valorProveedor ||
+                                    "No especificado"}
+                                </PropuestaCriterioValue>
+                              </PropuestaCriterioItem>
+                            )
+                          )}
+                        </PropuestaCriteriosSection>
+                      </>
+                    )}
+                </PropuestaDetailSection>
+              </PropuestaModalBody>
+
+              <PropuestaActions>
+                <PropuestaCloseButton onClick={handleClosePropuestaModal}>
+                  Cerrar
+                </PropuestaCloseButton>
+              </PropuestaActions>
+            </PropuestaModalContent>
+          </PropuestaModalOverlay>
+        )}
+      </MainContent>
 
       <ToastContainer
         position="top-right"
@@ -3599,8 +3250,6 @@ const LicitacionesMinera = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
-        style={{ zIndex: 9999 }}
       />
     </Container>
   );

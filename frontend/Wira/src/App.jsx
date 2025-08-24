@@ -21,6 +21,7 @@ import LicitacionesMinera from "./components/LicitacionesMinera";
 import LicitacionesProveedor from "./components/LicitacionesProveedor";
 import PropuestasProveedor from "./components/PropuestasProveedor";
 import EditarPropuesta from "./components/EditarPropuesta";
+import HistorialProveedor from "./components/HistorialProveedor";
 import Profile from "./components/Profile";
 import ColorPalette from "./components/ColorPalette";
 import "./App.css";
@@ -136,6 +137,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EditarPropuesta />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/historial-proveedor"
+              element={
+                <ProtectedRoute>
+                  <HistorialProveedor />
                 </ProtectedRoute>
               }
             />

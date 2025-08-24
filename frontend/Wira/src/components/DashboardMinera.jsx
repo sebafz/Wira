@@ -140,18 +140,20 @@ const StatCard = styled.div`
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   text-align: center;
+  border-left: 4px solid ${(props) => props.color || "#fc6b0a"};
 `;
 
 const StatNumber = styled.div`
   font-size: 2.5rem;
   font-weight: bold;
-  color: #fc6b0a;
+  color: ${(props) => props.color || "#fc6b0a"};
   margin-bottom: 5px;
 `;
 
 const StatLabel = styled.div`
   color: #666;
   font-size: 1rem;
+  font-weight: 500;
 `;
 
 const DashboardMinera = () => {
@@ -232,26 +234,28 @@ const DashboardMinera = () => {
         </CompanyInfo>
 
         <StatsGrid>
-          <StatCard>
-            <StatNumber>
+          <StatCard color="#fc6b0a">
+            <StatNumber color="#fc6b0a">
               {loading ? "..." : kpis.licitacionesActivas}
             </StatNumber>
             <StatLabel>Licitaciones activas</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatNumber>
+          <StatCard color="#ffc107">
+            <StatNumber color="#ffc107">
               {loading ? "..." : kpis.licitacionesEnEvaluacion}
             </StatNumber>
             <StatLabel>En evaluación</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatNumber>
+          <StatCard color="#28a745">
+            <StatNumber color="#28a745">
               {loading ? "..." : kpis.propuestasRecibidas}
             </StatNumber>
             <StatLabel>Propuestas recibidas</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatNumber>{loading ? "..." : kpis.adjudicaciones}</StatNumber>
+          <StatCard color="#17a2b8">
+            <StatNumber color="#17a2b8">
+              {loading ? "..." : kpis.adjudicaciones}
+            </StatNumber>
             <StatLabel>Adjudicaciones</StatLabel>
           </StatCard>
         </StatsGrid>
