@@ -1035,6 +1035,21 @@ const ConfirmSuccessButton = styled(ConfirmButton)`
   }
 `;
 
+const ConfirmYellowTitle = styled.h3`
+  color: #ffc107;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+`;
+
+const ConfirmYellowButton = styled(ConfirmButton)`
+  background: #ffc107;
+  color: #212529;
+
+  &:hover {
+    background: #e0a800;
+  }
+`;
+
 const CancelButton = styled(ConfirmButton)`
   background: #6c757d;
   color: white;
@@ -1462,6 +1477,7 @@ const LicitacionesMinera = () => {
   const [showConfirmAdjudicar, setShowConfirmAdjudicar] = useState(false);
   const [showConfirmSeleccionarGanadora, setShowConfirmSeleccionarGanadora] =
     useState(false);
+  const [showConfirmFinalizar, setShowConfirmFinalizar] = useState(false);
 
   // Estados de acciones pendientes
   const [deletingLicitacion, setDeletingLicitacion] = useState(null);
@@ -1469,6 +1485,7 @@ const LicitacionesMinera = () => {
   const [adjudicandoLicitacion, setAdjudicandoLicitacion] = useState(null);
   const [seleccionandoGanador, setSeleccionandoGanador] = useState(null);
   const [propuestaGanadora, setPropuestaGanadora] = useState(null);
+  const [finalizandoLicitacion, setFinalizandoLicitacion] = useState(null);
 
   // Estados para filtros y ordenamiento
   const [filters, setFilters] = useState({
@@ -1900,8 +1917,8 @@ const LicitacionesMinera = () => {
       const estadoLicitacion =
         licitacionActual?.estadoNombre || licitacionActual?.EstadoNombre;
 
-      // Si está adjudicada, solo mostrar la propuesta ganadora
-      if (estadoLicitacion === "Adjudicada") {
+      // Si está adjudicada o cerrada, solo mostrar la propuesta ganadora
+      if (estadoLicitacion === "Adjudicada" || estadoLicitacion === "Cerrada") {
         const propuestaGanadoraResponse = await apiRequest(
           `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
         );
@@ -1929,7 +1946,7 @@ const LicitacionesMinera = () => {
           const data = await response.json();
 
           // Estados que muestran ranking completo
-          const estadosConRanking = ["Cerrada"];
+          const estadosConRanking = ["En Evaluación"];
 
           if (estadosConRanking.includes(estadoLicitacion)) {
             const criteriosResponse = await apiRequest(
@@ -1961,7 +1978,7 @@ const LicitacionesMinera = () => {
               setPropuestas(propuestasOrdenadas);
             }
           } else {
-            // Para otros estados (En Evaluación, Publicada, etc.) mostrar propuestas sin ranking
+            // Para otros estados (Publicada, etc.) mostrar propuestas sin ranking
             setPropuestas(data);
           }
         } else {
@@ -2076,6 +2093,11 @@ const LicitacionesMinera = () => {
     setShowConfirmAdjudicar(true);
   };
 
+  const handleFinalizarLicitacion = (licitacion) => {
+    setFinalizandoLicitacion(licitacion);
+    setShowConfirmFinalizar(true);
+  };
+
   const handleSeleccionarGanador = async (licitacion) => {
     setSeleccionandoGanador(licitacion);
     const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
@@ -2188,8 +2210,8 @@ const LicitacionesMinera = () => {
     const success = await executeAction(
       "cerrar",
       licitacionId,
-      "Licitación cerrada y pasada a evaluación exitosamente",
-      "Error al cerrar la licitación"
+      "Licitación pasada a evaluación exitosamente",
+      "Error al pasar la licitación a evaluación"
     );
 
     if (success) {
@@ -2213,6 +2235,24 @@ const LicitacionesMinera = () => {
     if (success) {
       setShowConfirmAdjudicar(false);
       setAdjudicandoLicitacion(null);
+    }
+  };
+
+  const confirmFinalizarLicitacion = async () => {
+    if (!finalizandoLicitacion) return;
+
+    const licitacionId =
+      finalizandoLicitacion.licitacionID || finalizandoLicitacion.LicitacionID;
+    const success = await executeAction(
+      "finalizar",
+      licitacionId,
+      "Licitación finalizada exitosamente",
+      "Error al finalizar la licitación"
+    );
+
+    if (success) {
+      setShowConfirmFinalizar(false);
+      setFinalizandoLicitacion(null);
     }
   };
 
@@ -2251,7 +2291,7 @@ const LicitacionesMinera = () => {
         );
       }
 
-      // Cerrar licitación
+      // Cerrar licitación (pasar a "En Evaluación")
       const licitacionResponse = await apiRequest(
         `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
         {
@@ -2265,7 +2305,9 @@ const LicitacionesMinera = () => {
         );
       }
 
-      toast.success("Ganador seleccionado y licitación cerrada exitosamente");
+      toast.success(
+        "Ganador seleccionado y licitación pasada a evaluación exitosamente"
+      );
 
       // Cerrar modales y recargar
       setShowGanadorModal(false);
@@ -2360,6 +2402,11 @@ const LicitacionesMinera = () => {
   const cancelAdjudicarLicitacion = () => {
     setShowConfirmAdjudicar(false);
     setAdjudicandoLicitacion(null);
+  };
+
+  const cancelFinalizarLicitacion = () => {
+    setShowConfirmFinalizar(false);
+    setFinalizandoLicitacion(null);
   };
 
   const cancelSeleccionarGanador = () => {
@@ -2763,7 +2810,9 @@ const LicitacionesMinera = () => {
                 <PropuestasSection>
                   <PropuestasTitle>
                     {(selectedLicitacion.estadoNombre ||
-                      selectedLicitacion.EstadoNombre) === "Adjudicada"
+                      selectedLicitacion.EstadoNombre) === "Adjudicada" ||
+                    (selectedLicitacion.estadoNombre ||
+                      selectedLicitacion.EstadoNombre) === "Cerrada"
                       ? `Propuesta ganadora (${
                           propuestas.length === 0 ? "sin definir" : "1"
                         })`
@@ -2779,7 +2828,9 @@ const LicitacionesMinera = () => {
                     <EmptyPropuestas>
                       <EmptyPropuestasText>
                         {(selectedLicitacion.estadoNombre ||
-                          selectedLicitacion.EstadoNombre) === "Adjudicada"
+                          selectedLicitacion.EstadoNombre) === "Adjudicada" ||
+                        (selectedLicitacion.estadoNombre ||
+                          selectedLicitacion.EstadoNombre) === "Cerrada"
                           ? "No se ha definido una propuesta ganadora aún."
                           : "No hay propuestas recibidas aún."}
                       </EmptyPropuestasText>
@@ -2802,7 +2853,9 @@ const LicitacionesMinera = () => {
                           propuesta.scoreCalculado || propuesta.scoreTotal || 0;
                         const esAdjudicada =
                           (selectedLicitacion.estadoNombre ||
-                            selectedLicitacion.EstadoNombre) === "Adjudicada";
+                            selectedLicitacion.EstadoNombre) === "Adjudicada" ||
+                          (selectedLicitacion.estadoNombre ||
+                            selectedLicitacion.EstadoNombre) === "Cerrada";
 
                         return (
                           <PropuestaCard
@@ -2820,10 +2873,10 @@ const LicitacionesMinera = () => {
                                 : {}
                             }
                           >
-                            {/* Botón para seleccionar como ganadora - solo en estado "Cerrada" */}
+                            {/* Botón para seleccionar como ganadora - solo en estado "En Evaluación" */}
                             {(selectedLicitacion.estadoNombre ||
                               selectedLicitacion.EstadoNombre) ===
-                              "Cerrada" && (
+                              "En Evaluación" && (
                               <SeleccionarGanadoraButton
                                 className="seleccionar-ganadora-btn"
                                 onClick={(e) => {
@@ -2932,30 +2985,20 @@ const LicitacionesMinera = () => {
                   <CloseLicitacionButton
                     onClick={() => handleCloseLicitacion(selectedLicitacion)}
                   >
-                    ⏰ Cerrar licitación
+                    ⏰ Pasar a evaluación
                   </CloseLicitacionButton>
                 )}
 
                 {(selectedLicitacion.estadoNombre ||
-                  selectedLicitacion.EstadoNombre) === "En Evaluación" &&
-                  propuestas.length > 0 && (
-                    <>
-                      <AdjudicarButton
-                        onClick={() =>
-                          handleAdjudicarLicitacion(selectedLicitacion)
-                        }
-                      >
-                        ✅ Adjudicar
-                      </AdjudicarButton>
-                      <CloseLicitacionButton
-                        onClick={() =>
-                          handleSeleccionarGanador(selectedLicitacion)
-                        }
-                      >
-                        🏆 Seleccionar Ganador
-                      </CloseLicitacionButton>
-                    </>
-                  )}
+                  selectedLicitacion.EstadoNombre) === "Adjudicada" && (
+                  <CloseLicitacionButton
+                    onClick={() =>
+                      handleFinalizarLicitacion(selectedLicitacion)
+                    }
+                  >
+                    🏁 Finalizar Licitación
+                  </CloseLicitacionButton>
+                )}
 
                 {!["Cerrada", "Adjudicada"].includes(
                   selectedLicitacion.estadoNombre ||
@@ -2997,7 +3040,7 @@ const LicitacionesMinera = () => {
         {showConfirmClose && (
           <ConfirmModal>
             <ConfirmContent>
-              <ConfirmTitle>⏰ Confirmar cierre</ConfirmTitle>
+              <ConfirmTitle>⏰ Confirmar paso a evaluación</ConfirmTitle>
               <ConfirmText>
                 ¿Deseas cerrar la licitación "
                 {closingLicitacion?.titulo || closingLicitacion?.Titulo}" y
@@ -3005,7 +3048,7 @@ const LicitacionesMinera = () => {
               </ConfirmText>
               <ConfirmActions>
                 <ConfirmDeleteButton onClick={confirmCloseLicitacion}>
-                  Cerrar
+                  Pasar a evaluación
                 </ConfirmDeleteButton>
                 <CancelButton onClick={cancelCloseLicitacion}>
                   Cancelar
@@ -3029,6 +3072,27 @@ const LicitacionesMinera = () => {
                   Adjudicar
                 </ConfirmDeleteButton>
                 <CancelButton onClick={cancelAdjudicarLicitacion}>
+                  Cancelar
+                </CancelButton>
+              </ConfirmActions>
+            </ConfirmContent>
+          </ConfirmModal>
+        )}
+
+        {showConfirmFinalizar && (
+          <ConfirmModal>
+            <ConfirmContent>
+              <ConfirmYellowTitle>🏁 Confirmar finalización</ConfirmYellowTitle>
+              <ConfirmText>
+                ¿Deseas finalizar la licitación "
+                {finalizandoLicitacion?.titulo || finalizandoLicitacion?.Titulo}
+                " y marcarla como cerrada?
+              </ConfirmText>
+              <ConfirmActions>
+                <ConfirmYellowButton onClick={confirmFinalizarLicitacion}>
+                  Finalizar
+                </ConfirmYellowButton>
+                <CancelButton onClick={cancelFinalizarLicitacion}>
                   Cancelar
                 </CancelButton>
               </ConfirmActions>

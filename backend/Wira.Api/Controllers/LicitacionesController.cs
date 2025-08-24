@@ -374,8 +374,8 @@ namespace Wira.Api.Controllers
                 // Determinar el estado de destino basado en el estado actual
                 if (estadoActual == "Publicada")
                 {
-                    // Si está publicada, pasa a cerrada
-                    estadoDestino = "Cerrada";
+                    // Si está publicada, pasa a "En Evaluación"
+                    estadoDestino = "En Evaluación";
                     mensajeNotificacion = "Licitación cerrada exitosamente y pasada a evaluación";
                 }
                 else if (estadoActual == "Adjudicada")
@@ -399,20 +399,28 @@ namespace Wira.Api.Controllers
                     return BadRequest(new { message = $"No se encontró el estado '{estadoDestino}'" });
                 }
 
-                // Cambiar el estado de la licitación y actualizar la fecha de cierre
+                // Cambiar el estado de la licitación
                 licitacion.EstadoLicitacionID = estadoNuevo.EstadoLicitacionID;
-                licitacion.FechaCierre = DateTime.UtcNow;
+                
+                // Solo actualizar la fecha de cierre si realmente se está cerrando (no en evaluación)
+                if (estadoDestino == "Cerrada")
+                {
+                    licitacion.FechaCierre = DateTime.UtcNow;
+                }
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Licitación cerrada con ID: {id}. Estado: {estadoActual} -> {estadoDestino}");
+                _logger.LogInformation($"Licitación actualizada con ID: {id}. Estado: {estadoActual} -> {estadoDestino}");
 
-                // Crear notificación de cierre
-                await _notificacionService.CrearNotificacionLicitacionCerrada(
-                    id, 
-                    licitacion.Titulo, 
-                    licitacion.MineraID
-                );
+                // Crear notificación apropiada
+                if (estadoDestino == "En Evaluación")
+                {
+                    await _notificacionService.CrearNotificacionLicitacionCerrada(
+                        id, 
+                        licitacion.Titulo, 
+                        licitacion.MineraID
+                    );
+                }
 
                 return Ok(new { message = mensajeNotificacion });
             }
@@ -438,10 +446,10 @@ namespace Wira.Api.Controllers
                     return NotFound(new { message = "Licitación no encontrada" });
                 }
 
-                // Verificar que la licitación esté en estado "Cerrada"
-                if (licitacion.EstadoLicitacion.NombreEstado != "Cerrada")
+                // Verificar que la licitación esté en estado "En Evaluación"
+                if (licitacion.EstadoLicitacion.NombreEstado != "En Evaluación")
                 {
-                    return BadRequest(new { message = "La licitación debe estar en estado 'Cerrada' para poder adjudicarla" });
+                    return BadRequest(new { message = "La licitación debe estar en estado 'En Evaluación' para poder adjudicarla" });
                 }
 
                 // Buscar el estado "Adjudicada"
@@ -473,6 +481,54 @@ namespace Wira.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al adjudicar licitación con ID: {id}");
+                return StatusCode(500, new { message = "Error interno del servidor" });
+            }
+        }
+
+        [HttpPut("{id}/finalizar")]
+        public async Task<IActionResult> FinalizarLicitacion(int id)
+        {
+            try
+            {
+                var licitacion = await _context.Licitaciones
+                    .Include(l => l.EstadoLicitacion)
+                    .Where(l => l.LicitacionID == id && !l.Eliminado)
+                    .FirstOrDefaultAsync();
+
+                if (licitacion == null)
+                {
+                    return NotFound(new { message = "Licitación no encontrada" });
+                }
+
+                // Verificar que la licitación esté en estado "Adjudicada"
+                if (licitacion.EstadoLicitacion.NombreEstado != "Adjudicada")
+                {
+                    return BadRequest(new { message = "La licitación debe estar en estado 'Adjudicada' para poder finalizarla" });
+                }
+
+                // Buscar el estado "Cerrada"
+                var estadoCerrada = await _context.EstadosLicitacion
+                    .Where(e => e.NombreEstado == "Cerrada")
+                    .FirstOrDefaultAsync();
+
+                if (estadoCerrada == null)
+                {
+                    return BadRequest(new { message = "No se encontró el estado 'Cerrada'" });
+                }
+
+                // Cambiar el estado de la licitación y actualizar la fecha de cierre
+                licitacion.EstadoLicitacionID = estadoCerrada.EstadoLicitacionID;
+                licitacion.FechaCierre = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Licitación finalizada con ID: {id}");
+
+                return Ok(new { message = "Licitación finalizada exitosamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al finalizar licitación con ID: {id}");
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
