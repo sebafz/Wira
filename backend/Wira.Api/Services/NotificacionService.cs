@@ -212,86 +212,100 @@ namespace Wira.Api.Services
         {
             try
             {
-                using var transaction = await _context.Database.BeginTransactionAsync();
-
-                // Crear la notificación
-                var notificacion = new Notificacion
+                // Verificar si es un proveedor en memoria para evitar transacciones
+                var isInMemory = _context.Database.ProviderName?.Contains("InMemory") == true;
+                
+                if (!isInMemory)
                 {
-                    Titulo = titulo,
-                    Mensaje = mensaje,
-                    Tipo = tipo,
-                    EntidadTipo = entidadTipo,
-                    EntidadID = entidadId,
-                    FechaCreacion = DateTime.UtcNow
-                };
-
-                _context.Notificaciones.Add(notificacion);
-                await _context.SaveChangesAsync();
-
-                // Obtener los usuarios destinatarios
-                var usuariosDestinatarios = new HashSet<int>();
-
-                // Usuarios específicos
-                if (usuarioIds != null && usuarioIds.Any())
-                {
-                    foreach (var usuarioId in usuarioIds)
-                    {
-                        usuariosDestinatarios.Add(usuarioId);
-                    }
+                    using var transaction = await _context.Database.BeginTransactionAsync();
+                    await ExecuteNotificationCreation(titulo, mensaje, tipo, entidadTipo, entidadId, usuarioIds, rolIds, mineraIds);
+                    await transaction.CommitAsync();
                 }
-
-                // Usuarios por rol
-                if (rolIds != null && rolIds.Any())
+                else
                 {
-                    var usuariosPorRol = await _context.UsuariosRoles
-                        .Where(ur => rolIds.Contains(ur.RolID))
-                        .Select(ur => ur.UsuarioID)
-                        .ToListAsync();
-
-                    foreach (var usuarioId in usuariosPorRol)
-                    {
-                        usuariosDestinatarios.Add(usuarioId);
-                    }
+                    await ExecuteNotificationCreation(titulo, mensaje, tipo, entidadTipo, entidadId, usuarioIds, rolIds, mineraIds);
                 }
-
-                // Usuarios por minera
-                if (mineraIds != null && mineraIds.Any())
-                {
-                    var usuariosPorMinera = await _context.Usuarios
-                        .Where(u => u.MineraID.HasValue && mineraIds.Contains(u.MineraID.Value))
-                        .Select(u => u.UsuarioID)
-                        .ToListAsync();
-
-                    foreach (var usuarioId in usuariosPorMinera)
-                    {
-                        usuariosDestinatarios.Add(usuarioId);
-                    }
-                }
-
-                // Crear las relaciones NotificacionUsuario
-                foreach (var usuarioId in usuariosDestinatarios)
-                {
-                    var notificacionUsuario = new NotificacionUsuario
-                    {
-                        NotificacionID = notificacion.NotificacionID,
-                        UsuarioID = usuarioId,
-                        Leido = false
-                    };
-
-                    _context.NotificacionesUsuarios.Add(notificacionUsuario);
-                }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                _logger.LogInformation("Notificación creada: {Titulo} para {CantidadUsuarios} usuarios", 
-                    titulo, usuariosDestinatarios.Count);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear notificación: {Titulo}", titulo);
                 throw;
             }
+        }
+
+        private async Task ExecuteNotificationCreation(string titulo, string mensaje, string? tipo, string? entidadTipo, int? entidadId, List<int>? usuarioIds, List<int>? rolIds, List<int>? mineraIds)
+        {
+            // Crear la notificación
+            var notificacion = new Notificacion
+            {
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Tipo = tipo,
+                EntidadTipo = entidadTipo,
+                EntidadID = entidadId,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            _context.Notificaciones.Add(notificacion);
+            await _context.SaveChangesAsync();
+
+            // Obtener los usuarios destinatarios
+            var usuariosDestinatarios = new HashSet<int>();
+
+            // Usuarios específicos
+            if (usuarioIds != null && usuarioIds.Any())
+            {
+                foreach (var usuarioId in usuarioIds)
+                {
+                    usuariosDestinatarios.Add(usuarioId);
+                }
+            }
+
+            // Usuarios por rol
+            if (rolIds != null && rolIds.Any())
+            {
+                var usuariosPorRol = await _context.UsuariosRoles
+                    .Where(ur => rolIds.Contains(ur.RolID))
+                    .Select(ur => ur.UsuarioID)
+                    .ToListAsync();
+
+                foreach (var usuarioId in usuariosPorRol)
+                {
+                    usuariosDestinatarios.Add(usuarioId);
+                }
+            }
+
+            // Usuarios por minera
+            if (mineraIds != null && mineraIds.Any())
+            {
+                var usuariosPorMinera = await _context.Usuarios
+                    .Where(u => u.MineraID.HasValue && mineraIds.Contains(u.MineraID.Value))
+                    .Select(u => u.UsuarioID)
+                    .ToListAsync();
+
+                foreach (var usuarioId in usuariosPorMinera)
+                {
+                    usuariosDestinatarios.Add(usuarioId);
+                }
+            }
+
+            // Crear las relaciones NotificacionUsuario
+            foreach (var usuarioId in usuariosDestinatarios)
+            {
+                var notificacionUsuario = new NotificacionUsuario
+                {
+                    NotificacionID = notificacion.NotificacionID,
+                    UsuarioID = usuarioId,
+                    Leido = false
+                };
+
+                _context.NotificacionesUsuarios.Add(notificacionUsuario);
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Notificación creada: {Titulo} para {CantidadUsuarios} usuarios", 
+                titulo, usuariosDestinatarios.Count);
         }
     }
 }
