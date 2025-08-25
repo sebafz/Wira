@@ -1,0 +1,100 @@
+name: Hotfix Pipeline
+
+on:
+  push:
+    branches: ["hotfix/*"]
+  pull_request:
+    branches: ["hotfix/*"]
+
+env:
+  DOTNET_VERSION: "9.0.x"
+  BACKEND_PATH: "./backend/Wira.Api"
+  TESTS_PATH: "./backend/Wira.Api.Tests"
+
+jobs:
+  # ================================
+  # HOTFIX: FAST TESTING
+  # ================================
+  hotfix-validation:
+    name: 🚨 Hotfix - Critical Tests Only
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Restore dependencies
+        run: |
+          dotnet restore ${{ env.BACKEND_PATH }}
+          dotnet restore ${{ env.TESTS_PATH }}
+
+      - name: 🏗️ Build
+        run: |
+          dotnet build ${{ env.BACKEND_PATH }} --no-restore --configuration Release
+          dotnet build ${{ env.TESTS_PATH }} --no-restore --configuration Release
+
+      - name: 🚨 Run Critical Tests Only
+        run: |
+          # Solo tests críticos para hotfixes (más rápido)
+          dotnet test ${{ env.TESTS_PATH }} \
+            --no-build \
+            --configuration Release \
+            --filter "Category=Critical|AuthServiceTests|AuthIntegrationTests" \
+            --logger trx \
+            --results-directory ./hotfix-test-results
+
+      - name: 📊 Publish Hotfix Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: "Hotfix Test Results"
+          path: "./hotfix-test-results/*.trx"
+          reporter: dotnet-trx
+          fail-on-error: true
+
+  # ================================
+  # HOTFIX: EMERGENCY DEPLOYMENT
+  # ================================
+  emergency-deploy:
+    name: 🚨 Emergency Deployment
+    runs-on: ubuntu-latest
+    needs: [hotfix-validation]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    environment: production
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 🏗️ Publish Backend
+        run: |
+          dotnet publish ${{ env.BACKEND_PATH }} \
+            --configuration Release \
+            --output ./publish \
+            --no-restore
+
+      - name: 🚨 Deploy Hotfix to Production
+        run: |
+          echo "🚨 EMERGENCY DEPLOYMENT - HOTFIX"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Files ready for deployment: $(ls -la ./publish)"
+          # Aquí va tu lógica de deployment específica
+
+      - name: 📢 Notify Emergency Deployment
+        run: |
+          echo "🚨 HOTFIX DEPLOYED TO PRODUCTION"
+          echo "⚠️  Remember to:"
+          echo "1. Monitor application logs"
+          echo "2. Verify the fix is working"
+          echo "3. Create PR to merge hotfix back to main and develop"
