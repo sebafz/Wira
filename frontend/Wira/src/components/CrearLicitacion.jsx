@@ -667,7 +667,7 @@ const CrearLicitacion = () => {
 
   // Estado para modal de confirmación
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
-  // const [pendingFormData, setPendingFormData] = useState(null); // Unused for now
+  const [pendingFormData, setPendingFormData] = useState(null); // Used for confirmation modal
 
   // Cargar rubros y proyectos mineros al montar el componente
   useEffect(() => {

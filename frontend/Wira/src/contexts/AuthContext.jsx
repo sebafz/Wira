@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { apiService } from "../services/apiService";
 
+/* eslint-disable react-refresh/only-export-components */
+
 // Estados de autenticación
 const authReducer = (state, action) => {
   switch (action.type) {
@@ -190,8 +192,8 @@ export const useAuth = () => {
   return context;
 };
 
-// Export the AuthProvider as default to satisfy fast refresh
+// Export the AuthProvider as default (component) to satisfy fast refresh
 export default AuthProvider;
 
-// Also export AuthContext if needed elsewhere
+// Export AuthContext for compatibility
 export { AuthContext };
