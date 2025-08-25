@@ -1649,6 +1649,7 @@ const LicitacionesMinera = () => {
           }
           return { licitacionId, count: 0 };
         } catch (error) {
+          console.error("Error fetching propuestas count:", error);
           return { licitacionId, count: 0 };
         }
       });
@@ -1769,6 +1770,7 @@ const LicitacionesMinera = () => {
       setLicitaciones(licitacionesMinera);
       await fetchPropuestasCount(licitacionesMinera);
     } catch (error) {
+      console.error("Error fetching licitaciones:", error);
       setError(
         "Error al cargar las licitaciones. Por favor, intente nuevamente."
       );
@@ -1883,30 +1885,30 @@ const LicitacionesMinera = () => {
     }
   };
 
-  const fetchPropuestaGanadora = async (licitacionId) => {
-    try {
-      const response = await apiRequest(
-        `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
-      );
+  // const fetchPropuestaGanadora = async (licitacionId) => {
+  //   try {
+  //     const response = await apiRequest(
+  //       `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+  //     );
 
-      if (response.ok) {
-        const propuestaGanadora = await response.json();
-        return [propuestaGanadora];
-      } else if (response.status === 404) {
-        console.warn("No se encontró ganador para esta licitación");
-        return [];
-      } else {
-        console.error(
-          "Error al cargar propuesta ganadora:",
-          response.statusText
-        );
-        return [];
-      }
-    } catch (error) {
-      console.error("Error al cargar propuesta ganadora:", error);
-      return [];
-    }
-  };
+  //     if (response.ok) {
+  //       const propuestaGanadora = await response.json();
+  //       return [propuestaGanadora];
+  //     } else if (response.status === 404) {
+  //       console.warn("No se encontró ganador para esta licitación");
+  //       return [];
+  //     } else {
+  //       console.error(
+  //         "Error al cargar propuesta ganadora:",
+  //         response.statusText
+  //       );
+  //       return [];
+  //     }
+  //   } catch (error) {
+  //     console.error("Error al cargar propuesta ganadora:", error);
+  //     return [];
+  //   }
+  // };
 
   const fetchPropuestas = async (licitacionId) => {
     try {
@@ -2088,63 +2090,63 @@ const LicitacionesMinera = () => {
     setShowConfirmClose(true);
   };
 
-  const handleAdjudicarLicitacion = (licitacion) => {
-    setAdjudicandoLicitacion(licitacion);
-    setShowConfirmAdjudicar(true);
-  };
+  // const handleAdjudicarLicitacion = (licitacion) => {
+  //   setAdjudicandoLicitacion(licitacion);
+  //   setShowConfirmAdjudicar(true);
+  // };
 
   const handleFinalizarLicitacion = (licitacion) => {
     setFinalizandoLicitacion(licitacion);
     setShowConfirmFinalizar(true);
   };
 
-  const handleSeleccionarGanador = async (licitacion) => {
-    setSeleccionandoGanador(licitacion);
-    const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
+  // const handleSeleccionarGanador = async (licitacion) => {
+  //   setSeleccionandoGanador(licitacion);
+  //   const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
 
-    try {
-      const response = await apiRequest(
-        `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
-      );
-      if (!response.ok)
-        throw new Error(`Error al cargar propuestas: ${response.status}`);
+  //   try {
+  //     const response = await apiRequest(
+  //       `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+  //     );
+  //     if (!response.ok)
+  //       throw new Error(`Error al cargar propuestas: ${response.status}`);
 
-      const propuestasData = await response.json();
-      const criteriosResponse = await apiRequest(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-      );
+  //     const propuestasData = await response.json();
+  //     const criteriosResponse = await apiRequest(
+  //       `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
+  //     );
 
-      if (criteriosResponse.ok) {
-        const criterios = await criteriosResponse.json();
-        const propuestasRankeadas = await rankearPropuestas(
-          propuestasData,
-          criterios
-        );
-        setPropuestas(propuestasRankeadas);
-        setSelectedGanador(propuestasRankeadas[0] || null);
-      } else {
-        const propuestasOrdenadas = propuestasData
-          .sort((a, b) => {
-            const presupuestoA =
-              a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
-            const presupuestoB =
-              b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
-            return presupuestoA - presupuestoB;
-          })
-          .map((propuesta) => ({
-            ...propuesta,
-            scoreTotal: 0,
-            scoreCalculado: 0,
-          }));
+  //     if (criteriosResponse.ok) {
+  //       const criterios = await criteriosResponse.json();
+  //       const propuestasRankeadas = await rankearPropuestas(
+  //         propuestasData,
+  //         criterios
+  //       );
+  //       setPropuestas(propuestasRankeadas);
+  //       setSelectedGanador(propuestasRankeadas[0] || null);
+  //     } else {
+  //       const propuestasOrdenadas = propuestasData
+  //         .sort((a, b) => {
+  //           const presupuestoA =
+  //             a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
+  //           const presupuestoB =
+  //             b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
+  //           return presupuestoA - presupuestoB;
+  //         })
+  //         .map((propuesta) => ({
+  //           ...propuesta,
+  //           scoreTotal: 0,
+  //           scoreCalculado: 0,
+  //         }));
 
-        setPropuestas(propuestasOrdenadas);
-        setSelectedGanador(propuestasOrdenadas[0] || null);
-      }
-      setShowGanadorModal(true);
-    } catch (error) {
-      toast.error(`Error al cargar las propuestas: ${error.message}`);
-    }
-  };
+  //       setPropuestas(propuestasOrdenadas);
+  //       setSelectedGanador(propuestasOrdenadas[0] || null);
+  //     }
+  //     setShowGanadorModal(true);
+  //   } catch (error) {
+  //     toast.error(`Error al cargar las propuestas: ${error.message}`);
+  //   }
+  // };
 
   const handleSeleccionarPropuestaGanadora = (propuesta) => {
     setPropuestaGanadora(propuesta);
@@ -2431,7 +2433,7 @@ const LicitacionesMinera = () => {
         fetchPropuestasProveedor();
       }
     }
-  }, [user, token]);
+  }, [user, token]); // Conservativo: no agregamos funciones para evitar bucles infinitos
 
   // useEffect para filtros y ordenamiento
   useEffect(() => {
@@ -2439,7 +2441,7 @@ const LicitacionesMinera = () => {
       const filtered = applyFiltersAndSorting(originalLicitaciones);
       setLicitaciones(filtered);
     }
-  }, [filters, sortBy, sortOrder, originalLicitaciones]);
+  }, [filters, sortBy, sortOrder, originalLicitaciones]); // Conservativo: applyFiltersAndSorting es estable
 
   // Datos filtrados para renderizado
   const filteredLicitaciones = licitaciones;

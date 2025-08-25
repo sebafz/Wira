@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -167,16 +167,22 @@ const DashboardMinera = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.minera?.mineraID) {
-      fetchKpis();
-    }
-  }, [user]);
-
-  const fetchKpis = async () => {
+  const fetchKpis = useCallback(async () => {
     try {
       setLoading(true);
-      const mineraId = user?.minera.mineraID;
+      const mineraId = user?.minera?.mineraID;
+
+      console.log("DashboardMinera - fetchKpis called:", {
+        user,
+        mineraId,
+        token: !!token,
+      });
+
+      if (!mineraId) {
+        console.error("No mineraID found in user:", user);
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(
         `http://localhost:5242/api/dashboard/minera/${mineraId}/kpis`,
@@ -194,11 +200,18 @@ const DashboardMinera = () => {
         toast.error("Error al cargar estadísticas del dashboard");
       }
     } catch (error) {
+      console.error("Error fetching KPIs:", error);
       toast.error("Error al conectar con el servidor");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.minera?.mineraID, token]);
+
+  useEffect(() => {
+    if (user?.minera?.mineraID) {
+      fetchKpis();
+    }
+  }, [user?.minera?.mineraID, fetchKpis]);
 
   const handleCrearLicitacion = () => {
     navigate("/crear-licitacion");
@@ -216,9 +229,9 @@ const DashboardMinera = () => {
     return user?.Minera?.Nombre || user?.minera?.nombre || "Empresa Minera";
   };
 
-  const getCompanyCUIT = () => {
-    return user?.Minera?.CUIT || user?.minera?.cuit || "";
-  };
+  // const getCompanyCUIT = () => {
+  //   return user?.Minera?.CUIT || user?.minera?.cuit || "";
+  // };
 
   return (
     <DashboardContainer>

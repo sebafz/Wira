@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
@@ -713,6 +713,13 @@ const EditarLicitacion = () => {
 
   // Cargar datos iniciales
   useEffect(() => {
+    console.log("EditarLicitacion useEffect called:", {
+      id,
+      user,
+      userMineraID: user?.MineraID,
+      usermineraID: user?.mineraID,
+    });
+
     const fetchData = async () => {
       const promises = [fetchLicitacion(), fetchRubros()];
 
@@ -733,7 +740,7 @@ const EditarLicitacion = () => {
     }
   }, [id, user?.MineraID, user?.mineraID]);
 
-  const fetchLicitacion = async () => {
+  const fetchLicitacion = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -840,9 +847,9 @@ const EditarLicitacion = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]); // Agregamos id como dependencia porque lo usa
 
-  const fetchRubros = async () => {
+  const fetchRubros = useCallback(async () => {
     try {
       setLoadingRubros(true);
       setRubrosError("");
@@ -856,15 +863,16 @@ const EditarLicitacion = () => {
         throw new Error("Error al cargar rubros");
       }
     } catch (error) {
+      console.error("Error fetching rubros:", error);
       setRubrosError(
         "Error al cargar rubros. Algunos campos pueden no funcionar correctamente."
       );
     } finally {
       setLoadingRubros(false);
     }
-  };
+  }, []);
 
-  const fetchProyectosMineros = async () => {
+  const fetchProyectosMineros = useCallback(async () => {
     try {
       setLoadingProyectos(true);
       setProyectosError("");
@@ -884,19 +892,20 @@ const EditarLicitacion = () => {
         const data = await response.json();
         setProyectosMineros(data);
       } else {
-        const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
+        // const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
         setProyectosError(
           "Error al cargar proyectos mineros desde el servidor."
         );
         setProyectosMineros([]);
       }
     } catch (error) {
+      console.error("Error fetching proyectos mineros:", error);
       setProyectosError("No se pudo conectar con el servidor.");
       setProyectosMineros([]);
     } finally {
       setLoadingProyectos(false);
     }
-  };
+  }, [user?.MineraID, user?.mineraID]); // Solo necesita user IDs
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1015,6 +1024,7 @@ const EditarLicitacion = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      console.error("Error downloading file:", error);
       toast.error("Error al descargar el archivo");
     }
   };
@@ -1235,6 +1245,7 @@ const EditarLicitacion = () => {
         navigate("/mis-licitaciones");
       }, 1500);
     } catch (error) {
+      console.error("Error updating licitacion:", error);
       toast.error(
         "Error al actualizar la licitación. Por favor, intente nuevamente."
       );
@@ -1543,7 +1554,7 @@ const EditarLicitacion = () => {
                 )}
               </SectionTitle>
 
-              {criterios.map((criterio, index) => (
+              {criterios.map((criterio) => (
                 <CriterioItem key={criterio.id}>
                   <CriterioHeader>
                     <CriterioName

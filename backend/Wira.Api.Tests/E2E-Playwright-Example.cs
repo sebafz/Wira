@@ -1,4 +1,13 @@
+// ⚠️  ARCHIVO DE EJEMPLO - NO SE COMPILA EN CI/CD
 // EJEMPLO DE PLAYWRIGHT PARA WIRA (No ejecutar - solo referencia)
+// 
+// Para usar este ejemplo:
+// 1. Instalar: dotnet add package Microsoft.Playwright.NUnit
+// 2. Instalar: dotnet add package Microsoft.Playwright
+// 3. Ejecutar: pwsh bin/Debug/net9.0/playwright.ps1 install
+// 4. Remover la exclusión en Wira.Api.Tests.csproj
+//
+// Este archivo está excluido del build para que no rompa el CI/CD
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 

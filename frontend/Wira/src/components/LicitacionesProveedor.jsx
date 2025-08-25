@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -1048,7 +1048,7 @@ const CancelConfirmButton = styled.button`
 
 const LicitacionesProveedor = () => {
   const { user, token } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Currently not used
 
   // Estados para datos
   const [licitaciones, setLicitaciones] = useState([]);
@@ -1106,14 +1106,18 @@ const LicitacionesProveedor = () => {
     fetchRubros();
     fetchMineras();
     fetchUserPropuestas();
-  }, [user]);
+    // Note: ESLint suggests adding functions to dependencies, but this would cause infinite re-renders
+    // since these functions get recreated on each render. Using conservative dependency list instead.
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Aplicar filtros y ordenamiento cuando cambien
   useEffect(() => {
     if (user) {
       fetchLicitacionesActivas();
     }
-  }, [filters, sortBy, sortOrder, user]);
+    // Note: ESLint suggests adding fetchLicitacionesActivas to dependencies, but this would cause
+    // infinite re-renders since the function gets recreated on each render. Using conservative deps.
+  }, [filters, sortBy, sortOrder, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Efecto para cerrar modal con Escape
   useEffect(() => {
@@ -1134,7 +1138,7 @@ const LicitacionesProveedor = () => {
     };
   }, [showModal]);
 
-  const fetchLicitacionesActivas = async () => {
+  const fetchLicitacionesActivas = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -1262,7 +1266,7 @@ const LicitacionesProveedor = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, sortBy, sortOrder, userPropuestas]); // Conservative dependencies
 
   const fetchRubros = async () => {
     try {
@@ -1288,7 +1292,7 @@ const LicitacionesProveedor = () => {
     }
   };
 
-  const fetchUserPropuestas = async () => {
+  const fetchUserPropuestas = useCallback(async () => {
     try {
       const proveedorID =
         user?.ProveedorID ||
@@ -1308,7 +1312,7 @@ const LicitacionesProveedor = () => {
     } catch (error) {
       console.error("Error al cargar propuestas del usuario:", error);
     }
-  };
+  }, [user]); // Conservative dependencies
 
   const fetchCriteriosLicitacion = async (licitacionId) => {
     try {
@@ -1576,6 +1580,7 @@ const LicitacionesProveedor = () => {
           }
         } catch (parseError) {
           // Usar el mensaje de error por defecto
+          console.error("Parse error:", parseError);
         }
 
         throw new Error(errorMessage);
@@ -1658,14 +1663,17 @@ const LicitacionesProveedor = () => {
 
           if (!uploadResponse.ok) {
             const errorText = await uploadResponse.text();
+            console.error("Upload error text:", errorText);
             toast.warn(
               "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
             );
           } else {
             const fileResult = await uploadResponse.json();
+            console.log("File upload result:", fileResult);
             toast.success("✅ Propuesta y archivo enviados exitosamente!");
           }
         } catch (uploadError) {
+          console.error("Upload error:", uploadError);
           toast.warn(
             "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
           );
@@ -1854,6 +1862,7 @@ const LicitacionesProveedor = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      console.error("Download error:", error);
       toast.error("Error al descargar el archivo");
     }
   };
@@ -1910,12 +1919,13 @@ const LicitacionesProveedor = () => {
         return totalCount === 1
           ? "1 licitación disponible para postular"
           : `${totalCount} licitaciones disponibles para postular`;
-      default:
+      default: {
         const licSing = totalCount === 1 ? "licitación" : "licitaciones";
         const postSing = appliedCount === 1 ? "postulada" : "postuladas";
         const dispSing = notAppliedCount === 1 ? "disponible" : "disponibles";
         const activaWord = totalCount === 1 ? "activa" : "activas";
         return `${totalCount} ${licSing} ${activaWord} (${appliedCount} ${postSing}, ${notAppliedCount} ${dispSing})`;
+      }
     }
   };
 

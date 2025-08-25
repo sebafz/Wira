@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -335,9 +335,11 @@ const Navbar = () => {
       fetchNotifications();
       fetchUnreadCount();
     }
+    // Conservative dependency management: Not adding fetchNotifications and fetchUnreadCount
+    // to avoid potential infinite re-render loops. Functions are stable due to useCallback.
   }, [user]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user?.usuarioID) return;
 
     try {
@@ -360,9 +362,9 @@ const Navbar = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  };
+  }, [user, token]);
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     if (!user?.usuarioID) return;
 
     try {
@@ -382,7 +384,7 @@ const Navbar = () => {
     } catch (error) {
       console.error("Error al cargar conteo de notificaciones:", error);
     }
-  };
+  }, [user, token]);
 
   const markAsRead = async (notificationId) => {
     if (!user?.usuarioID) return;

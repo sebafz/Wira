@@ -82,6 +82,7 @@ export const AuthProvider = ({ children }) => {
           payload: { user, token },
         });
       } catch (error) {
+        console.error("Auth initialization error:", error);
         localStorage.removeItem("authToken");
         localStorage.removeItem("userInfo");
       }
@@ -151,6 +152,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       // Error silencioso para refresh de usuario
+      console.error("Refresh user error:", error);
     }
   };
 
@@ -188,4 +190,8 @@ export const useAuth = () => {
   return context;
 };
 
-export default AuthContext;
+// Export the AuthProvider as default to satisfy fast refresh
+export default AuthProvider;
+
+// Also export AuthContext if needed elsewhere
+export { AuthContext };

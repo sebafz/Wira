@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+// import { useAuth } from "../contexts/AuthContext"; // Currently not used
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../services/apiService";
 import logoWira from "../assets/logoWira.png";
@@ -392,6 +392,9 @@ const Register = () => {
       const response = await apiService.register(registrationData);
 
       if (response.data.success) {
+        setSuccess(
+          "Cuenta creada exitosamente. Redirigiendo a verificación..."
+        );
         // Redirigir a la página de verificación de email
         navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
       } else {

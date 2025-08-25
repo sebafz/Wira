@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -175,16 +175,16 @@ const DashboardProveedor = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.proveedor?.proveedorID) {
-      fetchKpis();
-    }
-  }, [user]);
-
-  const fetchKpis = async () => {
+  const fetchKpis = useCallback(async () => {
     try {
       setLoading(true);
       const proveedorId = user?.proveedor?.proveedorID;
+
+      if (!proveedorId) {
+        console.error("No proveedorID found in user:", user);
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(
         `http://localhost:5242/api/dashboard/proveedor/${proveedorId}/kpis`,
@@ -202,11 +202,18 @@ const DashboardProveedor = () => {
         toast.error("Error al cargar estadísticas del dashboard");
       }
     } catch (error) {
+      console.error("Error fetching KPIs:", error);
       toast.error("Error al conectar con el servidor");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.proveedor?.proveedorID, token]);
+
+  useEffect(() => {
+    if (user?.proveedor?.proveedorID) {
+      fetchKpis();
+    }
+  }, [user?.proveedor?.proveedorID, fetchKpis]);
 
   const handleVerLicitaciones = () => {
     navigate("/licitaciones-activas");
@@ -230,9 +237,9 @@ const DashboardProveedor = () => {
     );
   };
 
-  const getCompanyCUIT = () => {
-    return user?.Proveedor?.CUIT || user?.proveedor?.cuit || "";
-  };
+  // const getCompanyCUIT = () => {
+  //   return user?.Proveedor?.CUIT || user?.proveedor?.cuit || "";
+  // };
 
   const getRubroName = () => {
     return (

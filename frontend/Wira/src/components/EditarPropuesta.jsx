@@ -553,7 +553,7 @@ const ToastStyles = styled.div`
 `;
 
 const EditarPropuesta = () => {
-  const { user, token } = useAuth();
+  const { token } = useAuth(); // Removido 'user' ya que no se usa
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -564,7 +564,7 @@ const EditarPropuesta = () => {
 
   // Estado para el modal de confirmación
   const [showConfirmUpdate, setShowConfirmUpdate] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState(null);
+  // const [pendingFormData, setPendingFormData] = useState(null); // Unused for now
 
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -781,6 +781,7 @@ const EditarPropuesta = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      console.error("Error downloading file:", error);
       toast.error("Error al descargar el archivo");
     }
   };

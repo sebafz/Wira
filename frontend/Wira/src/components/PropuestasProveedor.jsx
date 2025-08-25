@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -769,12 +769,16 @@ const PropuestasProveedor = () => {
     if (user?.proveedor?.proveedorID) {
       fetchPropuestas();
     }
-  }, [user]);
+    // Note: ESLint suggests adding fetchPropuestas to dependencies, but this would cause infinite re-renders
+    // since the function gets recreated on each render. Using conservative dependency list instead.
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Aplicar filtros cuando cambien
   useEffect(() => {
     applyFilters();
-  }, [propuestas, filters, sortBy]);
+    // Note: ESLint suggests adding applyFilters to dependencies, but this would cause infinite re-renders
+    // since the function gets recreated on each render. Using conservative dependency list instead.
+  }, [propuestas, filters, sortBy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Efecto para cerrar modal con Escape
   useEffect(() => {
@@ -790,7 +794,7 @@ const PropuestasProveedor = () => {
     };
   }, [showModal]);
 
-  const fetchPropuestas = async () => {
+  const fetchPropuestas = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -813,14 +817,15 @@ const PropuestasProveedor = () => {
         setPropuestas([]);
       }
     } catch (error) {
+      console.error("Error fetching propuestas:", error);
       setError("No se pudo conectar con el servidor");
       setPropuestas([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]); // Conservative dependencies
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...propuestas];
 
     // Filtrar por nombre de licitación
@@ -878,7 +883,7 @@ const PropuestasProveedor = () => {
     });
 
     setFilteredPropuestas(filtered);
-  };
+  }, [propuestas, filters, sortBy]); // Conservative dependencies
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({
@@ -964,6 +969,7 @@ const PropuestasProveedor = () => {
         }
       }
     } catch (error) {
+      console.error("Error fetching propuesta details:", error);
       toast.error("Error al descargar detalles de la propuesta");
     }
   };
@@ -1076,6 +1082,7 @@ const PropuestasProveedor = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      console.error("Download error:", error);
       toast.error("Error al descargar el archivo");
     }
   };

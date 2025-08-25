@@ -667,7 +667,7 @@ const CrearLicitacion = () => {
 
   // Estado para modal de confirmación
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState(null);
+  // const [pendingFormData, setPendingFormData] = useState(null); // Unused for now
 
   // Cargar rubros y proyectos mineros al montar el componente
   useEffect(() => {
@@ -680,11 +680,12 @@ const CrearLicitacion = () => {
           const data = await response.json();
           setRubros(data);
         } else {
-          const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
+          // const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
           setRubrosError("Error al cargar rubros desde el servidor.");
           setRubros([]);
         }
       } catch (error) {
+        console.error("Error fetching rubros:", error);
         setRubrosError("No se pudo conectar con el servidor.");
         setRubros([]);
       } finally {
@@ -715,13 +716,14 @@ const CrearLicitacion = () => {
           const data = await response.json();
           setProyectosMineros(data);
         } else {
-          const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
+          // const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
           setProyectosError(
             "Error al cargar proyectos mineros desde el servidor."
           );
           setProyectosMineros([]);
         }
       } catch (error) {
+        console.error("Error fetching proyectos mineros:", error);
         setProyectosError("No se pudo conectar con el servidor.");
         setProyectosMineros([]);
       } finally {
@@ -834,7 +836,7 @@ const CrearLicitacion = () => {
         "El peso total de los criterios debe sumar exactamente 100%";
     }
 
-    criterios.forEach((criterio, index) => {
+    criterios.forEach((criterio) => {
       if (!criterio.nombre.trim()) {
         newErrors[`criterio_${criterio.id}_nombre`] =
           "El nombre del criterio es requerido";
@@ -1337,7 +1339,7 @@ const CrearLicitacion = () => {
                 )}
               </SectionTitle>
 
-              {criterios.map((criterio, index) => (
+              {criterios.map((criterio) => (
                 <CriterioItem key={criterio.id}>
                   <CriterioHeader>
                     <CriterioName

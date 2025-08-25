@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -361,7 +361,7 @@ const EmptyDescription = styled.p`
 
 const HistorialProveedor = () => {
   const { user, token } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Unused for now
 
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -382,12 +382,16 @@ const HistorialProveedor = () => {
   });
 
   useEffect(() => {
+    console.log("HistorialProveedor useEffect called:", {
+      user: !!user,
+      token: !!token,
+    });
     if (user && token) {
       fetchHistorial();
     }
-  }, [user, token]);
+  }, [user, token]); // Removemos fetchHistorial para evitar dependencia circular
 
-  const fetchHistorial = async () => {
+  const fetchHistorial = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -442,7 +446,7 @@ const HistorialProveedor = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, token]); // Simplificamos las dependencias
 
   const handleFilterChange = (field, value) => {
     setFiltros((prev) => ({ ...prev, [field]: value }));
