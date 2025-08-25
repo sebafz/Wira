@@ -47,36 +47,14 @@ jobs:
           dotnet test ${{ env.TESTS_PATH }} \
             --no-build \
             --configuration Release \
-            --filter "!Integration" \
-            --logger trx \
-            --results-directory ./test-results \
-            --collect:"XPlat Code Coverage"
+            --filter "!Integration"
 
       - name: Run Integration Tests
         run: |
           dotnet test ${{ env.TESTS_PATH }} \
             --no-build \
             --configuration Release \
-            --filter "AuthIntegrationTests|SimpleAuthIntegrationTests" \
-            --logger trx \
-            --results-directory ./test-results-integration
-
-      - name: Publish Test Results
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: "Backend Test Results"
-          path: "./test-results/*.trx,./test-results-integration/*.trx"
-          reporter: dotnet-trx
-          fail-on-error: true
-
-      - name: Code Coverage Report
-        uses: codecov/codecov-action@v3
-        if: always()
-        with:
-          files: ./test-results/*/coverage.cobertura.xml
-          flags: backend
-          name: backend-coverage
+            --filter "AuthIntegrationTests|SimpleAuthIntegrationTests"
 
   # ================================
   # JOB 2: FRONTEND BUILD & TEST
@@ -112,13 +90,6 @@ jobs:
         working-directory: ${{ env.FRONTEND_PATH }}
         run: npm run test:ci
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: ${{ env.FRONTEND_PATH }}/dist
-          retention-days: 7
-
   # ================================
   # JOB 3: NOTIFICATION
   # ================================
@@ -135,7 +106,6 @@ jobs:
           echo "Pipeline completed successfully!"
           echo "- Backend tests: ${{ needs.backend-test.result }}"
           echo "- Frontend tests: ${{ needs.frontend-test.result }}"
-          echo "- Security analysis: ${{ needs.security-analysis.result }}"
 
       - name: Failure Notification
         if: ${{ needs.backend-test.result == 'failure' || needs.frontend-test.result == 'failure' }}
@@ -143,5 +113,4 @@ jobs:
           echo "Pipeline failed!"
           echo "- Backend tests: ${{ needs.backend-test.result }}"
           echo "- Frontend tests: ${{ needs.frontend-test.result }}"
-          echo "- Security analysis: ${{ needs.security-analysis.result }}"
           exit 1

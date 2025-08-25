@@ -564,7 +564,7 @@ const EditarPropuesta = () => {
 
   // Estado para el modal de confirmación
   const [showConfirmUpdate, setShowConfirmUpdate] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState(null); // Used for confirmation modal
+  // const [pendingFormData, setPendingFormData] = useState(null); // Used for confirmation modal
 
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -818,7 +818,7 @@ const EditarPropuesta = () => {
       return;
     }
 
-    setPendingFormData(formData);
+    // setPendingFormData(formData); // Currently not used
     setShowConfirmUpdate(true);
   };
 
@@ -866,7 +866,7 @@ const EditarPropuesta = () => {
 
   const cancelUpdate = () => {
     setShowConfirmUpdate(false);
-    setPendingFormData(null);
+    // setPendingFormData(null); // Currently not used
   };
 
   const handleCancel = () => {
