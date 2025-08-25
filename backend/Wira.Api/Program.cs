@@ -89,11 +89,14 @@ app.MapControllers();
 // Ruta raíz que redirecciona a Swagger
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// Inicializar la base de datos con datos semilla
-using (var scope = app.Services.CreateScope())
+// Inicializar la base de datos con datos semilla (solo en entornos que no sean Testing)
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var context = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
-    await DbInitializer.InitializeAsync(context);
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
+        await DbInitializer.InitializeAsync(context);
+    }
 }
 
 app.Run();
