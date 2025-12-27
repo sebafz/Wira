@@ -13,9 +13,8 @@ namespace Wira.Api.Data
         public DbSet<Rol> Roles { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<UsuarioRol> UsuariosRoles { get; set; }
-        public DbSet<Minera> Mineras { get; set; }
+        public DbSet<Empresa> Empresas { get; set; }
         public DbSet<Rubro> Rubros { get; set; }
-        public DbSet<Proveedor> Proveedores { get; set; }
         public DbSet<EstadoLicitacion> EstadosLicitacion { get; set; }
         public DbSet<Licitacion> Licitaciones { get; set; }
         public DbSet<CriterioLicitacion> CriteriosLicitacion { get; set; }
@@ -50,13 +49,18 @@ namespace Wira.Api.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            modelBuilder.Entity<Minera>()
-                .HasIndex(m => m.CUIT)
+            modelBuilder.Entity<Usuario>()
+                .HasIndex(u => u.DNI)
                 .IsUnique();
 
-            modelBuilder.Entity<Proveedor>()
-                .HasIndex(p => p.CUIT)
+            modelBuilder.Entity<Empresa>()
+                .HasIndex(e => e.CUIT)
+                .HasDatabaseName("UX_Empresas_CUIT")
                 .IsUnique();
+
+            modelBuilder.Entity<Empresa>()
+                .ToTable(t => t.HasCheckConstraint("CK_Empresas_TipoEmpresa",
+                    "[TipoEmpresa] IN ('MINERA', 'PROVEEDOR')"));
 
             modelBuilder.Entity<EstadoLicitacion>()
                 .HasIndex(el => el.NombreEstado)
@@ -68,35 +72,30 @@ namespace Wira.Api.Data
 
             // Configuración de restricciones CHECK para ModoEvaluacion
             modelBuilder.Entity<CriterioLicitacion>()
-                .ToTable(t => t.HasCheckConstraint("CK_CriterioLicitacion_ModoEvaluacion", 
+                .ToTable(t => t.HasCheckConstraint("CK_CriterioLicitacion_ModoEvaluacion",
                     "[ModoEvaluacion] IN ('MENOR_MEJOR', 'MAYOR_MEJOR')"));
 
             // Configuración de restricciones CHECK para EntidadTipo en ArchivosAdjuntos
             modelBuilder.Entity<ArchivoAdjunto>()
-                .ToTable(t => t.HasCheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", 
+                .ToTable(t => t.HasCheckConstraint("CK_ArchivosAdjuntos_EntidadTipo",
                     "[EntidadTipo] IN ('LICITACION', 'PROPUESTA')"));
 
             // Configuración de restricciones CHECK para calificaciones
             modelBuilder.Entity<CalificacionPostLicitacion>()
-                .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", 
+                .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Puntualidad",
                     "[Puntualidad] BETWEEN 0 AND 10"))
-                .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Calidad", 
+                .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Calidad",
                     "[Calidad] BETWEEN 0 AND 10"))
-                .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", 
+                .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Comunicacion",
                     "[Comunicacion] BETWEEN 0 AND 10"));
 
             // Configuración de relaciones opcionales para Usuario
             modelBuilder.Entity<Usuario>()
-                .HasOne(u => u.Minera)
-                .WithMany(m => m.Usuarios)
-                .HasForeignKey(u => u.MineraID)
-                .IsRequired(false);
-
-            modelBuilder.Entity<Usuario>()
-                .HasOne(u => u.Proveedor)
-                .WithMany(p => p.Usuarios)
-                .HasForeignKey(u => u.ProveedorID)
-                .IsRequired(false);
+                .HasOne(u => u.Empresa)
+                .WithMany(e => e.Usuarios)
+                .HasForeignKey(u => u.EmpresaID)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Configuración de propiedades con valores por defecto
             modelBuilder.Entity<Usuario>()
@@ -111,13 +110,13 @@ namespace Wira.Api.Data
                 .Property(u => u.ValidadoEmail)
                 .HasDefaultValue(false);
 
-            modelBuilder.Entity<Minera>()
-                .Property(m => m.Activo)
+            modelBuilder.Entity<Empresa>()
+                .Property(e => e.Activo)
                 .HasDefaultValue(true);
 
-            modelBuilder.Entity<Proveedor>()
-                .Property(p => p.Activo)
-                .HasDefaultValue(true);
+            modelBuilder.Entity<Empresa>()
+                .Property(e => e.FechaAlta)
+                .HasDefaultValueSql("GETDATE()");
 
             modelBuilder.Entity<Rubro>()
                 .Property(r => r.Activo)
@@ -131,10 +130,10 @@ namespace Wira.Api.Data
                 .Property(l => l.FechaCreacion)
                 .HasDefaultValueSql("GETDATE()");
 
-            modelBuilder.Entity<Proveedor>()
-                .HasOne(p => p.Rubro)
+            modelBuilder.Entity<Empresa>()
+                .HasOne(e => e.Rubro)
                 .WithMany(r => r.Proveedores)
-                .HasForeignKey(p => p.RubroID)
+                .HasForeignKey(e => e.RubroID)
                 .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Licitacion>()
@@ -175,7 +174,6 @@ namespace Wira.Api.Data
                 .Property(a => a.Fecha)
                 .HasDefaultValueSql("GETDATE()");
 
-            // Configuración de relaciones opcionales para ArchivosAdjuntos
             modelBuilder.Entity<Licitacion>()
                 .HasOne(l => l.ArchivoAdjunto)
                 .WithMany()
@@ -183,12 +181,60 @@ namespace Wira.Api.Data
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<ArchivoAdjunto>()
+                .HasOne(a => a.Propuesta)
+                .WithMany(p => p.ArchivosAdjuntos)
+                .HasForeignKey(a => a.PropuestaID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configurar relaciones para evitar ciclos de eliminación en cascada
             modelBuilder.Entity<Propuesta>()
-                .HasOne(p => p.ArchivoAdjunto)
-                .WithMany()
-                .HasForeignKey(p => p.ArchivoID)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasOne(p => p.Licitacion)
+                .WithMany(l => l.Propuestas)
+                .HasForeignKey(p => p.LicitacionID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CriterioLicitacion>()
+                .HasOne(c => c.Licitacion)
+                .WithMany(l => l.CriteriosLicitacion)
+                .HasForeignKey(c => c.LicitacionID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RespuestaCriterioLicitacion>()
+                .HasOne(r => r.Propuesta)
+                .WithMany(p => p.RespuestasCriterios)
+                .HasForeignKey(r => r.PropuestaID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RespuestaCriterioLicitacion>()
+                .HasOne(r => r.Criterio)
+                .WithMany(c => c.RespuestasCriterios)
+                .HasForeignKey(r => r.CriterioID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CalificacionPostLicitacion>()
+                .HasOne(c => c.Licitacion)
+                .WithMany(l => l.CalificacionesPost)
+                .HasForeignKey(c => c.LicitacionID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CalificacionPostLicitacion>()
+                .HasOne(c => c.Proveedor)
+                .WithMany(e => e.CalificacionesPost)
+                .HasForeignKey(c => c.ProveedorID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HistorialProveedorLicitacion>()
+                .HasOne(h => h.Licitacion)
+                .WithMany(l => l.HistorialesProveedor)
+                .HasForeignKey(h => h.LicitacionID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HistorialProveedorLicitacion>()
+                .HasOne(h => h.Proveedor)
+                .WithMany(e => e.HistorialesProveedor)
+                .HasForeignKey(h => h.ProveedorID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

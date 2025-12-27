@@ -16,7 +16,7 @@ namespace Wira.Api.Controllers
         private readonly INotificacionService _notificacionService;
 
         public HistorialProveedorLicitacionController(
-            WiraDbContext context, 
+            WiraDbContext context,
             ILogger<HistorialProveedorLicitacionController> logger,
             INotificacionService notificacionService)
         {
@@ -100,7 +100,8 @@ namespace Wira.Api.Controllers
             try
             {
                 // Validar que el proveedor existe
-                var proveedor = await _context.Proveedores.FindAsync(request.ProveedorID);
+                var proveedor = await _context.Empresas
+                    .FirstOrDefaultAsync(p => p.EmpresaID == request.ProveedorID && p.TipoEmpresa == EmpresaTipos.Proveedor && p.Activo);
                 if (proveedor == null)
                 {
                     return BadRequest(new { message = "El proveedor especificado no existe" });
@@ -122,7 +123,7 @@ namespace Wira.Api.Controllers
                 {
                     // Actualizar el historial existente
                     var esNuevoGanador = historialExistente.Ganador != true && request.Ganador == true;
-                    
+
                     historialExistente.Resultado = request.Resultado;
                     historialExistente.Ganador = request.Ganador;
                     historialExistente.Observaciones = request.Observaciones;
@@ -138,7 +139,7 @@ namespace Wira.Api.Controllers
                             await _notificacionService.CrearNotificacionGanadorSeleccionado(
                                 licitacion.LicitacionID,
                                 licitacion.Titulo,
-                                proveedor.ProveedorID,
+                                proveedor.EmpresaID,
                                 proveedor.Nombre,
                                 licitacion.MineraID
                             );
@@ -188,7 +189,7 @@ namespace Wira.Api.Controllers
                             await _notificacionService.CrearNotificacionGanadorSeleccionado(
                                 licitacion.LicitacionID,
                                 licitacion.Titulo,
-                                proveedor.ProveedorID,
+                                proveedor.EmpresaID,
                                 proveedor.Nombre,
                                 licitacion.MineraID
                             );

@@ -32,8 +32,8 @@ namespace Wira.Api.Controllers
 
         // Extensiones permitidas
         private readonly string[] _allowedExtensions = {
-            ".pdf", ".doc", ".docx", ".xls", ".xlsx", 
-            ".jpg", ".jpeg", ".png", ".gif", 
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+            ".jpg", ".jpeg", ".png", ".gif",
             ".zip", ".rar", ".dwg"
         };
 
@@ -102,6 +102,7 @@ namespace Wira.Api.Controllers
                 {
                     EntidadTipo = request.EntidadTipo,
                     EntidadID = request.EntidadID,
+                    PropuestaID = request.EntidadTipo == "PROPUESTA" ? request.EntidadID : null,
                     NombreArchivo = request.File.FileName,
                     RutaArchivo = Path.Combine("uploads", request.EntidadTipo.ToLower(), fileName),
                     TipoMime = request.File.ContentType,

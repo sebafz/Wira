@@ -19,7 +19,7 @@ namespace Wira.Api.Tests.Services
         {
             _mockEmailService = new Mock<IEmailService>();
             _mockLogger = CreateMockLogger<AuthService>();
-            
+
             _authService = new AuthService(
                 DbContext,
                 Configuration,
@@ -99,7 +99,7 @@ namespace Wira.Api.Tests.Services
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             // Desactivar usuario
             var user = DbContext.Usuarios.First(u => u.Email == "minera@test.com");
             user.Activo = false;
@@ -144,7 +144,7 @@ namespace Wira.Api.Tests.Services
             result.Success.Should().BeTrue();
             result.User.Should().NotBeNull();
             result.User.Email.Should().Be(email);
-            
+
             if (email.Contains("minera"))
             {
                 result.User.Minera.Should().NotBeNull();
@@ -172,6 +172,7 @@ namespace Wira.Api.Tests.Services
                 Email = "nueva@minera.com",
                 Password = "newpassword123",
                 ConfirmPassword = "newpassword123",
+                DNI = "41000001",
                 TipoCuenta = "Minera"
             };
 
@@ -194,13 +195,14 @@ namespace Wira.Api.Tests.Services
         {
             // Arrange
             await SeedTestDataAsync(); // Para tener rubros disponibles
-            
+
             var registerRequest = new RegisterRequest
             {
                 Nombre = "Nuevo Proveedor",
                 Email = "nuevo@proveedor.com",
                 Password = "newpassword123",
                 ConfirmPassword = "newpassword123",
+                DNI = "41000002",
                 TipoCuenta = "Proveedor"
             };
 
@@ -223,13 +225,14 @@ namespace Wira.Api.Tests.Services
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             var registerRequest = new RegisterRequest
             {
                 Nombre = "Test User",
                 Email = "minera@test.com", // Email ya existe
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "41000003",
                 TipoCuenta = "Minera"
             };
 
@@ -251,7 +254,7 @@ namespace Wira.Api.Tests.Services
                 UsuarioID = 1,
                 Nombre = "Test User",
                 Email = "test@test.com",
-                Roles = new List<string> { "Minera" }
+                Roles = new List<string> { RoleNames.MineraUsuario }
             };
 
             // Act

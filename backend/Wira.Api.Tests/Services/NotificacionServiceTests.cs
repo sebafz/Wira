@@ -40,9 +40,11 @@ namespace Wira.Api.Tests.Services
             // Seed Roles
             var roles = new[]
             {
-                new Rol { RolID = 1, NombreRol = "Admin" },
-                new Rol { RolID = 2, NombreRol = "Minera" },
-                new Rol { RolID = 3, NombreRol = "Proveedor" }
+                new Rol { RolID = 1, NombreRol = RoleNames.AdministradorSistema },
+                new Rol { RolID = 2, NombreRol = RoleNames.MineraAdministrador },
+                new Rol { RolID = 3, NombreRol = RoleNames.MineraUsuario },
+                new Rol { RolID = 4, NombreRol = RoleNames.ProveedorAdministrador },
+                new Rol { RolID = 5, NombreRol = RoleNames.ProveedorUsuario }
             };
             _context.Roles.AddRange(roles);
 
@@ -54,41 +56,44 @@ namespace Wira.Api.Tests.Services
             };
             _context.Rubros.AddRange(rubros);
 
-            // Seed Mineras
-            var mineras = new[]
+            // Seed Empresas (Mineras y Proveedores)
+            var empresas = new[]
             {
-                new Minera
+                new Empresa
                 {
-                    MineraID = 1,
+                    EmpresaID = 1,
                     Nombre = "Minera Test",
+                    RazonSocial = "Minera Test SA",
                     CUIT = "20-12345678-9",
                     EmailContacto = "test@minera.com",
-                    Activo = true
-                }
-            };
-            _context.Mineras.AddRange(mineras);
-
-            // Seed Proveedores
-            var proveedores = new[]
-            {
-                new Proveedor
-                {
-                    ProveedorID = 1,
-                    Nombre = "Proveedor Test 1",
-                    CUIT = "20-87654321-9",
-                    RubroID = 1,
+                    Telefono = "+54 9 11 4000 0000",
+                    TipoEmpresa = EmpresaTipos.Minera,
                     Activo = true
                 },
-                new Proveedor
+                new Empresa
                 {
-                    ProveedorID = 2,
+                    EmpresaID = 2,
+                    Nombre = "Proveedor Test 1",
+                    RazonSocial = "Proveedor Test 1 SRL",
+                    CUIT = "20-87654321-9",
+                    RubroID = 1,
+                    Telefono = "+54 9 381 200 0000",
+                    TipoEmpresa = EmpresaTipos.Proveedor,
+                    Activo = true
+                },
+                new Empresa
+                {
+                    EmpresaID = 3,
                     Nombre = "Proveedor Test 2",
+                    RazonSocial = "Proveedor Test 2 SRL",
                     CUIT = "20-11111111-9",
                     RubroID = 1,
+                    Telefono = "+54 9 381 200 0001",
+                    TipoEmpresa = EmpresaTipos.Proveedor,
                     Activo = true
                 }
             };
-            _context.Proveedores.AddRange(proveedores);
+            _context.Empresas.AddRange(empresas);
 
             // Seed Usuarios
             var usuarios = new[]
@@ -97,43 +102,59 @@ namespace Wira.Api.Tests.Services
                 {
                     UsuarioID = 1,
                     Nombre = "Admin Test",
+                    Apellido = "Principal",
                     Email = "admin@test.com",
+                    DNI = "31000001",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true,
+                    Telefono = "+54 9 11 4000 0100",
+                    FechaBaja = null,
                     FechaRegistro = DateTime.UtcNow
                 },
                 new Usuario
                 {
                     UsuarioID = 2,
                     Nombre = "Minera Test",
+                    Apellido = "User",
                     Email = "minera@test.com",
+                    DNI = "31000002",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true,
-                    MineraID = 1,
+                    Telefono = "+54 9 11 4000 0101",
+                    FechaBaja = null,
+                    EmpresaID = 1,
                     FechaRegistro = DateTime.UtcNow
                 },
                 new Usuario
                 {
                     UsuarioID = 3,
                     Nombre = "Proveedor Test 1",
+                    Apellido = "User",
                     Email = "proveedor1@test.com",
+                    DNI = "31000003",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true,
-                    ProveedorID = 1,
+                    Telefono = "+54 9 11 4000 0102",
+                    FechaBaja = null,
+                    EmpresaID = 2,
                     FechaRegistro = DateTime.UtcNow
                 },
                 new Usuario
                 {
                     UsuarioID = 4,
                     Nombre = "Proveedor Test 2",
+                    Apellido = "User",
                     Email = "proveedor2@test.com",
+                    DNI = "31000004",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true,
-                    ProveedorID = 2,
+                    Telefono = "+54 9 11 4000 0103",
+                    FechaBaja = null,
+                    EmpresaID = 3,
                     FechaRegistro = DateTime.UtcNow
                 }
             };
@@ -144,8 +165,8 @@ namespace Wira.Api.Tests.Services
             {
                 new UsuarioRol { UsuarioID = 1, RolID = 1 },
                 new UsuarioRol { UsuarioID = 2, RolID = 2 },
-                new UsuarioRol { UsuarioID = 3, RolID = 3 },
-                new UsuarioRol { UsuarioID = 4, RolID = 3 }
+                new UsuarioRol { UsuarioID = 3, RolID = 5 },
+                new UsuarioRol { UsuarioID = 4, RolID = 5 }
             };
             _context.UsuariosRoles.AddRange(usuariosRoles);
 
@@ -237,7 +258,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCount(1);
-            
+
             var notificacion = notificaciones.First();
             notificacion.Titulo.Should().Be("Nueva licitación publicada");
             notificacion.Mensaje.Should().Contain(tituloLicitacion);
@@ -263,7 +284,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCountGreaterThan(0); // Puede crear múltiples notificaciones
-            
+
             var notificacion = notificaciones.First();
             notificacion.Titulo.Should().Be("Licitación cerrada");
             notificacion.Mensaje.Should().Contain(tituloLicitacion);
@@ -285,7 +306,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCount(1);
-            
+
             var notificacion = notificaciones.First();
             notificacion.Titulo.Should().Be("Nueva propuesta recibida");
             notificacion.Mensaje.Should().Contain(nombreProveedor);
@@ -308,7 +329,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCountGreaterThan(0);
-            
+
             // Verificar que se crearon diferentes tipos de notificaciones
             var tiposCreados = notificaciones.Select(n => n.Tipo).Distinct().ToList();
             tiposCreados.Should().Contain("GANADOR"); // Para el ganador
@@ -329,7 +350,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCount(1);
-            
+
             var notificacion = notificaciones.First();
             notificacion.Titulo.Should().Be(titulo);
             notificacion.Mensaje.Should().Be(mensaje);
@@ -337,7 +358,7 @@ namespace Wira.Api.Tests.Services
             var notificacionesUsuarios = await _context.NotificacionesUsuarios
                 .Where(nu => nu.NotificacionID == notificacion.NotificacionID)
                 .ToListAsync();
-            
+
             notificacionesUsuarios.Should().HaveCount(2);
             notificacionesUsuarios.Select(nu => nu.UsuarioID).Should().Contain(usuarioIds);
         }
@@ -356,12 +377,12 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCount(1);
-            
+
             var notificacionesUsuarios = await _context.NotificacionesUsuarios.ToListAsync();
             notificacionesUsuarios.Should().HaveCountGreaterThan(0);
 
             // Verificar que al menos un usuario de la minera recibió la notificación
-            var usuarioMinera = await _context.Usuarios.FirstOrDefaultAsync(u => u.MineraID == 1);
+            var usuarioMinera = await _context.Usuarios.FirstOrDefaultAsync(u => u.EmpresaID == 1);
             if (usuarioMinera != null)
             {
                 notificacionesUsuarios.Select(nu => nu.UsuarioID).Should().Contain(usuarioMinera.UsuarioID);
@@ -387,7 +408,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCount(1);
-            
+
             var notificacion = notificaciones.First();
             notificacion.Titulo.Should().Be(titulo);
             notificacion.Mensaje.Should().Be(mensaje);
@@ -410,7 +431,7 @@ namespace Wira.Api.Tests.Services
             // Assert
             var notificaciones = await _context.Notificaciones.ToListAsync();
             notificaciones.Should().HaveCount(1);
-            
+
             var notificacionesUsuarios = await _context.NotificacionesUsuarios.ToListAsync();
             notificacionesUsuarios.Should().HaveCount(0);
         }

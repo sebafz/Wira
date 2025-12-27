@@ -14,6 +14,10 @@ namespace Wira.Api.DTOs
         public int UsuarioID { get; set; }
         public string Email { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
+        public string? Apellido { get; set; }
+        public string DNI { get; set; } = string.Empty;
+        public string? Telefono { get; set; }
+        public DateTime? FechaBaja { get; set; }
         public bool ValidadoEmail { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
         public MineraInfo? Minera { get; set; }

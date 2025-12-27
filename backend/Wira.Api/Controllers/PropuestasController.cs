@@ -32,6 +32,7 @@ namespace Wira.Api.Controllers
                         .ThenInclude(l => l.Minera)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.ArchivosAdjuntos)
                     .Select(p => new
                     {
                         p.PropuestaID,
@@ -48,9 +49,7 @@ namespace Wira.Api.Controllers
                         LicitacionTitulo = p.Licitacion.Titulo,
                         MineraNombre = p.Licitacion.Minera.Nombre,
                         ProveedorNombre = p.Proveedor.Nombre,
-                        // Obtener archivos adjuntos de la tabla ArchivosAdjuntos
-                        ArchivosAdjuntos = _context.ArchivosAdjuntos
-                            .Where(a => a.EntidadTipo == "PROPUESTA" && a.EntidadID == p.PropuestaID)
+                        ArchivosAdjuntos = p.ArchivosAdjuntos
                             .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
                             .ToList()
                     })
@@ -77,18 +76,13 @@ namespace Wira.Api.Controllers
                         .ThenInclude(l => l.Minera)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.ArchivosAdjuntos)
                     .FirstOrDefaultAsync();
 
                 if (propuesta == null)
                 {
                     return NotFound(new { message = "Propuesta no encontrada" });
                 }
-
-                // Obtener archivos adjuntos de la tabla ArchivosAdjuntos
-                var archivosAdjuntos = await _context.ArchivosAdjuntos
-                    .Where(a => a.EntidadTipo == "PROPUESTA" && a.EntidadID == id)
-                    .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
-                    .ToListAsync();
 
                 // Obtener respuestas a criterios de evaluación
                 var respuestasCriterios = await _context.RespuestasCriteriosLicitacion
@@ -122,7 +116,9 @@ namespace Wira.Api.Controllers
                     LicitacionTitulo = propuesta.Licitacion.Titulo,
                     MineraNombre = propuesta.Licitacion.Minera.Nombre,
                     ProveedorNombre = propuesta.Proveedor.Nombre,
-                    ArchivosAdjuntos = archivosAdjuntos,
+                    ArchivosAdjuntos = propuesta.ArchivosAdjuntos
+                        .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
+                        .ToList(),
                     RespuestasCriterios = respuestasCriterios
                 };
 
@@ -145,6 +141,7 @@ namespace Wira.Api.Controllers
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.Minera)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.ArchivosAdjuntos)
                     .Select(p => new
                     {
                         p.PropuestaID,
@@ -160,9 +157,7 @@ namespace Wira.Api.Controllers
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
                         MineraNombre = p.Licitacion.Minera.Nombre,
-                        // Obtener archivos adjuntos de la tabla ArchivosAdjuntos
-                        ArchivosAdjuntos = _context.ArchivosAdjuntos
-                            .Where(a => a.EntidadTipo == "PROPUESTA" && a.EntidadID == p.PropuestaID)
+                        ArchivosAdjuntos = p.ArchivosAdjuntos
                             .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
                             .ToList()
                     })
@@ -187,6 +182,7 @@ namespace Wira.Api.Controllers
                     .Where(p => p.LicitacionID == licitacionId && !p.Eliminado)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.ArchivosAdjuntos)
                     .Select(p => new
                     {
                         p.PropuestaID,
@@ -201,9 +197,7 @@ namespace Wira.Api.Controllers
                         p.CalificacionFinal,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         ProveedorNombre = p.Proveedor.Nombre,
-                        // Obtener archivos adjuntos de la tabla ArchivosAdjuntos
-                        ArchivosAdjuntos = _context.ArchivosAdjuntos
-                            .Where(a => a.EntidadTipo == "PROPUESTA" && a.EntidadID == p.PropuestaID)
+                        ArchivosAdjuntos = p.ArchivosAdjuntos
                             .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
                             .ToList()
                     })
@@ -239,8 +233,8 @@ namespace Wira.Api.Controllers
                 }
 
                 // Verificar que el proveedor existe
-                var proveedor = await _context.Proveedores
-                    .FirstOrDefaultAsync(p => p.ProveedorID == createDto.ProveedorID && p.Activo);
+                var proveedor = await _context.Empresas
+                    .FirstOrDefaultAsync(p => p.EmpresaID == createDto.ProveedorID && p.TipoEmpresa == EmpresaTipos.Proveedor && p.Activo);
 
                 if (proveedor == null)
                 {
@@ -249,8 +243,8 @@ namespace Wira.Api.Controllers
 
                 // Verificar que el proveedor no haya enviado ya una propuesta para esta licitación
                 var propuestaExistente = await _context.Propuestas
-                    .AnyAsync(p => p.LicitacionID == createDto.LicitacionID && 
-                                   p.ProveedorID == createDto.ProveedorID && 
+                    .AnyAsync(p => p.LicitacionID == createDto.LicitacionID &&
+                                   p.ProveedorID == createDto.ProveedorID &&
                                    !p.Eliminado);
 
                 if (propuestaExistente)
@@ -310,12 +304,12 @@ namespace Wira.Api.Controllers
                     // No fallar la operación principal por error en notificación
                 }
 
-                var response = new 
-                { 
-                    message = "Propuesta creada exitosamente", 
+                var response = new
+                {
+                    message = "Propuesta creada exitosamente",
                     PropuestaID = propuesta.PropuestaID
                 };
-                
+
                 var location = Url.Action(nameof(GetPropuesta), new { id = propuesta.PropuestaID });
                 return Created(location ?? $"/api/propuestas/{propuesta.PropuestaID}", response);
             }

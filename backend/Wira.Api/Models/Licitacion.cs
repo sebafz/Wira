@@ -47,7 +47,7 @@ namespace Wira.Api.Models
 
         // Navegación
         [ForeignKey("MineraID")]
-        public virtual Minera Minera { get; set; } = null!;
+        public virtual Empresa Minera { get; set; } = null!;
 
         [ForeignKey("RubroID")]
         public virtual Rubro Rubro { get; set; } = null!;

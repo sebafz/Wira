@@ -57,54 +57,64 @@ namespace Wira.Api.Tests.Controllers
             _context.Rubros.AddRange(rubroConstruccion, rubroMineria, rubroInactivo);
 
             // Seed Proveedores activos
-            var proveedor1 = new Proveedor
+            var proveedor1 = new Empresa
             {
-                ProveedorID = 1,
+                EmpresaID = 1,
                 Nombre = "Constructora ABC",
+                RazonSocial = "Constructora ABC SA",
                 CUIT = "20-11111111-1",
                 RubroID = 1,
+                TipoEmpresa = EmpresaTipos.Proveedor,
                 Activo = true
             };
 
-            var proveedor2 = new Proveedor
+            var proveedor2 = new Empresa
             {
-                ProveedorID = 2,
+                EmpresaID = 2,
                 Nombre = "Minera XYZ",
+                RazonSocial = "Minera XYZ SRL",
                 CUIT = "20-22222222-2",
                 RubroID = 2,
+                TipoEmpresa = EmpresaTipos.Proveedor,
                 Activo = true
             };
 
-            var proveedor3 = new Proveedor
+            var proveedor3 = new Empresa
             {
-                ProveedorID = 3,
+                EmpresaID = 3,
                 Nombre = "Empresa DEF",
+                RazonSocial = "Empresa DEF SRL",
                 CUIT = "20-33333333-3",
                 RubroID = 1,
+                TipoEmpresa = EmpresaTipos.Proveedor,
                 Activo = true
             };
 
             // Proveedor inactivo
-            var proveedorInactivo = new Proveedor
+            var proveedorInactivo = new Empresa
             {
-                ProveedorID = 4,
+                EmpresaID = 4,
                 Nombre = "Proveedor Cerrado",
+                RazonSocial = "Proveedor Cerrado SRL",
                 CUIT = "20-44444444-4",
                 RubroID = 1,
+                TipoEmpresa = EmpresaTipos.Proveedor,
                 Activo = false
             };
 
             // Proveedor sin rubro
-            var proveedorSinRubro = new Proveedor
+            var proveedorSinRubro = new Empresa
             {
-                ProveedorID = 5,
+                EmpresaID = 5,
                 Nombre = "Proveedor Sin Rubro",
+                RazonSocial = "Proveedor Sin Rubro SRL",
                 CUIT = "20-55555555-5",
                 RubroID = null,
+                TipoEmpresa = EmpresaTipos.Proveedor,
                 Activo = true
             };
 
-            _context.Proveedores.AddRange(proveedor1, proveedor2, proveedor3, proveedorInactivo, proveedorSinRubro);
+            _context.Empresas.AddRange(proveedor1, proveedor2, proveedor3, proveedorInactivo, proveedorSinRubro);
             _context.SaveChanges();
         }
 
@@ -118,7 +128,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var proveedores = okResult!.Value as IEnumerable<object>;
-            
+
             proveedores.Should().NotBeNull();
             var proveedoresList = proveedores!.ToList();
             proveedoresList.Should().HaveCount(4); // Solo los activos (incluyendo el sin rubro)
@@ -139,16 +149,16 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var proveedores = okResult!.Value as IEnumerable<object>;
-            
+
             proveedores.Should().NotBeNull();
             var proveedoresList = proveedores!.ToList();
 
-            var proveedorConRubro = proveedoresList.First(p => 
+            var proveedorConRubro = proveedoresList.First(p =>
             {
                 var nombre = GetPropertyValue(p, "Nombre")?.ToString();
                 return nombre == "Constructora ABC";
             });
-            
+
             // Verificar propiedades
             Assert.True(HasProperty(proveedorConRubro, "ProveedorID"));
             Assert.True(HasProperty(proveedorConRubro, "Nombre"));
@@ -170,20 +180,20 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var proveedores = okResult!.Value as IEnumerable<object>;
-            
+
             proveedores.Should().NotBeNull();
             var proveedoresList = proveedores!.ToList();
 
-            var proveedorSinRubro = proveedoresList.First(p => 
+            var proveedorSinRubro = proveedoresList.First(p =>
             {
                 var nombre = GetPropertyValue(p, "Nombre")?.ToString();
                 return nombre == "Proveedor Sin Rubro";
             });
-            
+
             // RubroID debería ser null y RubroNombre también
             var rubroId = GetPropertyValue(proveedorSinRubro, "RubroID");
             var rubroNombre = GetPropertyValue(proveedorSinRubro, "RubroNombre");
-            
+
             rubroId.Should().BeNull();
             rubroNombre.Should().BeNull();
         }
@@ -201,14 +211,14 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var proveedor = okResult!.Value;
-            
+
             proveedor.Should().NotBeNull();
-            
+
             var returnedId = GetPropertyValue(proveedor!, "ProveedorID");
             var nombre = GetPropertyValue(proveedor!, "Nombre")?.ToString();
             var cuit = GetPropertyValue(proveedor!, "CUIT")?.ToString();
             var rubroNombre = GetPropertyValue(proveedor!, "RubroNombre")?.ToString();
-            
+
             returnedId.Should().Be(1);
             nombre.Should().Be("Constructora ABC");
             cuit.Should().Be("20-11111111-1");
@@ -228,7 +238,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<NotFoundObjectResult>();
             var notFoundResult = result as NotFoundObjectResult;
             var response = notFoundResult!.Value;
-            
+
             response.Should().NotBeNull();
             var message = GetPropertyValue(response!, "message")?.ToString();
             message.Should().Be("Proveedor no encontrado");
@@ -247,7 +257,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<NotFoundObjectResult>();
             var notFoundResult = result as NotFoundObjectResult;
             var response = notFoundResult!.Value;
-            
+
             response.Should().NotBeNull();
             var message = GetPropertyValue(response!, "message")?.ToString();
             message.Should().Be("Proveedor no encontrado");
@@ -263,7 +273,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var rubros = okResult!.Value as IEnumerable<object>;
-            
+
             rubros.Should().NotBeNull();
             var rubrosList = rubros!.ToList();
             rubrosList.Should().HaveCount(2); // Solo Construcción y Minería
@@ -287,20 +297,20 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var rubros = okResult!.Value as IEnumerable<object>;
-            
+
             rubros.Should().NotBeNull();
             var rubrosList = rubros!.ToList();
             rubrosList.Should().HaveCount(2);
 
             var firstRubro = rubrosList[0];
-            
+
             // Verificar que tiene las propiedades esperadas
             Assert.True(HasProperty(firstRubro, "RubroID"));
             Assert.True(HasProperty(firstRubro, "Nombre"));
 
             var rubroId = GetPropertyValue(firstRubro, "RubroID");
             var nombre = GetPropertyValue(firstRubro, "Nombre")?.ToString();
-            
+
             rubroId.Should().NotBeNull();
             Convert.ToInt32(rubroId).Should().BeGreaterThan(0);
             nombre.Should().NotBeNullOrEmpty();
@@ -310,7 +320,7 @@ namespace Wira.Api.Tests.Controllers
         public async Task GetProveedores_WhenNoActiveProveedores_ReturnsEmptyList()
         {
             // Arrange - Desactivar todos los proveedores
-            var allProveedores = await _context.Proveedores.ToListAsync();
+            var allProveedores = await _context.Empresas.Where(p => p.TipoEmpresa == EmpresaTipos.Proveedor).ToListAsync();
             foreach (var proveedor in allProveedores)
             {
                 proveedor.Activo = false;
@@ -324,7 +334,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var proveedores = okResult!.Value as IEnumerable<object>;
-            
+
             proveedores.Should().NotBeNull();
             proveedores!.Should().BeEmpty();
         }
@@ -333,7 +343,7 @@ namespace Wira.Api.Tests.Controllers
         public async Task GetRubrosConProveedores_WhenNoActiveProveedores_ReturnsEmptyList()
         {
             // Arrange - Desactivar todos los proveedores
-            var allProveedores = await _context.Proveedores.ToListAsync();
+            var allProveedores = await _context.Empresas.Where(p => p.TipoEmpresa == EmpresaTipos.Proveedor).ToListAsync();
             foreach (var proveedor in allProveedores)
             {
                 proveedor.Activo = false;
@@ -347,7 +357,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var rubros = okResult!.Value as IEnumerable<object>;
-            
+
             rubros.Should().NotBeNull();
             rubros!.Should().BeEmpty();
         }

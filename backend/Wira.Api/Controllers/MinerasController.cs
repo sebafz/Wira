@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Wira.Api.Data;
+using Wira.Api.Models;
 
 namespace Wira.Api.Controllers
 {
@@ -22,14 +23,17 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var mineras = await _context.Mineras
-                    .Where(m => m.Activo)
+                var mineras = await _context.Empresas
+                    .Where(m => m.Activo && m.TipoEmpresa == EmpresaTipos.Minera)
                     .Select(m => new
                     {
-                        m.MineraID,
+                        MineraID = m.EmpresaID,
                         m.Nombre,
+                        m.RazonSocial,
                         m.CUIT,
-                        m.EmailContacto
+                        m.EmailContacto,
+                        m.Telefono,
+                        m.FechaAlta
                     })
                     .OrderBy(m => m.Nombre)
                     .ToListAsync();
@@ -48,14 +52,17 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var minera = await _context.Mineras
-                    .Where(m => m.MineraID == id && m.Activo)
+                var minera = await _context.Empresas
+                    .Where(m => m.EmpresaID == id && m.Activo && m.TipoEmpresa == EmpresaTipos.Minera)
                     .Select(m => new
                     {
-                        m.MineraID,
+                        MineraID = m.EmpresaID,
                         m.Nombre,
+                        m.RazonSocial,
                         m.CUIT,
-                        m.EmailContacto
+                        m.EmailContacto,
+                        m.Telefono,
+                        m.FechaAlta
                     })
                     .FirstOrDefaultAsync();
 

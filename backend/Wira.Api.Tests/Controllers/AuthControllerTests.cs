@@ -118,6 +118,7 @@ namespace Wira.Api.Tests.Controllers
                 Email = "newuser@test.com",
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "42000001",
                 TipoCuenta = "Minera"
             };
 
@@ -152,6 +153,7 @@ namespace Wira.Api.Tests.Controllers
                 Email = "existing@test.com",
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "42000002",
                 TipoCuenta = "Minera"
             };
 
@@ -184,6 +186,7 @@ namespace Wira.Api.Tests.Controllers
                 Email = "test@test.com",
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "", // DNI inválido
                 TipoCuenta = "Minera"
             };
 

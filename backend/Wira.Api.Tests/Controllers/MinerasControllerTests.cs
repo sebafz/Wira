@@ -33,35 +33,44 @@ namespace Wira.Api.Tests.Controllers
         private void SeedTestData()
         {
             // Seed Mineras activas
-            var mineraActiva1 = new Minera
+            var mineraActiva1 = new Empresa
             {
-                MineraID = 1,
+                EmpresaID = 1,
                 Nombre = "Minera Los Andes",
+                RazonSocial = "Minera Los Andes SA",
                 CUIT = "20-12345678-9",
                 EmailContacto = "contacto@losandes.com",
+                Telefono = "+54 9 11 4000 0007",
+                TipoEmpresa = EmpresaTipos.Minera,
                 Activo = true
             };
 
-            var mineraActiva2 = new Minera
+            var mineraActiva2 = new Empresa
             {
-                MineraID = 2,
+                EmpresaID = 2,
                 Nombre = "Minera Cordillera",
+                RazonSocial = "Minera Cordillera SA",
                 CUIT = "20-23456789-0",
                 EmailContacto = "info@cordillera.com",
+                Telefono = "+54 9 11 4000 0008",
+                TipoEmpresa = EmpresaTipos.Minera,
                 Activo = true
             };
 
             // Seed Minera inactiva
-            var mineraInactiva = new Minera
+            var mineraInactiva = new Empresa
             {
-                MineraID = 3,
+                EmpresaID = 3,
                 Nombre = "Minera Cerrada",
+                RazonSocial = "Minera Cerrada SA",
                 CUIT = "20-34567890-1",
                 EmailContacto = "cerrada@minera.com",
+                Telefono = "+54 9 11 4000 0009",
+                TipoEmpresa = EmpresaTipos.Minera,
                 Activo = false
             };
 
-            _context.Mineras.AddRange(mineraActiva1, mineraActiva2, mineraInactiva);
+            _context.Empresas.AddRange(mineraActiva1, mineraActiva2, mineraInactiva);
             _context.SaveChanges();
         }
 
@@ -75,7 +84,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var mineras = okResult!.Value as IEnumerable<object>;
-            
+
             mineras.Should().NotBeNull();
             var minerasList = mineras!.ToList();
             minerasList.Should().HaveCount(2); // Solo las activas
@@ -83,10 +92,10 @@ namespace Wira.Api.Tests.Controllers
             // Verificar que están ordenadas por nombre usando reflection
             var minera1 = minerasList[0];
             var minera2 = minerasList[1];
-            
+
             var nombre1 = GetPropertyValue(minera1, "Nombre")?.ToString();
             var nombre2 = GetPropertyValue(minera2, "Nombre")?.ToString();
-            
+
             nombre1.Should().Be("Minera Cordillera"); // Orden alfabético
             nombre2.Should().Be("Minera Los Andes");
         }
@@ -104,14 +113,14 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var minera = okResult!.Value;
-            
+
             minera.Should().NotBeNull();
-            
+
             var returnedId = GetPropertyValue(minera!, "MineraID");
             var nombre = GetPropertyValue(minera!, "Nombre")?.ToString();
             var cuit = GetPropertyValue(minera!, "CUIT")?.ToString();
             var email = GetPropertyValue(minera!, "EmailContacto")?.ToString();
-            
+
             returnedId.Should().Be(1);
             nombre.Should().Be("Minera Los Andes");
             cuit.Should().Be("20-12345678-9");
@@ -131,7 +140,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<NotFoundObjectResult>();
             var notFoundResult = result as NotFoundObjectResult;
             var response = notFoundResult!.Value;
-            
+
             response.Should().NotBeNull();
             var message = GetPropertyValue(response!, "message")?.ToString();
             message.Should().Be("Minera no encontrada");
@@ -150,7 +159,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<NotFoundObjectResult>();
             var notFoundResult = result as NotFoundObjectResult;
             var response = notFoundResult!.Value;
-            
+
             response.Should().NotBeNull();
             var message = GetPropertyValue(response!, "message")?.ToString();
             message.Should().Be("Minera no encontrada");
@@ -160,7 +169,7 @@ namespace Wira.Api.Tests.Controllers
         public async Task GetMineras_WhenNoActiveMineras_ReturnsEmptyList()
         {
             // Arrange - Desactivar todas las mineras
-            var allMineras = await _context.Mineras.ToListAsync();
+            var allMineras = await _context.Empresas.Where(e => e.TipoEmpresa == EmpresaTipos.Minera).ToListAsync();
             foreach (var minera in allMineras)
             {
                 minera.Activo = false;
@@ -174,7 +183,7 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var mineras = okResult!.Value as IEnumerable<object>;
-            
+
             mineras.Should().NotBeNull();
             mineras!.Should().BeEmpty();
         }
@@ -189,13 +198,13 @@ namespace Wira.Api.Tests.Controllers
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
             var mineras = okResult!.Value as IEnumerable<object>;
-            
+
             mineras.Should().NotBeNull();
             var minerasList = mineras!.ToList();
             minerasList.Should().HaveCount(2);
 
             var firstMinera = (dynamic)minerasList[0];
-            
+
             // Verificar que tiene las propiedades esperadas
             Assert.True(HasProperty(firstMinera, "MineraID"));
             Assert.True(HasProperty(firstMinera, "Nombre"));

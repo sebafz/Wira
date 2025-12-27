@@ -21,9 +21,21 @@ namespace Wira.Api.Models
         [StringLength(100)]
         public string? Nombre { get; set; }
 
+        [StringLength(100)]
+        public string? Apellido { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string DNI { get; set; } = string.Empty;
+
+        [StringLength(30)]
+        public string? Telefono { get; set; }
+
         public bool Activo { get; set; } = true;
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
+
+        public DateTime? FechaBaja { get; set; }
 
         public bool ValidadoEmail { get; set; } = false;
 
@@ -37,16 +49,11 @@ namespace Wira.Api.Models
 
         public DateTime? FechaVencimientoTokenRecuperacion { get; set; }
 
-        public int? MineraID { get; set; }
-
-        public int? ProveedorID { get; set; }
+        public int? EmpresaID { get; set; }
 
         // Navegación
-        [ForeignKey("MineraID")]
-        public virtual Minera? Minera { get; set; }
-
-        [ForeignKey("ProveedorID")]
-        public virtual Proveedor? Proveedor { get; set; }
+        [ForeignKey("EmpresaID")]
+        public virtual Empresa? Empresa { get; set; }
 
         public virtual ICollection<UsuarioRol> UsuariosRoles { get; set; } = new List<UsuarioRol>();
         public virtual ICollection<NotificacionUsuario> NotificacionesUsuarios { get; set; } = new List<NotificacionUsuario>();

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Wira.Api.Data;
+using Wira.Api.Models;
 
 namespace Wira.Api.Controllers
 {
@@ -22,16 +23,19 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var proveedores = await _context.Proveedores
+                var proveedores = await _context.Empresas
                     .Include(p => p.Rubro)
-                    .Where(p => p.Activo)
+                    .Where(p => p.Activo && p.TipoEmpresa == EmpresaTipos.Proveedor)
                     .Select(p => new
                     {
-                        p.ProveedorID,
+                        ProveedorID = p.EmpresaID,
                         p.Nombre,
+                        p.RazonSocial,
                         p.CUIT,
                         p.RubroID,
-                        RubroNombre = p.Rubro != null ? p.Rubro.Nombre : null
+                        RubroNombre = p.Rubro != null ? p.Rubro.Nombre : null,
+                        p.Telefono,
+                        p.FechaAlta
                     })
                     .OrderBy(p => p.Nombre)
                     .ToListAsync();
@@ -50,16 +54,19 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var proveedor = await _context.Proveedores
+                var proveedor = await _context.Empresas
                     .Include(p => p.Rubro)
-                    .Where(p => p.ProveedorID == id && p.Activo)
+                    .Where(p => p.EmpresaID == id && p.Activo && p.TipoEmpresa == EmpresaTipos.Proveedor)
                     .Select(p => new
                     {
-                        p.ProveedorID,
+                        ProveedorID = p.EmpresaID,
                         p.Nombre,
+                        p.RazonSocial,
                         p.CUIT,
                         p.RubroID,
-                        RubroNombre = p.Rubro != null ? p.Rubro.Nombre : null
+                        RubroNombre = p.Rubro != null ? p.Rubro.Nombre : null,
+                        p.Telefono,
+                        p.FechaAlta
                     })
                     .FirstOrDefaultAsync();
 
@@ -83,7 +90,7 @@ namespace Wira.Api.Controllers
             try
             {
                 var rubros = await _context.Rubros
-                    .Where(r => r.Activo && r.Proveedores.Any(p => p.Activo))
+                    .Where(r => r.Activo && r.Proveedores.Any(p => p.Activo && p.TipoEmpresa == EmpresaTipos.Proveedor))
                     .Select(r => new { r.RubroID, r.Nombre })
                     .OrderBy(r => r.Nombre)
                     .ToListAsync();
