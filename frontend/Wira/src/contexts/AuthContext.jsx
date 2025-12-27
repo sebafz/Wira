@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }) => {
           payload: { user, token },
         });
 
-        return { success: true };
+        return { success: true, user };
       } else {
         dispatch({
           type: "LOGIN_ERROR",

@@ -6,24 +6,24 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import VerifyEmail from "./components/VerifyEmail";
-import ForgotPassword from "./components/ForgotPassword";
-import Dashboard from "./components/Dashboard";
-import DashboardRouter from "./components/DashboardRouter";
-import DashboardMinera from "./components/DashboardMinera";
-import DashboardProveedor from "./components/DashboardProveedor";
-import CrearLicitacion from "./components/CrearLicitacion";
-import EditarLicitacion from "./components/EditarLicitacion";
-import LicitacionesMinera from "./components/LicitacionesMinera";
-import LicitacionesProveedor from "./components/LicitacionesProveedor";
-import PropuestasProveedor from "./components/PropuestasProveedor";
-import EditarPropuesta from "./components/EditarPropuesta";
-import HistorialProveedor from "./components/HistorialProveedor";
-import Profile from "./components/Profile";
-import ColorPalette from "./components/ColorPalette";
+import ProtectedRoute from "./components/shared/ProtectedRoute";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import VerifyEmail from "./components/auth/VerifyEmail";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import Dashboard from "./components/dashboard/Dashboard";
+import DashboardRouter from "./components/dashboard/DashboardRouter";
+import DashboardMinera from "./components/dashboard/DashboardMinera";
+import DashboardProveedor from "./components/dashboard/DashboardProveedor";
+import CrearLicitacion from "./components/licitaciones/CrearLicitacion";
+import EditarLicitacion from "./components/licitaciones/EditarLicitacion";
+import LicitacionesMinera from "./components/licitaciones/LicitacionesMinera";
+import LicitacionesProveedor from "./components/licitaciones/LicitacionesProveedor";
+import PropuestasProveedor from "./components/propuestas/PropuestasProveedor";
+import EditarPropuesta from "./components/propuestas/EditarPropuesta";
+import HistorialProveedor from "./components/historial/HistorialProveedor";
+import Profile from "./components/profile/Profile";
+import ColorPalette from "./components/shared/ColorPalette";
 import "./App.css";
 
 function App() {

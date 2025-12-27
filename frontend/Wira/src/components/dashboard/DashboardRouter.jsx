@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { getDashboardRouteForUser } from "../utils/roleUtils";
 
 const LoadingContainer = styled.div`
   min-height: 100vh;
@@ -42,17 +43,8 @@ const DashboardRouter = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      // Verificar roles del usuario
-      const roles = user.Roles || user.roles || [];
-
-      if (roles.includes("Minera")) {
-        navigate("/dashboard-minera", { replace: true });
-      } else if (roles.includes("Proveedor")) {
-        navigate("/dashboard-proveedor", { replace: true });
-      } else {
-        // Si no tiene un rol específico, redirigir a un dashboard genérico
-        navigate("/dashboard-general", { replace: true });
-      }
+      const targetRoute = getDashboardRouteForUser(user);
+      navigate(targetRoute, { replace: true });
     } else if (!loading && !user) {
       // Si no está autenticado, redirigir al login
       navigate("/login", { replace: true });
