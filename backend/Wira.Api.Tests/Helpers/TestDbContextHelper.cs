@@ -22,8 +22,7 @@ namespace Wira.Api.Tests.Helpers
             // Limpiar datos existentes
             context.Usuarios.RemoveRange(context.Usuarios);
             context.Roles.RemoveRange(context.Roles);
-            context.Mineras.RemoveRange(context.Mineras);
-            context.Proveedores.RemoveRange(context.Proveedores);
+            context.Empresas.RemoveRange(context.Empresas);
             context.Rubros.RemoveRange(context.Rubros);
             context.Licitaciones.RemoveRange(context.Licitaciones);
             context.Propuestas.RemoveRange(context.Propuestas);
@@ -32,9 +31,11 @@ namespace Wira.Api.Tests.Helpers
             // Seed Roles
             var roles = new[]
             {
-                new Rol { RolID = 1, NombreRol = "Admin" },
-                new Rol { RolID = 2, NombreRol = "Minera" },
-                new Rol { RolID = 3, NombreRol = "Proveedor" }
+                new Rol { RolID = 1, NombreRol = RoleNames.AdministradorSistema },
+                new Rol { RolID = 2, NombreRol = RoleNames.MineraAdministrador },
+                new Rol { RolID = 3, NombreRol = RoleNames.MineraUsuario },
+                new Rol { RolID = 4, NombreRol = RoleNames.ProveedorAdministrador },
+                new Rol { RolID = 5, NombreRol = RoleNames.ProveedorUsuario }
             };
             context.Roles.AddRange(roles);
 
@@ -47,67 +48,79 @@ namespace Wira.Api.Tests.Helpers
             };
             context.Rubros.AddRange(rubros);
 
-            // Seed Mineras
-            var mineras = new[]
+            // Seed Empresas
+            var empresas = new[]
             {
-                new Minera 
-                { 
-                    MineraID = 1, 
-                    Nombre = "Minera Test", 
+                new Empresa
+                {
+                    EmpresaID = 1,
+                    Nombre = "Minera Test",
+                    RazonSocial = "Minera Test SA",
                     CUIT = "20-12345678-9",
                     EmailContacto = "test@minera.com",
+                    Telefono = "+54 9 11 4000 0006",
+                    TipoEmpresa = EmpresaTipos.Minera,
                     Activo = true
-                }
-            };
-            context.Mineras.AddRange(mineras);
-
-            // Seed Proveedores
-            var proveedores = new[]
-            {
-                new Proveedor 
-                { 
-                    ProveedorID = 1, 
-                    Nombre = "Proveedor Test", 
+                },
+                new Empresa
+                {
+                    EmpresaID = 2,
+                    Nombre = "Proveedor Test",
+                    RazonSocial = "Proveedor Test SRL",
                     CUIT = "20-87654321-9",
                     RubroID = 1,
+                    Telefono = "+54 9 381 200 0005",
+                    TipoEmpresa = EmpresaTipos.Proveedor,
                     Activo = true
                 }
             };
-            context.Proveedores.AddRange(proveedores);
+            context.Empresas.AddRange(empresas);
 
             // Seed Usuarios
             var usuarios = new[]
             {
-                new Usuario 
-                { 
+                new Usuario
+                {
                     UsuarioID = 1,
                     Nombre = "Admin Test",
+                    Apellido = "Principal",
                     Email = "admin@test.com",
+                    DNI = "30000001",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true, // Usuarios verificados para tests
+                    Telefono = "+54 9 11 4000 0010",
+                    FechaBaja = null,
                     FechaRegistro = DateTime.UtcNow
                 },
-                new Usuario 
-                { 
+                new Usuario
+                {
                     UsuarioID = 2,
                     Nombre = "Minera Test",
+                    Apellido = "User",
                     Email = "minera@test.com",
+                    DNI = "30000002",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true, // Usuarios verificados para tests
-                    MineraID = 1,
+                    Telefono = "+54 9 11 4000 0011",
+                    FechaBaja = null,
+                    EmpresaID = 1,
                     FechaRegistro = DateTime.UtcNow
                 },
-                new Usuario 
-                { 
+                new Usuario
+                {
                     UsuarioID = 3,
                     Nombre = "Proveedor Test",
+                    Apellido = "User",
                     Email = "proveedor@test.com",
+                    DNI = "30000003",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     Activo = true,
                     ValidadoEmail = true, // Usuarios verificados para tests
-                    ProveedorID = 1,
+                    Telefono = "+54 9 11 4000 0012",
+                    FechaBaja = null,
+                    EmpresaID = 2,
                     FechaRegistro = DateTime.UtcNow
                 }
             };
@@ -120,7 +133,7 @@ namespace Wira.Api.Tests.Helpers
             {
                 new UsuarioRol { UsuarioID = 1, RolID = 1 },
                 new UsuarioRol { UsuarioID = 2, RolID = 2 },
-                new UsuarioRol { UsuarioID = 3, RolID = 3 }
+                new UsuarioRol { UsuarioID = 3, RolID = 5 }
             };
             context.UsuariosRoles.AddRange(usuariosRoles);
 

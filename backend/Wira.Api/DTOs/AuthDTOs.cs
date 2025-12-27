@@ -31,6 +31,16 @@ namespace Wira.Api.DTOs
         [StringLength(100)]
         public string Nombre { get; set; } = string.Empty;
 
+        [StringLength(100)]
+        public string? Apellido { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string DNI { get; set; } = string.Empty;
+
+        [StringLength(30)]
+        public string? Telefono { get; set; }
+
         [Required]
         public string TipoCuenta { get; set; } = string.Empty; // "Minera" o "Proveedor"
 
@@ -85,5 +95,14 @@ namespace Wira.Api.DTOs
     {
         [StringLength(100)]
         public string? Nombre { get; set; }
+
+        [StringLength(100)]
+        public string? Apellido { get; set; }
+
+        [StringLength(30)]
+        public string? Telefono { get; set; }
+
+        [StringLength(20)]
+        public string? DNI { get; set; }
     }
 }

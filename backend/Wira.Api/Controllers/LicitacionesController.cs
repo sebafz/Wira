@@ -148,7 +148,8 @@ namespace Wira.Api.Controllers
             try
             {
                 // Validar que la minera existe
-                var minera = await _context.Mineras.FindAsync(request.MineraID);
+                var minera = await _context.Empresas
+                    .FirstOrDefaultAsync(m => m.EmpresaID == request.MineraID && m.TipoEmpresa == EmpresaTipos.Minera && m.Activo);
                 if (minera == null)
                 {
                     return BadRequest("La minera especificada no existe.");
@@ -165,8 +166,8 @@ namespace Wira.Api.Controllers
                 if (request.ProyectoMineroID.HasValue)
                 {
                     var proyecto = await _context.ProyectosMineros
-                        .FirstOrDefaultAsync(p => p.ProyectoMineroID == request.ProyectoMineroID.Value && 
-                                                  p.MineraID == request.MineraID && 
+                        .FirstOrDefaultAsync(p => p.ProyectoMineroID == request.ProyectoMineroID.Value &&
+                                                  p.MineraID == request.MineraID &&
                                                   p.Activo);
                     if (proyecto == null)
                     {
@@ -240,8 +241,8 @@ namespace Wira.Api.Controllers
 
                 // Crear notificación para proveedores
                 await _notificacionService.CrearNotificacionLicitacionPublicada(
-                    licitacion.LicitacionID, 
-                    licitacion.Titulo, 
+                    licitacion.LicitacionID,
+                    licitacion.Titulo,
                     licitacion.MineraID
                 );
 
@@ -401,7 +402,7 @@ namespace Wira.Api.Controllers
 
                 // Cambiar el estado de la licitación
                 licitacion.EstadoLicitacionID = estadoNuevo.EstadoLicitacionID;
-                
+
                 // Solo actualizar la fecha de cierre si realmente se está cerrando (no en evaluación)
                 if (estadoDestino == "Cerrada")
                 {
@@ -416,8 +417,8 @@ namespace Wira.Api.Controllers
                 if (estadoDestino == "En Evaluación")
                 {
                     await _notificacionService.CrearNotificacionLicitacionCerrada(
-                        id, 
-                        licitacion.Titulo, 
+                        id,
+                        licitacion.Titulo,
                         licitacion.MineraID
                     );
                 }
@@ -471,8 +472,8 @@ namespace Wira.Api.Controllers
 
                 // Crear notificación de adjudicación
                 await _notificacionService.CrearNotificacionLicitacionAdjudicada(
-                    id, 
-                    licitacion.Titulo, 
+                    id,
+                    licitacion.Titulo,
                     licitacion.MineraID
                 );
 

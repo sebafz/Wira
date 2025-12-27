@@ -124,8 +124,9 @@ namespace Wira.Api.Controllers
                 }
 
                 // Verificar que la minera existe
-                var minera = await _context.Mineras.FindAsync(createDto.MineraID);
-                if (minera == null || !minera.Activo)
+                var minera = await _context.Empresas
+                    .FirstOrDefaultAsync(m => m.EmpresaID == createDto.MineraID && m.TipoEmpresa == EmpresaTipos.Minera && m.Activo);
+                if (minera == null)
                 {
                     return BadRequest(new { message = "La minera especificada no existe o no está activa" });
                 }

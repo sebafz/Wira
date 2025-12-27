@@ -12,7 +12,7 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             var loginRequest = new LoginRequest
             {
                 Email = "admin@test.com",
@@ -24,7 +24,7 @@ namespace Wira.Api.Tests.Integration
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var loginResponse = JsonSerializer.Deserialize<AuthResponse>(content, new JsonSerializerOptions
             {
@@ -44,7 +44,7 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             var loginRequest = new LoginRequest
             {
                 Email = "admin@test.com",
@@ -80,13 +80,14 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             var registerRequest = new RegisterRequest
             {
                 Nombre = "Nueva Minera Test",
                 Email = "nuevaminera@test.com",
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "40000001",
                 TipoCuenta = "Minera"
             };
 
@@ -95,7 +96,7 @@ namespace Wira.Api.Tests.Integration
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var registerResponse = JsonSerializer.Deserialize<AuthResponse>(content, new JsonSerializerOptions
             {
@@ -112,13 +113,14 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             var registerRequest = new RegisterRequest
             {
                 Nombre = "Nuevo Proveedor Test",
                 Email = "nuevoproveedor@test.com",
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "40000002",
                 TipoCuenta = "Proveedor"
             };
 
@@ -127,7 +129,7 @@ namespace Wira.Api.Tests.Integration
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            
+
             var content = await response.Content.ReadAsStringAsync();
             var registerResponse = JsonSerializer.Deserialize<AuthResponse>(content, new JsonSerializerOptions
             {
@@ -144,13 +146,14 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             var registerRequest = new RegisterRequest
             {
                 Nombre = "Usuario Duplicado",
                 Email = "admin@test.com", // Email que ya existe
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "40000003",
                 TipoCuenta = "Minera"
             };
 
@@ -171,6 +174,7 @@ namespace Wira.Api.Tests.Integration
                 Email = "invalid-email", // Email inválido
                 Password = "123", // Password muy corto
                 ConfirmPassword = "456", // No coincide
+                DNI = "", // DNI inválido
                 TipoCuenta = "InvalidType" // Tipo inválido
             };
 
@@ -186,7 +190,7 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             // Register a new user
             var registerRequest = new RegisterRequest
             {
@@ -194,6 +198,7 @@ namespace Wira.Api.Tests.Integration
                 Email = "integration@test.com",
                 Password = "password123",
                 ConfirmPassword = "password123",
+                DNI = "40000004",
                 TipoCuenta = "Minera"
             };
 
@@ -239,7 +244,7 @@ namespace Wira.Api.Tests.Integration
         {
             // Arrange
             await SeedTestDataAsync();
-            
+
             // Act
             var response = await Client.GetAsync("/api/auth/me");
 

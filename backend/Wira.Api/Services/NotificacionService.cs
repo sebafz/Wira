@@ -31,18 +31,18 @@ namespace Wira.Api.Services
             var mensaje = $"Se ha publicado una nueva licitación: {tituloLicitacion}";
 
             // Notificar a todos los proveedores
-            var proveedorIds = await _context.Usuarios
-                .Where(u => u.ProveedorID.HasValue)
+            var usuarioProveedorIds = await _context.Usuarios
+                .Where(u => u.Empresa != null && u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
                 .Select(u => u.UsuarioID)
                 .ToListAsync();
 
             await CrearNotificacionPersonalizada(
-                titulo, 
-                mensaje, 
-                "APERTURA", 
-                "LICITACION", 
-                licitacionId, 
-                usuarioIds: proveedorIds
+                titulo,
+                mensaje,
+                "APERTURA",
+                "LICITACION",
+                licitacionId,
+                usuarioIds: usuarioProveedorIds
             );
         }
 
@@ -53,11 +53,11 @@ namespace Wira.Api.Services
 
             // Notificar a la minera propietaria
             await CrearNotificacionPersonalizada(
-                titulo, 
-                mensaje, 
-                "CIERRE", 
-                "LICITACION", 
-                licitacionId, 
+                titulo,
+                mensaje,
+                "CIERRE",
+                "LICITACION",
+                licitacionId,
                 mineraIds: new List<int> { mineraId }
             );
 
@@ -69,7 +69,11 @@ namespace Wira.Api.Services
                 .ToListAsync();
 
             var usuarioProveedorIds = await _context.Usuarios
-                .Where(u => u.ProveedorID.HasValue && proveedorIds.Contains(u.ProveedorID.Value))
+                .Where(u =>
+                    u.EmpresaID.HasValue &&
+                    proveedorIds.Contains(u.EmpresaID.Value) &&
+                    u.Empresa != null &&
+                    u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
                 .Select(u => u.UsuarioID)
                 .ToListAsync();
 
@@ -77,11 +81,11 @@ namespace Wira.Api.Services
             {
                 var mensajeProveedores = $"La licitación '{tituloLicitacion}' en la que participaste ha sido cerrada y está en evaluación";
                 await CrearNotificacionPersonalizada(
-                    titulo, 
-                    mensajeProveedores, 
-                    "CIERRE", 
-                    "LICITACION", 
-                    licitacionId, 
+                    titulo,
+                    mensajeProveedores,
+                    "CIERRE",
+                    "LICITACION",
+                    licitacionId,
                     usuarioIds: usuarioProveedorIds
                 );
             }
@@ -94,11 +98,11 @@ namespace Wira.Api.Services
 
             // Notificar a la minera propietaria
             await CrearNotificacionPersonalizada(
-                titulo, 
-                mensaje, 
-                "ADJUDICACION", 
-                "LICITACION", 
-                licitacionId, 
+                titulo,
+                mensaje,
+                "ADJUDICACION",
+                "LICITACION",
+                licitacionId,
                 mineraIds: new List<int> { mineraId }
             );
 
@@ -110,7 +114,11 @@ namespace Wira.Api.Services
                 .ToListAsync();
 
             var usuarioProveedorIds = await _context.Usuarios
-                .Where(u => u.ProveedorID.HasValue && proveedorIds.Contains(u.ProveedorID.Value))
+                .Where(u =>
+                    u.EmpresaID.HasValue &&
+                    proveedorIds.Contains(u.EmpresaID.Value) &&
+                    u.Empresa != null &&
+                    u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
                 .Select(u => u.UsuarioID)
                 .ToListAsync();
 
@@ -118,11 +126,11 @@ namespace Wira.Api.Services
             {
                 var mensajeProveedores = $"La licitación '{tituloLicitacion}' en la que participaste ha sido adjudicada";
                 await CrearNotificacionPersonalizada(
-                    titulo, 
-                    mensajeProveedores, 
-                    "ADJUDICACION", 
-                    "LICITACION", 
-                    licitacionId, 
+                    titulo,
+                    mensajeProveedores,
+                    "ADJUDICACION",
+                    "LICITACION",
+                    licitacionId,
                     usuarioIds: usuarioProveedorIds
                 );
             }
@@ -135,11 +143,11 @@ namespace Wira.Api.Services
 
             // Notificar a la minera propietaria
             await CrearNotificacionPersonalizada(
-                titulo, 
-                mensaje, 
-                "PROPUESTA", 
-                "PROPUESTA", 
-                propuestaId, 
+                titulo,
+                mensaje,
+                "PROPUESTA",
+                "PROPUESTA",
+                propuestaId,
                 mineraIds: new List<int> { mineraId }
             );
         }
@@ -151,18 +159,21 @@ namespace Wira.Api.Services
 
             // Notificar al proveedor ganador
             var usuarioGanadorIds = await _context.Usuarios
-                .Where(u => u.ProveedorID == proveedorGanadorId)
+                .Where(u =>
+                    u.EmpresaID == proveedorGanadorId &&
+                    u.Empresa != null &&
+                    u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
                 .Select(u => u.UsuarioID)
                 .ToListAsync();
 
             if (usuarioGanadorIds.Any())
             {
                 await CrearNotificacionPersonalizada(
-                    titulo, 
-                    mensaje, 
-                    "GANADOR", 
-                    "LICITACION", 
-                    licitacionId, 
+                    titulo,
+                    mensaje,
+                    "GANADOR",
+                    "LICITACION",
+                    licitacionId,
                     usuarioIds: usuarioGanadorIds
                 );
             }
@@ -170,13 +181,13 @@ namespace Wira.Api.Services
             // Notificar a la minera propietaria
             var tituloMinera = "Ganador seleccionado";
             var mensajeMinera = $"Se ha seleccionado a {nombreProveedorGanador} como ganador de la licitación '{tituloLicitacion}'";
-            
+
             await CrearNotificacionPersonalizada(
-                tituloMinera, 
-                mensajeMinera, 
-                "GANADOR_SELECCIONADO", 
-                "LICITACION", 
-                licitacionId, 
+                tituloMinera,
+                mensajeMinera,
+                "GANADOR_SELECCIONADO",
+                "LICITACION",
+                licitacionId,
                 mineraIds: new List<int> { mineraId }
             );
 
@@ -188,7 +199,11 @@ namespace Wira.Api.Services
                 .ToListAsync();
 
             var usuariosOtrosProveedorIds = await _context.Usuarios
-                .Where(u => u.ProveedorID.HasValue && otrosProveedorIds.Contains(u.ProveedorID.Value))
+                .Where(u =>
+                    u.EmpresaID.HasValue &&
+                    otrosProveedorIds.Contains(u.EmpresaID.Value) &&
+                    u.Empresa != null &&
+                    u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
                 .Select(u => u.UsuarioID)
                 .ToListAsync();
 
@@ -196,13 +211,13 @@ namespace Wira.Api.Services
             {
                 var tituloOtros = "Resultado de licitación";
                 var mensajeOtros = $"La licitación '{tituloLicitacion}' en la que participaste ha sido adjudicada a {nombreProveedorGanador}";
-                
+
                 await CrearNotificacionPersonalizada(
-                    tituloOtros, 
-                    mensajeOtros, 
-                    "RESULTADO_LICITACION", 
-                    "LICITACION", 
-                    licitacionId, 
+                    tituloOtros,
+                    mensajeOtros,
+                    "RESULTADO_LICITACION",
+                    "LICITACION",
+                    licitacionId,
                     usuarioIds: usuariosOtrosProveedorIds
                 );
             }
@@ -214,7 +229,7 @@ namespace Wira.Api.Services
             {
                 // Verificar si es un proveedor en memoria para evitar transacciones
                 var isInMemory = _context.Database.ProviderName?.Contains("InMemory") == true;
-                
+
                 if (!isInMemory)
                 {
                     using var transaction = await _context.Database.BeginTransactionAsync();
@@ -279,7 +294,11 @@ namespace Wira.Api.Services
             if (mineraIds != null && mineraIds.Any())
             {
                 var usuariosPorMinera = await _context.Usuarios
-                    .Where(u => u.MineraID.HasValue && mineraIds.Contains(u.MineraID.Value))
+                    .Where(u =>
+                        u.EmpresaID.HasValue &&
+                        mineraIds.Contains(u.EmpresaID.Value) &&
+                        u.Empresa != null &&
+                        u.Empresa.TipoEmpresa == EmpresaTipos.Minera)
                     .Select(u => u.UsuarioID)
                     .ToListAsync();
 
@@ -304,7 +323,7 @@ namespace Wira.Api.Services
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Notificación creada: {Titulo} para {CantidadUsuarios} usuarios", 
+            _logger.LogInformation("Notificación creada: {Titulo} para {CantidadUsuarios} usuarios",
                 titulo, usuariosDestinatarios.Count);
         }
     }

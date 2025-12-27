@@ -198,7 +198,11 @@ namespace Wira.Api.Controllers
                 if (request.MineraIDs != null && request.MineraIDs.Any())
                 {
                     var usuariosPorMinera = await _context.Usuarios
-                        .Where(u => u.MineraID.HasValue && request.MineraIDs.Contains(u.MineraID.Value))
+                        .Where(u =>
+                            u.EmpresaID.HasValue &&
+                            request.MineraIDs.Contains(u.EmpresaID.Value) &&
+                            u.Empresa != null &&
+                            u.Empresa.TipoEmpresa == EmpresaTipos.Minera)
                         .Select(u => u.UsuarioID)
                         .ToListAsync();
 
@@ -224,7 +228,7 @@ namespace Wira.Api.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                _logger.LogInformation("Notificación creada con ID: {NotificacionId} para {CantidadUsuarios} usuarios", 
+                _logger.LogInformation("Notificación creada con ID: {NotificacionId} para {CantidadUsuarios} usuarios",
                     notificacion.NotificacionID, usuariosDestinatarios.Count);
 
                 var notificacionDto = new NotificacionDto

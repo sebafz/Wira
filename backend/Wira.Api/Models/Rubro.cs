@@ -14,8 +14,8 @@ namespace Wira.Api.Models
 
         public bool Activo { get; set; } = true;
 
-        // Navegación - Proveedores que pertenecen a este rubro
-        public virtual ICollection<Proveedor> Proveedores { get; set; } = new List<Proveedor>();
+        // Navegación - Empresas proveedoras asociadas a este rubro
+        public virtual ICollection<Empresa> Proveedores { get; set; } = new List<Empresa>();
 
         // Navegación - Licitaciones de este rubro
         public virtual ICollection<Licitacion> Licitaciones { get; set; } = new List<Licitacion>();

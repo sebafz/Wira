@@ -49,6 +49,7 @@ namespace Wira.Api.Tests.Integration
                 Email = "invalid-email", // Email inválido
                 Password = "123", // Password muy corto
                 ConfirmPassword = "456", // No coincide
+                DNI = "", // DNI inválido
                 TipoCuenta = "InvalidType" // Tipo inválido
             };
 
@@ -72,7 +73,7 @@ namespace Wira.Api.Tests.Integration
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
-            
+
             builder.ConfigureServices(services =>
             {
                 // Remover todos los servicios relacionados con DbContext
@@ -91,11 +92,11 @@ namespace Wira.Api.Tests.Integration
                 }
 
                 // Remover otros descriptores de DbContext
-                var descriptorsToRemove = services.Where(d => 
-                    d.ServiceType.IsGenericType && 
+                var descriptorsToRemove = services.Where(d =>
+                    d.ServiceType.IsGenericType &&
                     d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>))
                     .ToList();
-                
+
                 foreach (var descriptor in descriptorsToRemove)
                 {
                     services.Remove(descriptor);
@@ -114,9 +115,11 @@ namespace Wira.Api.Tests.Integration
             // Agregar roles básicos
             var roles = new[]
             {
-                new Rol { NombreRol = "Admin" },
-                new Rol { NombreRol = "Minera" },
-                new Rol { NombreRol = "Proveedor" }
+                new Rol { NombreRol = RoleNames.MineraAdministrador },
+                new Rol { NombreRol = RoleNames.MineraUsuario },
+                new Rol { NombreRol = RoleNames.ProveedorAdministrador },
+                new Rol { NombreRol = RoleNames.ProveedorUsuario },
+                new Rol { NombreRol = RoleNames.AdministradorSistema }
             };
             context.Roles.AddRange(roles);
             context.SaveChanges();

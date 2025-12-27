@@ -33,45 +33,71 @@ namespace Wira.Api.Services
                 var user = await _context.Usuarios
                     .Include(u => u.UsuariosRoles)
                         .ThenInclude(ur => ur.Rol)
-                    .Include(u => u.Minera)
-                    .Include(u => u.Proveedor)
-                        .ThenInclude(p => p!.Rubro)
+                    .Include(u => u.Empresa)
+                        .ThenInclude(e => e!.Rubro)
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
 
                 if (user == null)
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "Email o contraseña incorrectos" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Email o contraseña incorrectos"
                     };
                 }
 
                 if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "Email o contraseña incorrectos" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Email o contraseña incorrectos"
                     };
                 }
 
                 if (!user.Activo)
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "La cuenta está desactivada" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "La cuenta está desactivada"
                     };
                 }
 
                 if (!user.ValidadoEmail)
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "Debe verificar su email antes de iniciar sesión" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Debe verificar su email antes de iniciar sesión"
                     };
+                }
+
+                MineraInfo? mineraInfo = null;
+                ProveedorInfo? proveedorInfo = null;
+
+                if (user.Empresa != null)
+                {
+                    if (user.Empresa.TipoEmpresa == EmpresaTipos.Minera)
+                    {
+                        mineraInfo = new MineraInfo
+                        {
+                            MineraID = user.Empresa.EmpresaID,
+                            Nombre = user.Empresa.Nombre,
+                            CUIT = user.Empresa.CUIT
+                        };
+                    }
+                    else if (user.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
+                    {
+                        proveedorInfo = new ProveedorInfo
+                        {
+                            ProveedorID = user.Empresa.EmpresaID,
+                            Nombre = user.Empresa.Nombre,
+                            CUIT = user.Empresa.CUIT,
+                            RubroID = user.Empresa.RubroID,
+                            RubroNombre = user.Empresa.Rubro?.Nombre
+                        };
+                    }
                 }
 
                 var userInfo = new UserInfo
@@ -79,22 +105,14 @@ namespace Wira.Api.Services
                     UsuarioID = user.UsuarioID,
                     Email = user.Email,
                     Nombre = user.Nombre ?? "",
+                    Apellido = user.Apellido,
+                    DNI = user.DNI,
+                    Telefono = user.Telefono,
+                    FechaBaja = user.FechaBaja,
                     ValidadoEmail = user.ValidadoEmail,
                     Roles = user.UsuariosRoles.Select(ur => ur.Rol.NombreRol).ToList(),
-                    Minera = user.Minera != null ? new MineraInfo
-                    {
-                        MineraID = user.Minera.MineraID,
-                        Nombre = user.Minera.Nombre,
-                        CUIT = user.Minera.CUIT
-                    } : null,
-                    Proveedor = user.Proveedor != null ? new ProveedorInfo
-                    {
-                        ProveedorID = user.Proveedor.ProveedorID,
-                        Nombre = user.Proveedor.Nombre,
-                        CUIT = user.Proveedor.CUIT,
-                        RubroID = user.Proveedor.RubroID,
-                        RubroNombre = user.Proveedor.Rubro?.Nombre
-                    } : null
+                    Minera = mineraInfo,
+                    Proveedor = proveedorInfo
                 };
 
                 var token = GenerateJwtToken(userInfo);
@@ -112,10 +130,10 @@ namespace Wira.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error durante el login para el email: {Email}", request.Email);
-                return new AuthResponse 
-                { 
-                    Success = false, 
-                    Message = "Error interno del servidor" 
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Error interno del servidor"
                 };
             }
         }
@@ -127,43 +145,74 @@ namespace Wira.Api.Services
                 // Verificar si el email ya existe
                 if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "El email ya está registrado" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "El email ya está registrado"
                     };
                 }
 
-                // Validar que el tipo de cuenta sea válido
-                if (request.TipoCuenta != "Minera" && request.TipoCuenta != "Proveedor")
+                var dniNormalizado = request.DNI?.Trim();
+                if (string.IsNullOrWhiteSpace(dniNormalizado))
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "Tipo de cuenta inválido" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "El DNI es obligatorio"
+                    };
+                }
+
+                if (await _context.Usuarios.AnyAsync(u => u.DNI == dniNormalizado))
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "El DNI ya está registrado"
+                    };
+                }
+
+                var tipoCuentaNormalizado = EmpresaTipos.Normalizar(request.TipoCuenta);
+
+                // Validar que el tipo de cuenta sea válido
+                if (!EmpresaTipos.EsValido(tipoCuentaNormalizado))
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Tipo de cuenta inválido"
                     };
                 }
 
                 // Validar que la empresa existe según el tipo
-                if (request.TipoCuenta == "Minera" && request.MineraID.HasValue)
+                if (tipoCuentaNormalizado == EmpresaTipos.Minera && request.MineraID.HasValue)
                 {
-                    if (!await _context.Mineras.AnyAsync(m => m.MineraID == request.MineraID && m.Activo))
+                    var mineraExiste = await _context.Empresas.AnyAsync(m =>
+                        m.EmpresaID == request.MineraID &&
+                        m.TipoEmpresa == EmpresaTipos.Minera &&
+                        m.Activo);
+
+                    if (!mineraExiste)
                     {
-                        return new AuthResponse 
-                        { 
-                            Success = false, 
-                            Message = "La minera seleccionada no existe o está inactiva" 
+                        return new AuthResponse
+                        {
+                            Success = false,
+                            Message = "La minera seleccionada no existe o está inactiva"
                         };
                     }
                 }
-                else if (request.TipoCuenta == "Proveedor" && request.ProveedorID.HasValue)
+                else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor && request.ProveedorID.HasValue)
                 {
-                    if (!await _context.Proveedores.AnyAsync(p => p.ProveedorID == request.ProveedorID && p.Activo))
+                    var proveedorExiste = await _context.Empresas.AnyAsync(p =>
+                        p.EmpresaID == request.ProveedorID &&
+                        p.TipoEmpresa == EmpresaTipos.Proveedor &&
+                        p.Activo);
+
+                    if (!proveedorExiste)
                     {
-                        return new AuthResponse 
-                        { 
-                            Success = false, 
-                            Message = "El proveedor seleccionado no existe o está inactivo" 
+                        return new AuthResponse
+                        {
+                            Success = false,
+                            Message = "El proveedor seleccionado no existe o está inactivo"
                         };
                     }
                 }
@@ -174,35 +223,60 @@ namespace Wira.Api.Services
                 {
                     Email = request.Email,
                     PasswordHash = hashedPassword,
-                    Nombre = request.Nombre,
+                    Nombre = request.Nombre?.Trim(),
+                    Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim(),
+                    DNI = dniNormalizado,
+                    Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim(),
                     Activo = true,
                     ValidadoEmail = false,
                     FechaRegistro = DateTime.Now,
-                    MineraID = request.TipoCuenta == "Minera" ? request.MineraID : null,
-                    ProveedorID = request.TipoCuenta == "Proveedor" ? request.ProveedorID : null
+                    FechaBaja = null,
+                    EmpresaID = tipoCuentaNormalizado == EmpresaTipos.Minera
+                        ? request.MineraID
+                        : tipoCuentaNormalizado == EmpresaTipos.Proveedor
+                            ? request.ProveedorID
+                            : null
                 };
 
                 _context.Usuarios.Add(user);
                 await _context.SaveChangesAsync();
 
-                // Asignar rol
-                var rol = await _context.Roles.FirstOrDefaultAsync(r => r.NombreRol == request.TipoCuenta);
-                if (rol != null)
+                // Asignar rol predeterminado según el tipo de cuenta
+                string? rolNombre = tipoCuentaNormalizado switch
                 {
-                    var usuarioRol = new UsuarioRol
+                    var tipo when tipo == EmpresaTipos.Minera => RoleNames.MineraUsuario,
+                    var tipo when tipo == EmpresaTipos.Proveedor => RoleNames.ProveedorUsuario,
+                    _ => null
+                };
+
+                if (rolNombre == null)
+                {
+                    _logger.LogWarning("No se pudo determinar un rol para el tipo de cuenta {TipoCuenta}", tipoCuentaNormalizado);
+                }
+                else
+                {
+                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.NombreRol == rolNombre);
+                    if (rol == null)
                     {
-                        UsuarioID = user.UsuarioID,
-                        RolID = rol.RolID
-                    };
-                    _context.UsuariosRoles.Add(usuarioRol);
-                    await _context.SaveChangesAsync();
+                        _logger.LogWarning("El rol {RolNombre} no está configurado en la base de datos", rolNombre);
+                    }
+                    else
+                    {
+                        var usuarioRol = new UsuarioRol
+                        {
+                            UsuarioID = user.UsuarioID,
+                            RolID = rol.RolID
+                        };
+                        _context.UsuariosRoles.Add(usuarioRol);
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 // Generar token de verificación y guardarlo
                 var verificationToken = GenerateEmailVerificationToken();
                 user.TokenVerificacionEmail = verificationToken;
                 user.FechaVencimientoTokenVerificacion = DateTime.UtcNow.AddMinutes(10); // 10 minutos
-                
+
                 await _context.SaveChangesAsync();
 
                 // Enviar email de verificación
@@ -215,7 +289,7 @@ namespace Wira.Api.Services
                     _logger.LogError(emailEx, "Error enviando email de verificación a: {Email}", user.Email);
                     // No fallar el registro por error de email
                 }
-                
+
                 return new AuthResponse
                 {
                     Success = true,
@@ -225,10 +299,10 @@ namespace Wira.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error durante el registro para el email: {Email}", request.Email);
-                return new AuthResponse 
-                { 
-                    Success = false, 
-                    Message = "Error interno del servidor" 
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Error interno del servidor"
                 };
             }
         }
@@ -238,7 +312,7 @@ namespace Wira.Api.Services
             try
             {
                 var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
-                
+
                 if (user == null)
                 {
                     // Por seguridad, no revelamos si el email existe o no
@@ -253,7 +327,7 @@ namespace Wira.Api.Services
                 var resetToken = GeneratePasswordResetToken();
                 user.TokenRecuperacionPassword = resetToken;
                 user.FechaVencimientoTokenRecuperacion = DateTime.UtcNow.AddHours(1); // 1 hora
-                
+
                 await _context.SaveChangesAsync();
 
                 // Enviar email de recuperación
@@ -266,7 +340,7 @@ namespace Wira.Api.Services
                     _logger.LogError(emailEx, "Error enviando email de recuperación a: {Email}", user.Email);
                     // Continuar normalmente para no revelar si el email existe
                 }
-                
+
                 return new AuthResponse
                 {
                     Success = true,
@@ -276,10 +350,10 @@ namespace Wira.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error durante forgot password para el email: {Email}", request.Email);
-                return new AuthResponse 
-                { 
-                    Success = false, 
-                    Message = "Error interno del servidor" 
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Error interno del servidor"
                 };
             }
         }
@@ -288,8 +362,8 @@ namespace Wira.Api.Services
         {
             try
             {
-                var user = await _context.Usuarios.FirstOrDefaultAsync(u => 
-                    u.TokenRecuperacionPassword == request.Token && 
+                var user = await _context.Usuarios.FirstOrDefaultAsync(u =>
+                    u.TokenRecuperacionPassword == request.Token &&
                     u.FechaVencimientoTokenRecuperacion > DateTime.UtcNow);
 
                 if (user == null)
@@ -329,9 +403,9 @@ namespace Wira.Api.Services
         {
             try
             {
-                var user = await _context.Usuarios.FirstOrDefaultAsync(u => 
+                var user = await _context.Usuarios.FirstOrDefaultAsync(u =>
                     u.Email == request.Email &&
-                    u.TokenVerificacionEmail == request.Code && 
+                    u.TokenVerificacionEmail == request.Code &&
                     u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
 
                 if (user == null)
@@ -381,13 +455,13 @@ namespace Wira.Api.Services
             try
             {
                 var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
-                
+
                 if (user == null || user.ValidadoEmail)
                 {
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "Usuario no encontrado o ya verificado" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Usuario no encontrado o ya verificado"
                     };
                 }
 
@@ -395,7 +469,7 @@ namespace Wira.Api.Services
                 var verificationToken = GenerateEmailVerificationToken();
                 user.TokenVerificacionEmail = verificationToken;
                 user.FechaVencimientoTokenVerificacion = DateTime.UtcNow.AddMinutes(10); // 10 minutos
-                
+
                 await _context.SaveChangesAsync();
 
                 // Reenviar email de verificación
@@ -406,10 +480,10 @@ namespace Wira.Api.Services
                 catch (Exception emailEx)
                 {
                     _logger.LogError(emailEx, "Error reenviando email de verificación a: {Email}", user.Email);
-                    return new AuthResponse 
-                    { 
-                        Success = false, 
-                        Message = "Error enviando el email de verificación" 
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Error enviando el email de verificación"
                     };
                 }
 
@@ -422,10 +496,10 @@ namespace Wira.Api.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error durante reenvío de verificación para: {Email}", email);
-                return new AuthResponse 
-                { 
-                    Success = false, 
-                    Message = "Error interno del servidor" 
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Error interno del servidor"
                 };
             }
         }

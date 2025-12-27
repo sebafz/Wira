@@ -25,7 +25,7 @@ namespace Wira.Api.Models
 
         // Navigation properties
         [ForeignKey("MineraID")]
-        public virtual Minera Minera { get; set; } = null!;
+        public virtual Empresa Minera { get; set; } = null!;
 
         public virtual ICollection<Licitacion> Licitaciones { get; set; } = new List<Licitacion>();
     }

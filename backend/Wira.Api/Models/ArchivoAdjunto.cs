@@ -16,6 +16,8 @@ namespace Wira.Api.Models
         [Required]
         public int EntidadID { get; set; }
 
+        public int? PropuestaID { get; set; }
+
         [Required]
         [StringLength(255)]
         public string NombreArchivo { get; set; } = string.Empty;
@@ -30,5 +32,8 @@ namespace Wira.Api.Models
         public int? TamañoBytes { get; set; }
 
         public DateTime FechaSubida { get; set; } = DateTime.Now;
+
+        [ForeignKey("PropuestaID")]
+        public virtual Propuesta? Propuesta { get; set; }
     }
 }

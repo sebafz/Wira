@@ -64,7 +64,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseDeveloperExceptionPage();
-    
+
     // Habilitar Swagger UI
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -95,6 +95,10 @@ if (!app.Environment.IsEnvironment("Testing"))
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
+        // Crear la base de datos y las tablas si no existen (crea esquema desde los modelos)
+        await context.Database.EnsureCreatedAsync();
+
+        // Luego inicializar datos semilla
         await DbInitializer.InitializeAsync(context);
     }
 }

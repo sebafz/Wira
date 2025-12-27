@@ -31,7 +31,7 @@ namespace Wira.Api.Models
 
         // Navegación
         [ForeignKey("ProveedorID")]
-        public virtual Proveedor Proveedor { get; set; } = null!;
+        public virtual Empresa Proveedor { get; set; } = null!;
 
         [ForeignKey("LicitacionID")]
         public virtual Licitacion Licitacion { get; set; } = null!;

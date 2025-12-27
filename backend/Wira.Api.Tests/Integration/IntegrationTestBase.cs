@@ -28,7 +28,7 @@ namespace Wira.Api.Tests.Integration
         {
             using var scope = Factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
-            
+
             var user = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
             if (user != null)
             {
@@ -53,7 +53,7 @@ namespace Wira.Api.Tests.Integration
 
         protected void SetAuthorizationHeader(string token)
         {
-            Client.DefaultRequestHeaders.Authorization = 
+            Client.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         }
 
@@ -74,7 +74,7 @@ namespace Wira.Api.Tests.Integration
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
-            
+
             builder.ConfigureServices(services =>
             {
                 // Remover TODOS los descriptores relacionados con Entity Framework
@@ -105,7 +105,7 @@ namespace Wira.Api.Tests.Integration
         {
             using var scope = Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
-            
+
             try
             {
                 // No llamar EnsureCreated ya que puede causar conflictos
@@ -127,39 +127,45 @@ namespace Wira.Api.Tests.Integration
             }
 
             // Add test roles
-            var adminRole = new Rol { NombreRol = "Admin" };
-            var mineraRole = new Rol { NombreRol = "Minera" };
-            var proveedorRole = new Rol { NombreRol = "Proveedor" };
-            
-            context.Roles.AddRange(adminRole, mineraRole, proveedorRole);
+            var mineraAdminRole = new Rol { NombreRol = RoleNames.MineraAdministrador };
+            var mineraUserRole = new Rol { NombreRol = RoleNames.MineraUsuario };
+            var proveedorAdminRole = new Rol { NombreRol = RoleNames.ProveedorAdministrador };
+            var proveedorUserRole = new Rol { NombreRol = RoleNames.ProveedorUsuario };
+            var adminSistemaRole = new Rol { NombreRol = RoleNames.AdministradorSistema };
+
+            context.Roles.AddRange(mineraAdminRole, mineraUserRole, proveedorAdminRole, proveedorUserRole, adminSistemaRole);
 
             // Add test rubro
-            var testRubro = new Rubro 
-            { 
+            var testRubro = new Rubro
+            {
                 Nombre = "Test Rubro",
                 Activo = true
             };
             context.Rubros.Add(testRubro);
 
-            // Add test minera
-            var testMinera = new Minera
+            // Add test empresas
+            var testMinera = new Empresa
             {
                 Nombre = "Test Minera",
+                RazonSocial = "Test Minera SA",
                 CUIT = "20-12345678-9",
                 EmailContacto = "minera@test.com",
+                Telefono = "+54 9 11 4000 0005",
+                TipoEmpresa = EmpresaTipos.Minera,
                 Activo = true
             };
-            context.Mineras.Add(testMinera);
 
-            // Add test proveedor
-            var testProveedor = new Proveedor
+            var testProveedor = new Empresa
             {
                 Nombre = "Test Proveedor",
+                RazonSocial = "Test Proveedor SRL",
                 CUIT = "20-98765432-1",
                 Activo = true,
-                Rubro = testRubro
+                Rubro = testRubro,
+                TipoEmpresa = EmpresaTipos.Proveedor
             };
-            context.Proveedores.Add(testProveedor);
+
+            context.Empresas.AddRange(testMinera, testProveedor);
 
             await context.SaveChangesAsync();
 
@@ -169,12 +175,13 @@ namespace Wira.Api.Tests.Integration
                 Email = "admin@test.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                 Nombre = "Admin Test",
+                DNI = "32000001",
                 ValidadoEmail = true,
                 FechaRegistro = DateTime.UtcNow,
                 Activo = true,
-                Minera = testMinera
+                Empresa = testMinera
             };
-            
+
             context.Usuarios.Add(testUser);
             await context.SaveChangesAsync();
 
@@ -182,9 +189,9 @@ namespace Wira.Api.Tests.Integration
             var userRole = new UsuarioRol
             {
                 UsuarioID = testUser.UsuarioID,
-                RolID = adminRole.RolID
+                RolID = mineraAdminRole.RolID
             };
-            
+
             context.UsuariosRoles.Add(userRole);
             await context.SaveChangesAsync();
         }

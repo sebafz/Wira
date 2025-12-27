@@ -23,9 +23,11 @@ namespace Wira.Api.Data
             // Agregar roles iniciales
             var roles = new[]
             {
-                new Rol { NombreRol = "Minera" },
-                new Rol { NombreRol = "Proveedor" },
-                new Rol { NombreRol = "Administrador" }
+                new Rol { NombreRol = RoleNames.MineraAdministrador },
+                new Rol { NombreRol = RoleNames.MineraUsuario },
+                new Rol { NombreRol = RoleNames.ProveedorAdministrador },
+                new Rol { NombreRol = RoleNames.ProveedorUsuario },
+                new Rol { NombreRol = RoleNames.AdministradorSistema }
             };
 
             await context.Roles.AddRangeAsync(roles);
@@ -72,15 +74,15 @@ namespace Wira.Api.Data
 
             await context.Rubros.AddRangeAsync(rubros);
 
-            // Agregar mineras de ejemplo
+            // Agregar empresas mineras de ejemplo
             var mineras = new[]
             {
-                new Minera { Nombre = "Borax Argentina", CUIT = "30-12345678-9", EmailContacto = "contacto@borax.com", Activo = true },
-                new Minera { Nombre = "Bajo de la Alumbrera", CUIT = "30-87654321-2", EmailContacto = "info@bajoalumbrera.com", Activo = true },
-                new Minera { Nombre = "Cauchari-Olaroz", CUIT = "30-11223344-5", EmailContacto = "admin@cauchari-olaroz.com", Activo = true }
+                new Empresa { Nombre = "Borax Argentina", RazonSocial = "Borax Argentina SA", CUIT = "30-12345678-9", EmailContacto = "contacto@borax.com", Telefono = "+54 9 11 4000 0001", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now },
+                new Empresa { Nombre = "Bajo de la Alumbrera", RazonSocial = "Bajo de la Alumbrera SA", CUIT = "30-87654321-2", EmailContacto = "info@bajoalumbrera.com", Telefono = "+54 9 11 4000 0002", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now },
+                new Empresa { Nombre = "Cauchari-Olaroz", RazonSocial = "Cauchari-Olaroz SA", CUIT = "30-11223344-5", EmailContacto = "admin@cauchari-olaroz.com", Telefono = "+54 9 11 4000 0003", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now }
             };
 
-            await context.Mineras.AddRangeAsync(mineras);
+            await context.Empresas.AddRangeAsync(mineras);
 
             // Guardar cambios intermedios para obtener IDs
             await context.SaveChangesAsync();
@@ -94,24 +96,24 @@ namespace Wira.Api.Data
             // Agregar proveedores de ejemplo con rubros asignados
             var proveedores = new[]
             {
-                new Proveedor { Nombre = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, Activo = true },
-                new Proveedor { Nombre = "Equipos Mineros SRL", CUIT = "30-99887766-4", RubroID = rubroEquipos.RubroID, Activo = true },
-                new Proveedor { Nombre = "Servicios Técnicos Unidos", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, Activo = true },
-                new Proveedor { Nombre = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, Activo = true }
+                new Empresa { Nombre = "Transportes del Norte", RazonSocial = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0001", FechaAlta = DateTime.Now },
+                new Empresa { Nombre = "Equipos Mineros", RazonSocial = "Equipos Mineros SRL", CUIT = "30-99887766-4", RubroID = rubroEquipos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0002", FechaAlta = DateTime.Now },
+                new Empresa { Nombre = "Servicios Técnicos Unidos", RazonSocial = "Servicios Técnicos Unidos SA", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0003", FechaAlta = DateTime.Now },
+                new Empresa { Nombre = "Químicos Industriales", RazonSocial = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0004", FechaAlta = DateTime.Now }
             };
 
-            await context.Proveedores.AddRangeAsync(proveedores);
+            await context.Empresas.AddRangeAsync(proveedores);
 
             // Guardar cambios para obtener IDs de mineras y proveedores
             await context.SaveChangesAsync();
 
             // Obtener roles
-            var rolMinera = await context.Roles.FirstAsync(r => r.NombreRol == "Minera");
-            var rolProveedor = await context.Roles.FirstAsync(r => r.NombreRol == "Proveedor");
+            var rolMineraUsuario = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.MineraUsuario);
+            var rolProveedorUsuario = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.ProveedorUsuario);
 
             // Obtener primera minera y proveedor para asignar a usuarios
-            var primeraMinera = await context.Mineras.FirstAsync();
-            var primerProveedor = await context.Proveedores.FirstAsync();
+            var primeraMinera = await context.Empresas.FirstAsync(e => e.TipoEmpresa == EmpresaTipos.Minera);
+            var primerProveedor = await context.Empresas.FirstAsync(e => e.TipoEmpresa == EmpresaTipos.Proveedor);
 
             // Hash de la contraseña "123456"
             string passwordHash = BCrypt.Net.BCrypt.HashPassword("123456");
@@ -119,24 +121,32 @@ namespace Wira.Api.Data
             // Agregar usuarios de ejemplo
             var usuarios = new[]
             {
-                new Usuario 
-                { 
-                    Email = "minera@gmail.com", 
+                new Usuario
+                {
+                    Email = "minera@gmail.com",
                     PasswordHash = passwordHash,
-                    Nombre = "Usuario Minera", 
-                    Activo = true, 
+                    Nombre = "Usuario Minera",
+                    Apellido = "Demo",
+                    DNI = "20000001",
+                    Telefono = "+54 9 11 4000 1001",
+                    Activo = true,
                     ValidadoEmail = true,
-                    MineraID = primeraMinera.MineraID,
+                    FechaBaja = null,
+                    EmpresaID = primeraMinera.EmpresaID,
                     FechaRegistro = DateTime.Now
                 },
-                new Usuario 
-                { 
-                    Email = "proveedor@gmail.com", 
+                new Usuario
+                {
+                    Email = "proveedor@gmail.com",
                     PasswordHash = passwordHash,
-                    Nombre = "Usuario Proveedor", 
-                    Activo = true, 
+                    Nombre = "Usuario Proveedor",
+                    Apellido = "Demo",
+                    DNI = "20000002",
+                    Telefono = "+54 9 11 4000 2001",
+                    Activo = true,
                     ValidadoEmail = true,
-                    ProveedorID = primerProveedor.ProveedorID,
+                    FechaBaja = null,
+                    EmpresaID = primerProveedor.EmpresaID,
                     FechaRegistro = DateTime.Now
                 }
             };
@@ -151,36 +161,36 @@ namespace Wira.Api.Data
             // Asignar roles a usuarios
             var usuarioRoles = new[]
             {
-                new UsuarioRol { UsuarioID = usuarioMinera.UsuarioID, RolID = rolMinera.RolID },
-                new UsuarioRol { UsuarioID = usuarioProveedor.UsuarioID, RolID = rolProveedor.RolID }
+                new UsuarioRol { UsuarioID = usuarioMinera.UsuarioID, RolID = rolMineraUsuario.RolID },
+                new UsuarioRol { UsuarioID = usuarioProveedor.UsuarioID, RolID = rolProveedorUsuario.RolID }
             };
 
             await context.UsuariosRoles.AddRangeAsync(usuarioRoles);
 
             // Agregar proyectos mineros de ejemplo para Borax Argentina
-            var boraxMinera = await context.Mineras.FirstAsync(m => m.Nombre == "Borax Argentina");
+            var boraxMinera = await context.Empresas.FirstAsync(m => m.Nombre == "Borax Argentina" && m.TipoEmpresa == EmpresaTipos.Minera);
 
             var proyectosMineros = new[]
             {
-                new ProyectoMinero 
-                { 
-                    MineraID = boraxMinera.MineraID,
+                new ProyectoMinero
+                {
+                    MineraID = boraxMinera.EmpresaID,
                     Nombre = "Extracción Tinkal",
                     Ubicacion = "Salar del Hombre Muerto, Catamarca",
                     Descripcion = "Proyecto de extracción de boratos en la cuenca de Tincalayu, fase de expansión de operaciones existentes con nuevas tecnologías de extracción sostenible.",
                     Activo = true
                 },
-                new ProyectoMinero 
-                { 
-                    MineraID = boraxMinera.MineraID,
+                new ProyectoMinero
+                {
+                    MineraID = boraxMinera.EmpresaID,
                     Nombre = "Planta de Refinado Norte",
                     Ubicacion = "Campo Quijano, Salta",
                     Descripcion = "Construcción de nueva planta de refinado de ácido bórico con tecnología de última generación para incrementar la capacidad de procesamiento.",
                     Activo = true
                 },
-                new ProyectoMinero 
-                { 
-                    MineraID = boraxMinera.MineraID,
+                new ProyectoMinero
+                {
+                    MineraID = boraxMinera.EmpresaID,
                     Nombre = "Modernización Infraestructura",
                     Ubicacion = "Tincalayu, Catamarca",
                     Descripcion = "Actualización integral de sistemas de transporte interno, modernización de equipos de extracción y mejora de la infraestructura logística.",
