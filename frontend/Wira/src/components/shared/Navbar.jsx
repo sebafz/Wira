@@ -538,10 +538,28 @@ const Navbar = () => {
       .substring(0, 2);
   };
 
-  // Obtener el primer rol del usuario
-  const getUserRole = () => {
+  const ROLE_DESCRIPTIONS = {
+    ADMIN_SISTEMA: "Administrador del sistema",
+    MINERA_ADMINISTRADOR: "Minera administrador",
+    MINERA_USUARIO: "Minera usuario",
+    PROVEEDOR_ADMINISTRADOR: "Proveedor administrador",
+    PROVEEDOR_USUARIO: "Proveedor usuario",
+  };
+
+  const normalizeRoleValue = (role) => {
+    if (typeof role !== "string") return "";
+    const trimmed = role.trim();
+    if (!trimmed) return "";
+    if (ROLE_DESCRIPTIONS[trimmed]) return trimmed;
+    const upper = trimmed.toUpperCase();
+    if (ROLE_DESCRIPTIONS[upper]) return upper;
+    return trimmed;
+  };
+
+  const getUserRoleDescription = () => {
     if (!user?.roles || user.roles.length === 0) return "Usuario";
-    return user.roles[0];
+    const normalized = normalizeRoleValue(user.roles[0]);
+    return ROLE_DESCRIPTIONS[normalized] || normalized;
   };
 
   return (
@@ -555,7 +573,7 @@ const Navbar = () => {
         <UserSection ref={dropdownRef}>
           <UserInfo>
             <div className="name">{user?.nombre || "Usuario"}</div>
-            <div className="role">{getUserRole()}</div>
+            <div className="role">{getUserRoleDescription()}</div>
           </UserInfo>
 
           <ProfileButton onClick={handleProfileClick}>

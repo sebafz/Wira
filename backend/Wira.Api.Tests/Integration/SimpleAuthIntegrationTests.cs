@@ -115,11 +115,11 @@ namespace Wira.Api.Tests.Integration
             // Agregar roles básicos
             var roles = new[]
             {
-                new Rol { NombreRol = RoleNames.MineraAdministrador },
-                new Rol { NombreRol = RoleNames.MineraUsuario },
-                new Rol { NombreRol = RoleNames.ProveedorAdministrador },
-                new Rol { NombreRol = RoleNames.ProveedorUsuario },
-                new Rol { NombreRol = RoleNames.AdministradorSistema }
+                new Rol { Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera administrador" },
+                new Rol { Nombre = RoleNames.MineraUsuario, Descripcion = "Minera usuario" },
+                new Rol { Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor administrador" },
+                new Rol { Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor usuario" },
+                new Rol { Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" }
             };
             context.Roles.AddRange(roles);
             context.SaveChanges();

@@ -2,9 +2,22 @@ const normalizeRole = (role) =>
   typeof role === "string" ? role.trim().toLowerCase() : "";
 
 const ROLE_GROUPS = {
-  admin: new Set(["administrador del sistema", "admin", "administrador"]),
-  minera: new Set(["minera administrador", "minera usuario", "minera"]),
+  admin: new Set([
+    "admin_sistema",
+    "administrador del sistema",
+    "admin",
+    "administrador",
+  ]),
+  minera: new Set([
+    "minera_administrador",
+    "minera_usuario",
+    "minera administrador",
+    "minera usuario",
+    "minera",
+  ]),
   proveedor: new Set([
+    "proveedor_administrador",
+    "proveedor_usuario",
     "proveedor administrador",
     "proveedor usuario",
     "proveedor",

@@ -11,7 +11,11 @@ namespace Wira.Api.Models
 
         [Required]
         [StringLength(50)]
-        public string NombreRol { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(150)]
+        public string Descripcion { get; set; } = string.Empty;
 
         // Navegación
         public virtual ICollection<UsuarioRol> UsuariosRoles { get; set; } = new List<UsuarioRol>();

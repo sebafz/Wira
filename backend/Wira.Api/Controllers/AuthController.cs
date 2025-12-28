@@ -186,7 +186,7 @@ namespace Wira.Api.Controllers
                     Telefono = user.Telefono,
                     FechaBaja = user.FechaBaja,
                     ValidadoEmail = user.ValidadoEmail,
-                    Roles = user.UsuariosRoles.Select(ur => ur.Rol.NombreRol).ToList(),
+                    Roles = user.UsuariosRoles.Select(ur => ur.Rol.Nombre).ToList(),
                     Minera = mineraInfo,
                     Proveedor = proveedorInfo
                 };
@@ -262,7 +262,7 @@ namespace Wira.Api.Controllers
             }
 
             var rolesDisponibles = await _context.Roles
-                .Where(r => requestedRoles.Contains(r.NombreRol))
+                .Where(r => requestedRoles.Contains(r.Nombre))
                 .ToListAsync();
 
             if (rolesDisponibles.Count != requestedRoles.Count)
@@ -395,7 +395,7 @@ namespace Wira.Api.Controllers
                 FechaBaja = usuario.FechaBaja,
                 ValidadoEmail = usuario.ValidadoEmail,
                 Roles = usuario.UsuariosRoles
-                    .Select(ur => ur.Rol.NombreRol)
+                    .Select(ur => ur.Rol.Nombre)
                     .OrderBy(r => r)
                     .ToList(),
                 Empresa = usuario.Empresa == null

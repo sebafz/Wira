@@ -42,7 +42,7 @@ namespace Wira.Api.Data
 
             // Configuración de índices únicos
             modelBuilder.Entity<Rol>()
-                .HasIndex(r => r.NombreRol)
+                .HasIndex(r => r.Nombre)
                 .IsUnique();
 
             modelBuilder.Entity<Usuario>()

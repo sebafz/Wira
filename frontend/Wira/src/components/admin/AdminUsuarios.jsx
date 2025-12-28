@@ -220,15 +220,56 @@ const ModalActions = styled.div`
 
 const ROLE_OPTIONS = [
   { value: "", label: "Sin rol asignado" },
-  { value: "Administrador del sistema", label: "Administrador del sistema" },
-  { value: "Minera administrador", label: "Minera administrador" },
-  { value: "Minera usuario", label: "Minera usuario" },
-  { value: "Proveedor administrador", label: "Proveedor administrador" },
-  { value: "Proveedor usuario", label: "Proveedor usuario" },
+  { value: "ADMIN_SISTEMA", label: "Administrador del sistema" },
+  { value: "MINERA_ADMINISTRADOR", label: "Minera administrador" },
+  { value: "MINERA_USUARIO", label: "Minera usuario" },
+  { value: "PROVEEDOR_ADMINISTRADOR", label: "Proveedor administrador" },
+  { value: "PROVEEDOR_USUARIO", label: "Proveedor usuario" },
 ];
 
+const ROLE_LABELS = ROLE_OPTIONS.reduce((labels, role) => {
+  if (role.value) {
+    labels[role.value] = role.label;
+  }
+  return labels;
+}, {});
+
+const KNOWN_ROLE_VALUES = new Set(Object.keys(ROLE_LABELS));
+
+const LEGACY_ROLE_MAP = {
+  "administrador del sistema": "ADMIN_SISTEMA",
+  "minera administrador": "MINERA_ADMINISTRADOR",
+  "minera usuario": "MINERA_USUARIO",
+  "proveedor administrador": "PROVEEDOR_ADMINISTRADOR",
+  "proveedor usuario": "PROVEEDOR_USUARIO",
+};
+
+const normalizeRoleValue = (role) => {
+  if (typeof role !== "string") return "";
+  const trimmed = role.trim();
+  if (!trimmed) return "";
+  if (KNOWN_ROLE_VALUES.has(trimmed)) return trimmed;
+  const legacyKey = trimmed.toLowerCase();
+  return LEGACY_ROLE_MAP[legacyKey] || trimmed;
+};
+
+const getRoleLabel = (role) => ROLE_LABELS[role] || role;
+
+const extractUserRoles = (usuario) => {
+  if (Array.isArray(usuario?.Roles) && usuario.Roles.length > 0) {
+    return usuario.Roles;
+  }
+  if (Array.isArray(usuario?.roles) && usuario.roles.length > 0) {
+    return usuario.roles;
+  }
+  return [];
+};
+
 const getUserId = (usuario) => usuario?.UsuarioID || usuario?.usuarioID;
-const getUserRoles = (usuario) => usuario?.Roles || usuario?.roles || [];
+const getUserRoles = (usuario) =>
+  extractUserRoles(usuario)
+    .map((role) => normalizeRoleValue(role))
+    .filter((role) => typeof role === "string" && role.length > 0);
 const isUserActive = (usuario) => {
   if (typeof usuario?.Activo === "boolean") return usuario.Activo;
   if (typeof usuario?.activo === "boolean") return usuario.activo;
@@ -269,13 +310,20 @@ const AdminUsuarios = () => {
     const term = search.trim().toLowerCase();
 
     return usuarios.filter((usuario) => {
+      const roleValues = getUserRoles(usuario);
+      const roleLabels = roleValues.map((role) => getRoleLabel(role));
       const matchesTerm = term
         ? [
             usuario.Nombre || usuario.nombre || "",
             usuario.Apellido || usuario.apellido || "",
             usuario.Email || usuario.email || "",
-            ...getUserRoles(usuario),
-          ].some((value) => value.toLowerCase().includes(term))
+            ...roleValues,
+            ...roleLabels,
+          ].some(
+            (value) =>
+              typeof value === "string" &&
+              value.toLowerCase().includes(term)
+          )
         : true;
 
       const matchesStatus =
@@ -439,7 +487,7 @@ const AdminUsuarios = () => {
                             </span>
                           ) : (
                             getUserRoles(usuario).map((rol) => (
-                              <RoleTag key={rol}>{rol}</RoleTag>
+                              <RoleTag key={rol}>{getRoleLabel(rol)}</RoleTag>
                             ))
                           )}
                         </RoleList>

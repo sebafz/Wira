@@ -110,7 +110,7 @@ namespace Wira.Api.Services
                     Telefono = user.Telefono,
                     FechaBaja = user.FechaBaja,
                     ValidadoEmail = user.ValidadoEmail,
-                    Roles = user.UsuariosRoles.Select(ur => ur.Rol.NombreRol).ToList(),
+                    Roles = user.UsuariosRoles.Select(ur => ur.Rol.Nombre).ToList(),
                     Minera = mineraInfo,
                     Proveedor = proveedorInfo
                 };
@@ -255,7 +255,7 @@ namespace Wira.Api.Services
                 }
                 else
                 {
-                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.NombreRol == rolNombre);
+                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == rolNombre);
                     if (rol == null)
                     {
                         _logger.LogWarning("El rol {RolNombre} no está configurado en la base de datos", rolNombre);

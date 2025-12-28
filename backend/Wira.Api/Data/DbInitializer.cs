@@ -23,11 +23,11 @@ namespace Wira.Api.Data
             // Agregar roles iniciales
             var roles = new[]
             {
-                new Rol { NombreRol = RoleNames.MineraAdministrador },
-                new Rol { NombreRol = RoleNames.MineraUsuario },
-                new Rol { NombreRol = RoleNames.ProveedorAdministrador },
-                new Rol { NombreRol = RoleNames.ProveedorUsuario },
-                new Rol { NombreRol = RoleNames.AdministradorSistema }
+                new Rol { Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera administrador" },
+                new Rol { Nombre = RoleNames.MineraUsuario, Descripcion = "Minera usuario" },
+                new Rol { Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor administrador" },
+                new Rol { Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor usuario" },
+                new Rol { Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" }
             };
 
             await context.Roles.AddRangeAsync(roles);
@@ -108,11 +108,11 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Obtener roles
-            var rolMineraUsuario = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.MineraUsuario);
-            var rolProveedorUsuario = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.ProveedorUsuario);
-            var rolMineraAdministrador = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.MineraAdministrador);
-            var rolProveedorAdministrador = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.ProveedorAdministrador);
-            var rolAdministradorSistema = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.AdministradorSistema);
+            var rolMineraUsuario = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.MineraUsuario);
+            var rolProveedorUsuario = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.ProveedorUsuario);
+            var rolMineraAdministrador = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.MineraAdministrador);
+            var rolProveedorAdministrador = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+            var rolAdministradorSistema = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.AdministradorSistema);
 
             // Obtener primera minera y proveedor para asignar a usuarios
             var primeraMinera = await context.Empresas.FirstAsync(e => e.TipoEmpresa == EmpresaTipos.Minera);

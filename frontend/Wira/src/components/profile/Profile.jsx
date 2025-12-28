@@ -513,7 +513,7 @@ const Profile = () => {
       <Navbar />
 
       <MainContent>
-        <BackButton onClick={handleGoBack}>← Volver</BackButton>
+        <BackButton onClick={handleGoBack}>Volver</BackButton>
 
         <ProfileCard>
           <ProfileHeader>
