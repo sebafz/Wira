@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Navbar from "./Navbar";
+import Navbar from "../shared/Navbar";
+import { buttonBaseStyles } from "../shared/buttonStyles";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -17,25 +18,20 @@ const MainContent = styled.main`
   padding: 40px 20px;
 `;
 
-const PageHeader = styled.div`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
+const PageHeader = styled.header`
   margin-bottom: 30px;
 `;
 
 const PageTitle = styled.h1`
-  color: white;
+  color: #0f172a;
   font-size: 2rem;
-  margin-bottom: 10px;
+  margin: 0 0 10px;
 `;
 
 const PageSubtitle = styled.p`
-  color: rgba(255, 255, 255, 0.9);
+  color: #475569;
   font-size: 1.1rem;
-  margin-bottom: 20px;
+  margin: 0;
 `;
 
 const LicitacionesContainer = styled.div`
@@ -121,40 +117,26 @@ const FiltersActions = styled.div`
 `;
 
 const FilterButton = styled.button`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  border: none;
+  ${buttonBaseStyles};
   padding: 10px 20px;
-  border-radius: 6px;
   font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background: #fc6b0a;
+  color: white;
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(252, 107, 10, 0.3);
+  &:hover:not(:disabled) {
+    background: #e55a09;
   }
 `;
 
 const ClearButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
   background: #6c757d;
   color: white;
-  border: 0px solid #ddd;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 `;
 
@@ -321,23 +303,15 @@ const EmptyDescription = styled.p`
 `;
 
 const CreateButton = styled.button`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  border: none;
+  ${buttonBaseStyles};
   padding: 12px 24px;
-  border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  border-radius: 10px;
+  background: #fc6b0a;
+  color: white;
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(252, 107, 10, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
+  &:hover:not(:disabled) {
+    background: #e55a09;
   }
 `;
 
@@ -419,23 +393,14 @@ const ErrorDescription = styled.p`
 `;
 
 const RetryButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 12px 24px;
+  font-size: 1rem;
   background: #dc3545;
   color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #c82333;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 `;
 
@@ -798,25 +763,22 @@ const PropuestaInfo = styled.div`
 `;
 
 const SeleccionarGanadoraButton = styled.button`
+  ${buttonBaseStyles};
   position: absolute;
   top: 10px;
   right: 10px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
   padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: 0.85rem;
+  background: #28a745;
+  color: white;
+  border-radius: 8px;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
   z-index: 10;
 
-  &:hover {
-    background: linear-gradient(135deg, #218838 0%, #1e8e7a 100%);
-    transform: scale(1.05);
+  &:hover:not(:disabled) {
+    background: #218838;
   }
 `;
 
@@ -898,41 +860,30 @@ const ModalActions = styled.div`
 `;
 
 const ActionButton = styled.button`
+  ${buttonBaseStyles};
   padding: 10px 20px;
-  border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 const EditButton = styled(ActionButton)`
-  background: #308becff;
+  background: #2563eb;
   color: white;
 
-  &:hover {
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
   }
 `;
 
 const CloseLicitacionButton = styled(ActionButton)`
   background: #ffc107;
-  color: #212529;
+  color: #1f2937;
 
-  &:hover {
-    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+  &:hover:not(:disabled) {
+    background: #e0a800;
   }
 `;
 
@@ -940,8 +891,8 @@ const AdjudicarButton = styled(ActionButton)`
   background: #28a745;
   color: white;
 
-  &:hover {
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  &:hover:not(:disabled) {
+    background: #218838;
   }
 `;
 
@@ -949,8 +900,8 @@ const DeleteButton = styled(ActionButton)`
   background: #dc3545;
   color: white;
 
-  &:hover {
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  &:hover:not(:disabled) {
+    background: #c82333;
   }
 `;
 
@@ -1004,24 +955,16 @@ const ConfirmActions = styled.div`
 `;
 
 const ConfirmButton = styled.button`
+  ${buttonBaseStyles};
   padding: 10px 20px;
-  border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
 `;
 
 const ConfirmDeleteButton = styled(ConfirmButton)`
   background: #dc3545;
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #c82333;
   }
 `;
@@ -1030,7 +973,7 @@ const ConfirmSuccessButton = styled(ConfirmButton)`
   background: #28a745;
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #218838;
   }
 `;
@@ -1043,9 +986,9 @@ const ConfirmYellowTitle = styled.h3`
 
 const ConfirmYellowButton = styled(ConfirmButton)`
   background: #ffc107;
-  color: #212529;
+  color: #1f2937;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #e0a800;
   }
 `;
@@ -1054,7 +997,7 @@ const CancelButton = styled(ConfirmButton)`
   background: #6c757d;
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
   }
 `;
@@ -1259,31 +1202,20 @@ const PropuestaActions = styled.div`
 `;
 
 const PropuestaActionButton = styled.button`
+  ${buttonBaseStyles};
   padding: 10px 20px;
-  border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
 `;
 
 const PropuestaCloseButton = styled(PropuestaActionButton)`
   background: #6c757d;
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
   }
 `;
@@ -1408,42 +1340,26 @@ const GanadorModalActions = styled.div`
 `;
 
 const GanadorConfirmButton = styled.button`
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
+  ${buttonBaseStyles};
   padding: 12px 24px;
-  border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background: #28a745;
+  color: white;
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+  &:hover:not(:disabled) {
+    background: #218838;
   }
 `;
 
 const GanadorCancelButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 12px 24px;
+  font-size: 1rem;
   background: #6c757d;
   color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
-    transform: translateY(-1px);
   }
 `;
 

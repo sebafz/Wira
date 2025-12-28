@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import logoWira from "../assets/logoWira.png";
+import logoWira from "../../assets/logoWira.png";
+import { getDashboardRouteForUser } from "../../utils/roleUtils";
 
 const LoginContainer = styled.div`
   min-height: 100vh;
@@ -185,7 +186,8 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate("/dashboard");
+      const targetRoute = getDashboardRouteForUser(result.user);
+      navigate(targetRoute, { replace: true });
     } else if (
       result.message &&
       result.message.includes("verificar su email")

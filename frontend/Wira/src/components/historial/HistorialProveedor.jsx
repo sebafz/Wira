@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 // import { useNavigate } from "react-router-dom"; // Currently not used
-import Navbar from "./Navbar";
+import Navbar from "../shared/Navbar";
 import { toast } from "react-toastify";
+import { buttonBaseStyles } from "../shared/buttonStyles";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -16,25 +17,21 @@ const MainContent = styled.main`
   padding: 40px 20px;
 `;
 
-const PageHeader = styled.div`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
+const PageHeader = styled.header`
   margin-bottom: 30px;
 `;
 
 const PageTitle = styled.h1`
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
   font-size: 2.2rem;
   font-weight: 700;
+  color: #0f172a;
 `;
 
 const PageSubtitle = styled.p`
   margin: 0;
   font-size: 1.1rem;
-  opacity: 0.9;
+  color: #475569;
 `;
 
 const StatsContainer = styled.div`
@@ -132,36 +129,26 @@ const FilterActions = styled.div`
 `;
 
 const FilterButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
   background: #fc6b0a;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #e55a09;
-    transform: translateY(-1px);
   }
 `;
 
 const ClearButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
   background: #6c757d;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
-    transform: translateY(-1px);
   }
 `;
 

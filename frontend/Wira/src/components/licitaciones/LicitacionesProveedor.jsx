@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 // import { useNavigate } from "react-router-dom"; // Currently not used
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Navbar from "./Navbar";
+import Navbar from "../shared/Navbar";
+import { buttonBaseStyles } from "../shared/buttonStyles";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -17,25 +18,20 @@ const MainContent = styled.main`
   padding: 40px 20px;
 `;
 
-const PageHeader = styled.div`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(252, 107, 10, 0.3);
+const PageHeader = styled.header`
   margin-bottom: 30px;
 `;
 
 const PageTitle = styled.h1`
-  color: white;
+  color: #0f172a;
   font-size: 2rem;
-  margin-bottom: 10px;
+  margin: 0 0 10px;
 `;
 
 const PageSubtitle = styled.p`
-  color: rgba(255, 255, 255, 0.9);
+  color: #475569;
   font-size: 1.1rem;
-  margin-bottom: 20px;
+  margin: 0;
 `;
 
 const LicitacionesContainer = styled.div`
@@ -121,40 +117,26 @@ const FiltersActions = styled.div`
 `;
 
 const FilterButton = styled.button`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  border: none;
+  ${buttonBaseStyles};
   padding: 10px 20px;
-  border-radius: 6px;
   font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background: #fc6b0a;
+  color: white;
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(252, 107, 10, 0.3);
+  &:hover:not(:disabled) {
+    background: #e55a09;
   }
 `;
 
 const ClearButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
   background: #6c757d;
   color: white;
-  border: 0px solid #ddd;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 `;
 
@@ -412,23 +394,14 @@ const ErrorDescription = styled.p`
 `;
 
 const RetryButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 12px 24px;
+  font-size: 1rem;
   background: #dc3545;
   color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #c82333;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
   }
 `;
 
@@ -623,30 +596,13 @@ const ModalActions = styled.div`
 `;
 
 const ActionButton = styled.button`
+  ${buttonBaseStyles};
   padding: 12px 24px;
-  border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
 `;
 
 const PostularButton = styled(ActionButton)`
@@ -655,14 +611,20 @@ const PostularButton = styled(ActionButton)`
 
   &:hover:not(:disabled) {
     background: #218838;
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
   }
 `;
 
 const AlreadyAppliedButton = styled(ActionButton)`
-  background: #6c757d;
+  background: #94a3b8;
   color: white;
   cursor: not-allowed;
+  box-shadow: none;
+
+  &:hover {
+    background: #94a3b8;
+    transform: none;
+    box-shadow: none;
+  }
 `;
 
 const PropuestaModal = styled.div`
@@ -779,7 +741,6 @@ const PropuestaSubmitButton = styled(ActionButton)`
 
   &:hover:not(:disabled) {
     background: #218838;
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
   }
 `;
 
@@ -937,16 +898,15 @@ const FileSize = styled.p`
 `;
 
 const RemoveFileButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 6px;
   background: #dc3545;
   color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #c82333;
   }
 `;
@@ -1007,42 +967,26 @@ const ConfirmActions = styled.div`
 `;
 
 const ConfirmSubmitButton = styled.button`
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
+  ${buttonBaseStyles};
   padding: 12px 24px;
-  border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background: #28a745;
+  color: white;
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+  &:hover:not(:disabled) {
+    background: #218838;
   }
 `;
 
 const CancelConfirmButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 12px 24px;
+  font-size: 1rem;
   background: #6c757d;
   color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #5a6268;
-    transform: translateY(-1px);
   }
 `;
 
@@ -2056,14 +2000,14 @@ const LicitacionesProveedor = () => {
             <FilterButton onClick={fetchLicitacionesActivas}>
               Aplicar filtros
             </FilterButton>
-            <ClearButton onClick={clearFilters}>Limpiar filtros</ClearButton>
+            <ClearButton onClick={clearFilters}>Limpiar</ClearButton>
           </FiltersActions>
         </FiltersContainer>
 
         <LicitacionesContainer>
           <LicitacionesHeader>
             <div>
-              <LicitacionesTitle>Licitaciones activas</LicitacionesTitle>
+              <LicitacionesTitle>Licitaciones</LicitacionesTitle>
               <ResultsInfo>{getResultsText()}</ResultsInfo>
             </div>
 

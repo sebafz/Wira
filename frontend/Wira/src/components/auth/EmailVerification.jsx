@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { apiService } from "../services/apiService";
+import { apiService } from "../../services/apiService";
 
 const VerificationContainer = styled.div`
   min-height: 100vh;

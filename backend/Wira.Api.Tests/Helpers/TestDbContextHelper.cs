@@ -31,11 +31,11 @@ namespace Wira.Api.Tests.Helpers
             // Seed Roles
             var roles = new[]
             {
-                new Rol { RolID = 1, NombreRol = RoleNames.AdministradorSistema },
-                new Rol { RolID = 2, NombreRol = RoleNames.MineraAdministrador },
-                new Rol { RolID = 3, NombreRol = RoleNames.MineraUsuario },
-                new Rol { RolID = 4, NombreRol = RoleNames.ProveedorAdministrador },
-                new Rol { RolID = 5, NombreRol = RoleNames.ProveedorUsuario }
+                new Rol { RolID = 1, Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" },
+                new Rol { RolID = 2, Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera administrador" },
+                new Rol { RolID = 3, Nombre = RoleNames.MineraUsuario, Descripcion = "Minera usuario" },
+                new Rol { RolID = 4, Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor administrador" },
+                new Rol { RolID = 5, Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor usuario" }
             };
             context.Roles.AddRange(roles);
 

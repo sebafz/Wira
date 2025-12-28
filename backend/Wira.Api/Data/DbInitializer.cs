@@ -23,11 +23,11 @@ namespace Wira.Api.Data
             // Agregar roles iniciales
             var roles = new[]
             {
-                new Rol { NombreRol = RoleNames.MineraAdministrador },
-                new Rol { NombreRol = RoleNames.MineraUsuario },
-                new Rol { NombreRol = RoleNames.ProveedorAdministrador },
-                new Rol { NombreRol = RoleNames.ProveedorUsuario },
-                new Rol { NombreRol = RoleNames.AdministradorSistema }
+                new Rol { Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera administrador" },
+                new Rol { Nombre = RoleNames.MineraUsuario, Descripcion = "Minera usuario" },
+                new Rol { Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor administrador" },
+                new Rol { Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor usuario" },
+                new Rol { Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" }
             };
 
             await context.Roles.AddRangeAsync(roles);
@@ -108,8 +108,11 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Obtener roles
-            var rolMineraUsuario = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.MineraUsuario);
-            var rolProveedorUsuario = await context.Roles.FirstAsync(r => r.NombreRol == RoleNames.ProveedorUsuario);
+            var rolMineraUsuario = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.MineraUsuario);
+            var rolProveedorUsuario = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.ProveedorUsuario);
+            var rolMineraAdministrador = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.MineraAdministrador);
+            var rolProveedorAdministrador = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+            var rolAdministradorSistema = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.AdministradorSistema);
 
             // Obtener primera minera y proveedor para asignar a usuarios
             var primeraMinera = await context.Empresas.FirstAsync(e => e.TipoEmpresa == EmpresaTipos.Minera);
@@ -148,6 +151,48 @@ namespace Wira.Api.Data
                     FechaBaja = null,
                     EmpresaID = primerProveedor.EmpresaID,
                     FechaRegistro = DateTime.Now
+                },
+                new Usuario
+                {
+                    Email = "admin@gmail.com",
+                    PasswordHash = passwordHash,
+                    Nombre = "Admin",
+                    Apellido = "Principal",
+                    DNI = "20000000",
+                    Telefono = "+54 9 11 4000 0000",
+                    Activo = true,
+                    ValidadoEmail = true,
+                    FechaBaja = null,
+                    EmpresaID = null,
+                    FechaRegistro = DateTime.Now
+                },
+                new Usuario
+                {
+                    Email = "mineraadmin@gmail.com",
+                    PasswordHash = passwordHash,
+                    Nombre = "Admin Minera",
+                    Apellido = "Demo",
+                    DNI = "20000003",
+                    Telefono = "+54 9 11 4000 1002",
+                    Activo = true,
+                    ValidadoEmail = true,
+                    FechaBaja = null,
+                    EmpresaID = primeraMinera.EmpresaID,
+                    FechaRegistro = DateTime.Now
+                },
+                new Usuario
+                {
+                    Email = "proveedoradmin@gmail.com",
+                    PasswordHash = passwordHash,
+                    Nombre = "Admin Proveedor",
+                    Apellido = "Demo",
+                    DNI = "20000004",
+                    Telefono = "+54 9 11 4000 2002",
+                    Activo = true,
+                    ValidadoEmail = true,
+                    FechaBaja = null,
+                    EmpresaID = primerProveedor.EmpresaID,
+                    FechaRegistro = DateTime.Now
                 }
             };
 
@@ -157,12 +202,18 @@ namespace Wira.Api.Data
             // Obtener IDs de usuarios recién creados
             var usuarioMinera = await context.Usuarios.FirstAsync(u => u.Email == "minera@gmail.com");
             var usuarioProveedor = await context.Usuarios.FirstAsync(u => u.Email == "proveedor@gmail.com");
+            var usuarioAdminSistema = await context.Usuarios.FirstAsync(u => u.Email == "admin@gmail.com");
+            var usuarioMineraAdmin = await context.Usuarios.FirstAsync(u => u.Email == "mineraadmin@gmail.com");
+            var usuarioProveedorAdmin = await context.Usuarios.FirstAsync(u => u.Email == "proveedoradmin@gmail.com");
 
             // Asignar roles a usuarios
             var usuarioRoles = new[]
             {
                 new UsuarioRol { UsuarioID = usuarioMinera.UsuarioID, RolID = rolMineraUsuario.RolID },
-                new UsuarioRol { UsuarioID = usuarioProveedor.UsuarioID, RolID = rolProveedorUsuario.RolID }
+                new UsuarioRol { UsuarioID = usuarioProveedor.UsuarioID, RolID = rolProveedorUsuario.RolID },
+                new UsuarioRol { UsuarioID = usuarioAdminSistema.UsuarioID, RolID = rolAdministradorSistema.RolID },
+                new UsuarioRol { UsuarioID = usuarioMineraAdmin.UsuarioID, RolID = rolMineraAdministrador.RolID },
+                new UsuarioRol { UsuarioID = usuarioProveedorAdmin.UsuarioID, RolID = rolProveedorAdministrador.RolID }
             };
 
             await context.UsuariosRoles.AddRangeAsync(usuarioRoles);

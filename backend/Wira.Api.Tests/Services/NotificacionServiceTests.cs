@@ -40,11 +40,11 @@ namespace Wira.Api.Tests.Services
             // Seed Roles
             var roles = new[]
             {
-                new Rol { RolID = 1, NombreRol = RoleNames.AdministradorSistema },
-                new Rol { RolID = 2, NombreRol = RoleNames.MineraAdministrador },
-                new Rol { RolID = 3, NombreRol = RoleNames.MineraUsuario },
-                new Rol { RolID = 4, NombreRol = RoleNames.ProveedorAdministrador },
-                new Rol { RolID = 5, NombreRol = RoleNames.ProveedorUsuario }
+                new Rol { RolID = 1, Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" },
+                new Rol { RolID = 2, Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera - Administrador" },
+                new Rol { RolID = 3, Nombre = RoleNames.MineraUsuario, Descripcion = "Minera - Usuario" },
+                new Rol { RolID = 4, Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor - Administrador" },
+                new Rol { RolID = 5, Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor - Usuario" }
             };
             _context.Roles.AddRange(roles);
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
+import Navbar from "../shared/Navbar";
 import { toast } from "react-toastify";
 
 const DashboardContainer = styled.div`
@@ -59,71 +59,62 @@ const CompanyDetail = styled.p`
 
 const ActionsSection = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-top: 30px;
 `;
 
-const ActionCard = styled.div`
+const ActionCard = styled.article`
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 
   &:hover {
-    border-color: #fc6b0a;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(252, 107, 10, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.15);
   }
 `;
 
 const ActionIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: white;
+  font-size: 1.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 1.5rem;
-  color: white;
+  margin-bottom: 18px;
 `;
 
 const ActionTitle = styled.h3`
-  color: #333;
+  margin: 0 0 8px;
+  color: #0f172a;
   font-size: 1.3rem;
-  margin-bottom: 10px;
 `;
 
 const ActionDescription = styled.p`
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 20px;
+  margin: 0 0 20px;
+  color: #475569;
   line-height: 1.5;
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
   border: none;
-  padding: 12px 24px;
   border-radius: 8px;
-  font-size: 1rem;
+  padding: 10px 20px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: #fb6b0a;
+  color: white;
+  transition: background 0.2s ease;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(252, 107, 10, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
+    background: #ff8740;
   }
 `;
 
@@ -156,36 +147,38 @@ const StatLabel = styled.div`
   font-weight: 500;
 `;
 
-const DashboardMinera = () => {
+const RubroBadge = styled.span`
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-left: 10px;
+`;
+
+const DashboardProveedor = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [kpis, setKpis] = useState({
-    licitacionesActivas: 0,
-    licitacionesEnEvaluacion: 0,
-    propuestasRecibidas: 0,
-    adjudicaciones: 0,
+    licitacionesDisponibles: 0,
+    propuestasEnviadas: 0,
+    propuestasEnEvaluacion: 0,
+    adjudicacionesGanadas: 0,
   });
   const [loading, setLoading] = useState(true);
 
   const fetchKpis = useCallback(async () => {
     try {
       setLoading(true);
-      const mineraId = user?.minera?.mineraID;
+      const proveedorId = user?.proveedor?.proveedorID;
 
-      console.log("DashboardMinera - fetchKpis called:", {
-        user,
-        mineraId,
-        token: !!token,
-      });
-
-      if (!mineraId) {
-        console.error("No mineraID found in user:", user);
+      if (!proveedorId) {
+        console.error("No proveedorID found in user:", user);
         setLoading(false);
         return;
       }
 
       const response = await fetch(
-        `http://localhost:5242/api/dashboard/minera/${mineraId}/kpis`,
+        `http://localhost:5242/api/dashboard/proveedor/${proveedorId}/kpis`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -205,20 +198,24 @@ const DashboardMinera = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.minera?.mineraID, token]);
+  }, [user?.proveedor?.proveedorID, token]);
 
   useEffect(() => {
-    if (user?.minera?.mineraID) {
+    if (user?.proveedor?.proveedorID) {
       fetchKpis();
     }
-  }, [user?.minera?.mineraID, fetchKpis]);
+  }, [user?.proveedor?.proveedorID, fetchKpis]);
 
-  const handleCrearLicitacion = () => {
-    navigate("/crear-licitacion");
+  const handleVerLicitaciones = () => {
+    navigate("/licitaciones-activas");
   };
 
-  const handleMisLicitaciones = () => {
-    navigate("/mis-licitaciones");
+  const handleVerPropuestas = () => {
+    navigate("/propuestas-proveedor");
+  };
+
+  const handleVerHistorial = () => {
+    navigate("/historial-proveedor");
   };
 
   const getUserName = () => {
@@ -226,12 +223,22 @@ const DashboardMinera = () => {
   };
 
   const getCompanyName = () => {
-    return user?.Minera?.Nombre || user?.minera?.nombre || "Empresa Minera";
+    return (
+      user?.Proveedor?.Nombre || user?.proveedor?.nombre || "Empresa Proveedora"
+    );
   };
 
   // const getCompanyCUIT = () => {
-  //   return user?.Minera?.CUIT || user?.minera?.cuit || "";
+  //   return user?.Proveedor?.CUIT || user?.proveedor?.cuit || "";
   // };
+
+  const getRubroName = () => {
+    return (
+      user?.Proveedor?.RubroNombre ||
+      user?.proveedor?.rubroNombre ||
+      "Sin rubro asignado"
+    );
+  };
 
   return (
     <DashboardContainer>
@@ -241,75 +248,76 @@ const DashboardMinera = () => {
         <CompanyInfo>
           <WelcomeTitle>Bienvenido, {getUserName()}</WelcomeTitle>
           <WelcomeSubtitle>
-            Gestione las licitaciones de su empresa minera desde acá.
+            Encuentre y participe en licitaciones que se ajusten a su
+            especialidad.
           </WelcomeSubtitle>
-          <CompanyName>{getCompanyName()}</CompanyName>
+          <CompanyName>
+            {getCompanyName()}
+            <RubroBadge>{getRubroName()}</RubroBadge>
+          </CompanyName>
         </CompanyInfo>
 
         <StatsGrid>
           <StatCard color="#fc6b0a">
             <StatNumber color="#fc6b0a">
-              {loading ? "..." : kpis.licitacionesActivas}
+              {loading ? "..." : kpis.licitacionesDisponibles}
             </StatNumber>
-            <StatLabel>Licitaciones activas</StatLabel>
-          </StatCard>
-          <StatCard color="#ffc107">
-            <StatNumber color="#ffc107">
-              {loading ? "..." : kpis.licitacionesEnEvaluacion}
-            </StatNumber>
-            <StatLabel>En evaluación</StatLabel>
+            <StatLabel>Licitaciones disponibles</StatLabel>
           </StatCard>
           <StatCard color="#28a745">
             <StatNumber color="#28a745">
-              {loading ? "..." : kpis.propuestasRecibidas}
+              {loading ? "..." : kpis.propuestasEnviadas}
             </StatNumber>
-            <StatLabel>Propuestas recibidas</StatLabel>
+            <StatLabel>Propuestas enviadas</StatLabel>
+          </StatCard>
+          <StatCard color="#ffc107">
+            <StatNumber color="#ffc107">
+              {loading ? "..." : kpis.propuestasEnEvaluacion}
+            </StatNumber>
+            <StatLabel>En evaluación</StatLabel>
           </StatCard>
           <StatCard color="#17a2b8">
             <StatNumber color="#17a2b8">
-              {loading ? "..." : kpis.adjudicaciones}
+              {loading ? "..." : kpis.adjudicacionesGanadas}
             </StatNumber>
-            <StatLabel>Adjudicaciones</StatLabel>
+            <StatLabel>Adjudicaciones ganadas</StatLabel>
           </StatCard>
         </StatsGrid>
 
         <ActionsSection>
           <ActionCard>
-            <ActionIcon>📝</ActionIcon>
-            <ActionTitle>Nueva licitación</ActionTitle>
+            <ActionIcon>🔍</ActionIcon>
+            <ActionTitle>Buscar licitaciones</ActionTitle>
             <ActionDescription>
-              Cree una nueva licitación para recibir propuestas de proveedores
-              especializados.
+              Explore las licitaciones disponibles que coincidan con tu rubro y
+              especialidad.
             </ActionDescription>
-            <ActionButton onClick={handleCrearLicitacion}>
-              Crear licitación
-            </ActionButton>
-          </ActionCard>
-
-          <ActionCard>
-            <ActionIcon>📊</ActionIcon>
-            <ActionTitle>Mis licitaciones</ActionTitle>
-            <ActionDescription>
-              Visualice y gestione todas sus licitaciones activas, en evaluación
-              y finalizadas.
-            </ActionDescription>
-            <ActionButton onClick={handleMisLicitaciones}>
+            <ActionButton onClick={handleVerLicitaciones}>
               Ver licitaciones
             </ActionButton>
           </ActionCard>
 
           <ActionCard>
-            <ActionIcon>📈</ActionIcon>
-            <ActionTitle>Reportes</ActionTitle>
+            <ActionIcon>📋</ActionIcon>
+            <ActionTitle>Mis propuestas</ActionTitle>
             <ActionDescription>
-              Genere reportes detallados sobre el rendimiento de sus procesos de
-              licitación.
+              Revise el estado de todas las propuestas que ha enviado y su
+              progreso.
             </ActionDescription>
-            <ActionButton
-              disabled
-              style={{ opacity: 0.6, cursor: "not-allowed" }}
-            >
-              Próximamente
+            <ActionButton onClick={handleVerPropuestas}>
+              Ver mis propuestas
+            </ActionButton>
+          </ActionCard>
+
+          <ActionCard>
+            <ActionIcon>⭐</ActionIcon>
+            <ActionTitle>Mi historial</ActionTitle>
+            <ActionDescription>
+              Consulte tu historial de participaciones y calificaciones
+              recibidas.
+            </ActionDescription>
+            <ActionButton onClick={handleVerHistorial}>
+              Ver mi historial
             </ActionButton>
           </ActionCard>
         </ActionsSection>
@@ -318,4 +326,4 @@ const DashboardMinera = () => {
   );
 };
 
-export default DashboardMinera;
+export default DashboardProveedor;

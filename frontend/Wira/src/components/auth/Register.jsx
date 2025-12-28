@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-// import { useAuth } from "../contexts/AuthContext"; // Currently not used
+// import { useAuth } from "../../contexts/AuthContext"; // Currently not used
 import { useNavigate } from "react-router-dom";
-import { apiService } from "../services/apiService";
-import logoWira from "../assets/logoWira.png";
+import { apiService } from "../../services/apiService";
+import logoWira from "../../assets/logoWira.png";
 
 const RegisterContainer = styled.div`
   min-height: 100vh;
@@ -284,6 +284,8 @@ const Register = () => {
     password: "",
     confirmPassword: "",
     nombre: "",
+    apellido: "",
+    dni: "",
     // Campos para Minera
     mineraId: "",
     // Campos para Proveedor
@@ -356,6 +358,24 @@ const Register = () => {
         return;
       }
 
+      if (!formData.nombre.trim()) {
+        setError("Por favor ingrese su nombre");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.apellido.trim()) {
+        setError("Por favor ingrese su apellido");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.dni.trim()) {
+        setError("Por favor ingrese su DNI");
+        setLoading(false);
+        return;
+      }
+
       if (formData.password.length < 6) {
         setError("La contraseña debe tener al menos 6 caracteres");
         setLoading(false);
@@ -380,6 +400,8 @@ const Register = () => {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         nombre: formData.nombre,
+        apellido: formData.apellido,
+        dni: formData.dni,
         tipoCuenta: userType === "minera" ? "Minera" : "Proveedor",
         ...(userType === "minera"
           ? { mineraID: parseInt(formData.mineraId) }
@@ -462,14 +484,40 @@ const Register = () => {
   const renderStep2 = () => (
     <>
       <InputGroup>
-        <Label htmlFor="nombre">Nombre completo</Label>
+        <Label htmlFor="nombre">Nombre</Label>
         <Input
           type="text"
           id="nombre"
           name="nombre"
           value={formData.nombre}
           onChange={handleChange}
-          placeholder="Nombre completo"
+          placeholder="Nombre"
+          required
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <Label htmlFor="apellido">Apellido</Label>
+        <Input
+          type="text"
+          id="apellido"
+          name="apellido"
+          value={formData.apellido}
+          onChange={handleChange}
+          placeholder="Apellido"
+          required
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <Label htmlFor="dni">DNI</Label>
+        <Input
+          type="text"
+          id="dni"
+          name="dni"
+          value={formData.dni}
+          onChange={handleChange}
+          placeholder="Ingrese su DNI"
           required
         />
       </InputGroup>

@@ -127,11 +127,11 @@ namespace Wira.Api.Tests.Integration
             }
 
             // Add test roles
-            var mineraAdminRole = new Rol { NombreRol = RoleNames.MineraAdministrador };
-            var mineraUserRole = new Rol { NombreRol = RoleNames.MineraUsuario };
-            var proveedorAdminRole = new Rol { NombreRol = RoleNames.ProveedorAdministrador };
-            var proveedorUserRole = new Rol { NombreRol = RoleNames.ProveedorUsuario };
-            var adminSistemaRole = new Rol { NombreRol = RoleNames.AdministradorSistema };
+            var mineraAdminRole = new Rol { Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera administrador" };
+            var mineraUserRole = new Rol { Nombre = RoleNames.MineraUsuario, Descripcion = "Minera usuario" };
+            var proveedorAdminRole = new Rol { Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor administrador" };
+            var proveedorUserRole = new Rol { Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor usuario" };
+            var adminSistemaRole = new Rol { Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" };
 
             context.Roles.AddRange(mineraAdminRole, mineraUserRole, proveedorAdminRole, proveedorUserRole, adminSistemaRole);
 
