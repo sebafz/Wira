@@ -677,10 +677,10 @@ const FormGroup = styled.div`
 
 const FormLabel = styled.label`
   display: block;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #555;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
 `;
 
 const FormInput = styled.input`
@@ -688,7 +688,7 @@ const FormInput = styled.input`
   padding: 12px;
   border: 2px solid #ddd;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: border-color 0.2s ease;
 
   &:focus {
@@ -707,7 +707,7 @@ const FormTextarea = styled.textarea`
   padding: 12px;
   border: 2px solid #ddd;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   min-height: 100px;
   resize: vertical;
   font-family: inherit;
@@ -721,7 +721,7 @@ const FormTextarea = styled.textarea`
 `;
 
 const FormHint = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #666;
   margin-top: 5px;
 `;
@@ -775,15 +775,6 @@ const CriterioNombre = styled.h4`
   margin: 0;
 `;
 
-const CriterioPeso = styled.span`
-  background: #fc6b0a;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-`;
-
 const CriterioDescripcion = styled.p`
   color: #666;
   font-size: 0.9rem;
@@ -793,6 +784,62 @@ const CriterioDescripcion = styled.p`
 
 const CriterioInput = styled.div`
   margin-top: 15px;
+`;
+
+const CriterioHint = styled.div`
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 8px;
+  font-style: italic;
+`;
+
+const CriterioSelect = styled.select`
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  }
+`;
+
+const BooleanChoiceRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 8px;
+`;
+
+const BooleanChoiceLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid #e1e5e9;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+  background: #fff;
+
+  &:hover {
+    border-color: #28a745;
+  }
+`;
+
+const BooleanChoiceInput = styled.input`
+  accent-color: #28a745;
+`;
+
+const NoOptionsText = styled.div`
+  font-size: 0.9rem;
+  color: #888;
 `;
 
 // Styled components para archivo adjunto
@@ -853,8 +900,9 @@ const FileUploadText = styled.p`
 
 const FileUploadSubtext = styled.p`
   color: #999;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   margin: 0;
+  font-style: italic;
 `;
 
 const SelectedFileContainer = styled.div`
@@ -989,6 +1037,134 @@ const CancelConfirmButton = styled.button`
     background: #5a6268;
   }
 `;
+
+const tipoCriterioLabels = {
+  Numerico: "Valor numérico",
+  Booleano: "Sí / No",
+  Descriptivo: "Respuesta descriptiva",
+  Escala: "Escala personalizada",
+};
+
+const resolveTipoCriterio = (tipoValue) => {
+  if (typeof tipoValue === "string" && tipoValue.trim()) {
+    const normalized = tipoValue.trim().toLowerCase();
+    if (normalized.includes("boolean")) return "Booleano";
+    if (normalized.includes("escala")) return "Escala";
+    if (normalized.includes("descript")) return "Descriptivo";
+    return "Numerico";
+  }
+
+  if (typeof tipoValue === "number") {
+    switch (tipoValue) {
+      case 2:
+        return "Booleano";
+      case 3:
+        return "Descriptivo";
+      case 4:
+        return "Escala";
+      default:
+        return "Numerico";
+    }
+  }
+
+  return "Numerico";
+};
+
+const toNumberOrFallback = (value, fallback) => {
+  if (typeof value === "number" && !Number.isNaN(value)) {
+    return value;
+  }
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const parseBooleanValue = (value) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (value === 1 || value === "1" || value === "true" || value === "TRUE") {
+    return true;
+  }
+  if (value === 0 || value === "0" || value === "false" || value === "FALSE") {
+    return false;
+  }
+  return null;
+};
+
+const normalizeCriterioOpcion = (opcion, index) => {
+  const opcionID = toNumberOrFallback(
+    opcion?.opcionID ?? opcion?.OpcionID ?? opcion?.id ?? index + 1,
+    index + 1
+  );
+
+  return {
+    id: String(opcionID),
+    opcionID,
+    valor: opcion?.valor ?? opcion?.Valor ?? `Opción ${index + 1}`,
+    descripcion: opcion?.descripcion ?? opcion?.Descripcion ?? "",
+    puntaje: toNumberOrNull(opcion?.puntaje ?? opcion?.Puntaje),
+    orden: opcion?.orden ?? opcion?.Orden ?? index + 1,
+  };
+};
+
+const normalizeCriterioResponse = (criterio, index) => {
+  const criterioID = toNumberOrFallback(
+    criterio?.criterioID ?? criterio?.CriterioID ?? criterio?.id ?? index + 1,
+    index + 1
+  );
+  const tipo = resolveTipoCriterio(criterio?.tipo ?? criterio?.Tipo);
+  const mayorMejorValue = criterio?.mayorMejor ?? criterio?.MayorMejor;
+  const valorRequeridoBooleanoValue =
+    criterio?.valorRequeridoBooleano ?? criterio?.ValorRequeridoBooleano;
+
+  const opciones =
+    tipo === "Escala"
+      ? (criterio?.opciones ?? criterio?.Opciones ?? []).map((opcion, idx) =>
+          normalizeCriterioOpcion(opcion, idx)
+        )
+      : [];
+
+  return {
+    id: String(criterioID),
+    criterioID,
+    nombre: criterio?.nombre ?? criterio?.Nombre ?? `Criterio ${index + 1}`,
+    descripcion: criterio?.descripcion ?? criterio?.Descripcion ?? "",
+    peso: toNumberOrNull(criterio?.peso ?? criterio?.Peso) ?? 0,
+    tipo,
+    mayorMejor: typeof mayorMejorValue === "boolean" ? mayorMejorValue : null,
+    valorMinimo: toNumberOrNull(criterio?.valorMinimo ?? criterio?.ValorMinimo),
+    valorMaximo: toNumberOrNull(criterio?.valorMaximo ?? criterio?.ValorMaximo),
+    valorRequeridoBooleano: parseBooleanValue(valorRequeridoBooleanoValue),
+    esExcluyente: Boolean(
+      criterio?.esExcluyente ?? criterio?.EsExcluyente ?? false
+    ),
+    esPuntuable:
+      tipo === "Descriptivo"
+        ? false
+        : Boolean(criterio?.esPuntuable ?? criterio?.EsPuntuable ?? true),
+    opciones,
+  };
+};
+
+const createRespuestaInicial = () => ({
+  valorTexto: "",
+  valorNumerico: "",
+  valorBooleano: null,
+  opcionSeleccionadaId: "",
+});
+
+const getTipoDisplayLabel = (tipo) => tipoCriterioLabels[tipo] || "Texto libre";
 
 const LicitacionesProveedor = () => {
   const { user, token } = useAuth();
@@ -1268,14 +1444,14 @@ const LicitacionesProveedor = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCriteriosLicitacion(data);
+        const normalized = data.map((criterio, index) =>
+          normalizeCriterioResponse(criterio, index)
+        );
+        setCriteriosLicitacion(normalized);
 
-        // Inicializar respuestas vacías para cada criterio
         const respuestasIniciales = {};
-        data.forEach((criterio) => {
-          respuestasIniciales[
-            criterio.criterioID || criterio.CriterioID || criterio.id
-          ] = "";
+        normalized.forEach((criterio) => {
+          respuestasIniciales[criterio.id] = createRespuestaInicial();
         });
         setRespuestasCriterios(respuestasIniciales);
       } else {
@@ -1469,10 +1645,7 @@ const LicitacionesProveedor = () => {
       // Validar que se hayan completado todas las respuestas a criterios requeridos
       if (criteriosLicitacion.length > 0) {
         const criteriosSinRespuesta = criteriosLicitacion.filter(
-          (criterio) =>
-            !respuestasCriterios[
-              criterio.criterioID || criterio.CriterioID || criterio.id
-            ]?.trim()
+          (criterio) => !isRespuestaCompleta(criterio)
         );
 
         if (criteriosSinRespuesta.length > 0) {
@@ -1482,12 +1655,9 @@ const LicitacionesProveedor = () => {
       }
 
       // Preparar respuestas a los criterios
-      const respuestasCriteriosArray = Object.keys(respuestasCriterios)
-        .filter((criterioId) => respuestasCriterios[criterioId]?.trim())
-        .map((criterioId) => ({
-          CriterioID: parseInt(criterioId),
-          ValorProveedor: respuestasCriterios[criterioId].trim(),
-        }));
+      const respuestasCriteriosArray = criteriosLicitacion
+        .map((criterio) => buildRespuestaPayload(criterio))
+        .filter((respuesta) => respuesta !== null);
 
       const response = await fetch("http://localhost:5242/api/propuestas", {
         method: "POST",
@@ -1677,12 +1847,145 @@ const LicitacionesProveedor = () => {
     setUploadError("");
   };
 
-  const handleRespuestaCriterioChange = (criterioId, valor) => {
+  const updateRespuestaCriterio = (criterioId, updates) => {
     setRespuestasCriterios((prev) => ({
       ...prev,
-      [criterioId]: valor,
+      [criterioId]: {
+        ...(prev[criterioId] || createRespuestaInicial()),
+        ...updates,
+      },
     }));
   };
+
+  const handleTextoRespuestaChange = (criterioId, value) => {
+    updateRespuestaCriterio(criterioId, { valorTexto: value });
+  };
+
+  const handleNumericoRespuestaChange = (criterioId, value) => {
+    updateRespuestaCriterio(criterioId, { valorNumerico: value });
+  };
+
+  const handleBooleanRespuestaChange = (criterioId, value) => {
+    updateRespuestaCriterio(criterioId, { valorBooleano: value });
+  };
+
+  const handleEscalaRespuestaChange = (criterioId, value) => {
+    updateRespuestaCriterio(criterioId, { opcionSeleccionadaId: value });
+  };
+
+  const isRespuestaCompleta = useCallback(
+    (criterio) => {
+      const respuesta = respuestasCriterios[criterio.id];
+      if (!respuesta) {
+        return false;
+      }
+
+      switch (criterio.tipo) {
+        case "Numerico": {
+          if (
+            respuesta.valorNumerico === "" ||
+            respuesta.valorNumerico === null
+          ) {
+            return false;
+          }
+          const numericValue = parseFloat(respuesta.valorNumerico);
+          if (Number.isNaN(numericValue)) {
+            return false;
+          }
+          if (
+            criterio.valorMinimo !== null &&
+            criterio.valorMinimo !== undefined &&
+            numericValue < criterio.valorMinimo
+          ) {
+            return false;
+          }
+          if (
+            criterio.valorMaximo !== null &&
+            criterio.valorMaximo !== undefined &&
+            numericValue > criterio.valorMaximo
+          ) {
+            return false;
+          }
+          return true;
+        }
+        case "Booleano":
+          return typeof respuesta.valorBooleano === "boolean";
+        case "Escala":
+          return Boolean(respuesta.opcionSeleccionadaId);
+        case "Descriptivo":
+        default:
+          return Boolean(respuesta.valorTexto?.trim());
+      }
+    },
+    [respuestasCriterios]
+  );
+
+  const buildRespuestaPayload = useCallback(
+    (criterio) => {
+      const respuesta = respuestasCriterios[criterio.id];
+      if (!respuesta) {
+        return null;
+      }
+
+      const basePayload = {
+        CriterioID: criterio.criterioID,
+      };
+
+      switch (criterio.tipo) {
+        case "Numerico": {
+          const numericValue = parseFloat(respuesta.valorNumerico);
+          if (Number.isNaN(numericValue)) {
+            return null;
+          }
+          return {
+            ...basePayload,
+            ValorProveedor: respuesta.valorNumerico.toString(),
+            ValorNumerico: numericValue,
+          };
+        }
+        case "Booleano": {
+          if (typeof respuesta.valorBooleano !== "boolean") {
+            return null;
+          }
+          return {
+            ...basePayload,
+            ValorProveedor: respuesta.valorBooleano ? "true" : "false",
+            ValorBooleano: respuesta.valorBooleano,
+          };
+        }
+        case "Escala": {
+          if (!respuesta.opcionSeleccionadaId) {
+            return null;
+          }
+          const opcionSeleccionada = criterio.opciones.find(
+            (opcion) => opcion.id === respuesta.opcionSeleccionadaId
+          );
+          const parsedOpcionId =
+            opcionSeleccionada?.opcionID ??
+            Number(respuesta.opcionSeleccionadaId);
+          return {
+            ...basePayload,
+            ValorProveedor: opcionSeleccionada?.valor || "",
+            CriterioOpcionID: Number.isNaN(parsedOpcionId)
+              ? null
+              : parsedOpcionId,
+          };
+        }
+        case "Descriptivo":
+        default: {
+          const texto = respuesta.valorTexto?.trim();
+          if (!texto) {
+            return null;
+          }
+          return {
+            ...basePayload,
+            ValorProveedor: texto,
+          };
+        }
+      }
+    },
+    [respuestasCriterios]
+  );
 
   // Funciones para manejo de archivos en propuesta
   const formatFileSize = (bytes) => {
@@ -1872,6 +2175,10 @@ const LicitacionesProveedor = () => {
       }
     }
   };
+
+  const hasIncompleteCriterios =
+    criteriosLicitacion.length > 0 &&
+    criteriosLicitacion.some((criterio) => !isRespuestaCompleta(criterio));
 
   return (
     <Container>
@@ -2337,10 +2644,6 @@ const LicitacionesProveedor = () => {
                   placeholder="Describa su propuesta, experiencia y cómo planea abordar este proyecto..."
                   required
                 />
-                <FormHint>
-                  Detalle su experiencia, metodología y valor agregado que
-                  aporta al proyecto
-                </FormHint>
               </FormGroup>
 
               <FormGroup>
@@ -2365,6 +2668,7 @@ const LicitacionesProveedor = () => {
                     selectedLicitacion.presupuestoEstimado ||
                       selectedLicitacion.PresupuestoEstimado
                   )}
+                  .
                 </FormHint>
               </FormGroup>
 
@@ -2387,6 +2691,7 @@ const LicitacionesProveedor = () => {
                     selectedLicitacion.fechaCierre ||
                       selectedLicitacion.FechaCierre
                   )}
+                  .
                 </FormHint>
               </FormGroup>
 
@@ -2411,49 +2716,207 @@ const LicitacionesProveedor = () => {
                     <FormLabel>Criterios de evaluación</FormLabel>
                     <FormHint style={{ marginBottom: "15px" }}>
                       Complete los valores para cada criterio de evaluación de
-                      esta licitación
+                      esta licitación.
                     </FormHint>
-                    {criteriosLicitacion.map((criterio) => (
-                      <CriterioCard
-                        key={
-                          criterio.criterioID ||
-                          criterio.CriterioID ||
-                          criterio.id
+                    {criteriosLicitacion.map((criterio) => {
+                      const respuesta =
+                        respuestasCriterios[criterio.id] ||
+                        createRespuestaInicial();
+                      const rangoTexto = (() => {
+                        if (
+                          criterio.valorMinimo !== null &&
+                          criterio.valorMinimo !== undefined &&
+                          criterio.valorMaximo !== null &&
+                          criterio.valorMaximo !== undefined
+                        ) {
+                          return `Rango permitido: ${criterio.valorMinimo} - ${criterio.valorMaximo}.`;
                         }
-                      >
-                        <CriterioHeader>
-                          <CriterioNombre>{criterio.nombre}</CriterioNombre>
-                        </CriterioHeader>
-                        {criterio.descripcion && (
-                          <CriterioDescripcion>
-                            {criterio.descripcion}
-                          </CriterioDescripcion>
-                        )}
-                        <CriterioInput>
-                          <FormLabel>Valor ofrecido *</FormLabel>
-                          <FormInput
-                            type="text"
-                            value={
-                              respuestasCriterios[
-                                criterio.criterioID ||
-                                  criterio.CriterioID ||
-                                  criterio.id
-                              ] || ""
-                            }
-                            onChange={(e) =>
-                              handleRespuestaCriterioChange(
-                                criterio.criterioID ||
-                                  criterio.CriterioID ||
-                                  criterio.id,
-                                e.target.value
-                              )
-                            }
-                            placeholder="Ingrese su valor para este criterio"
-                            required
-                          />
-                        </CriterioInput>
-                      </CriterioCard>
-                    ))}
+                        if (
+                          criterio.valorMinimo !== null &&
+                          criterio.valorMinimo !== undefined
+                        ) {
+                          return `Mínimo permitido: ${criterio.valorMinimo}.`;
+                        }
+                        if (
+                          criterio.valorMaximo !== null &&
+                          criterio.valorMaximo !== undefined
+                        ) {
+                          return `Máximo permitido: ${criterio.valorMaximo}.`;
+                        }
+                        return null;
+                      })();
+
+                      return (
+                        <CriterioCard key={criterio.id}>
+                          <CriterioHeader>
+                            <CriterioNombre>{criterio.nombre}</CriterioNombre>
+                          </CriterioHeader>
+                          <CriterioHint>
+                            {criterio.esExcluyente ? "Criterio excluyente" : ""}
+                            {!criterio.esPuntuable ? "No puntuable" : ""}
+                          </CriterioHint>
+                          {criterio.descripcion && (
+                            <CriterioDescripcion>
+                              {criterio.descripcion}
+                            </CriterioDescripcion>
+                          )}
+                          <CriterioInput>
+                            {(() => {
+                              switch (criterio.tipo) {
+                                case "Descriptivo":
+                                  return (
+                                    <>
+                                      <FormLabel>Respuesta *</FormLabel>
+                                      <FormTextarea
+                                        value={respuesta.valorTexto}
+                                        onChange={(e) =>
+                                          handleTextoRespuestaChange(
+                                            criterio.id,
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="Describe tu aporte para este criterio"
+                                      />
+                                    </>
+                                  );
+                                case "Numerico":
+                                  return (
+                                    <>
+                                      <FormLabel>Valor numérico *</FormLabel>
+                                      <FormInput
+                                        type="number"
+                                        value={respuesta.valorNumerico}
+                                        onChange={(e) =>
+                                          handleNumericoRespuestaChange(
+                                            criterio.id,
+                                            e.target.value
+                                          )
+                                        }
+                                        step="0.01"
+                                      />
+                                      {rangoTexto && (
+                                        <FormHint>{rangoTexto}</FormHint>
+                                      )}
+                                      {criterio.mayorMejor !== null && (
+                                        <FormHint>
+                                          {criterio.mayorMejor
+                                            ? "Valores mayores obtienen mejor puntuación."
+                                            : "Valores menores obtienen mejor puntuación."}
+                                        </FormHint>
+                                      )}
+                                    </>
+                                  );
+                                case "Booleano":
+                                  return (
+                                    <>
+                                      <FormLabel>
+                                        Selecciona una opción *
+                                      </FormLabel>
+                                      <BooleanChoiceRow>
+                                        <BooleanChoiceLabel>
+                                          <BooleanChoiceInput
+                                            type="radio"
+                                            name={`criterio_booleano_${criterio.id}`}
+                                            checked={
+                                              respuesta.valorBooleano === true
+                                            }
+                                            onChange={() =>
+                                              handleBooleanRespuestaChange(
+                                                criterio.id,
+                                                true
+                                              )
+                                            }
+                                          />
+                                          Sí / Verdadero
+                                        </BooleanChoiceLabel>
+                                        <BooleanChoiceLabel>
+                                          <BooleanChoiceInput
+                                            type="radio"
+                                            name={`criterio_booleano_${criterio.id}`}
+                                            checked={
+                                              respuesta.valorBooleano === false
+                                            }
+                                            onChange={() =>
+                                              handleBooleanRespuestaChange(
+                                                criterio.id,
+                                                false
+                                              )
+                                            }
+                                          />
+                                          No / Falso
+                                        </BooleanChoiceLabel>
+                                      </BooleanChoiceRow>
+                                      {typeof criterio.valorRequeridoBooleano ===
+                                        "boolean" && (
+                                        <FormHint>
+                                          {`Esta licitación espera una respuesta ${
+                                            criterio.valorRequeridoBooleano
+                                              ? "afirmativa"
+                                              : "negativa"
+                                          }.`}
+                                        </FormHint>
+                                      )}
+                                    </>
+                                  );
+                                case "Escala":
+                                  return (
+                                    <>
+                                      <FormLabel>
+                                        Selecciona un valor *
+                                      </FormLabel>
+                                      {criterio.opciones.length > 0 ? (
+                                        <CriterioSelect
+                                          value={respuesta.opcionSeleccionadaId}
+                                          onChange={(e) =>
+                                            handleEscalaRespuestaChange(
+                                              criterio.id,
+                                              e.target.value
+                                            )
+                                          }
+                                        >
+                                          <option value="">
+                                            Seleccionar opción
+                                          </option>
+                                          {criterio.opciones.map((opcion) => (
+                                            <option
+                                              key={opcion.id}
+                                              value={opcion.id}
+                                            >
+                                              {opcion.valor}
+                                            </option>
+                                          ))}
+                                        </CriterioSelect>
+                                      ) : (
+                                        <NoOptionsText>
+                                          Esta escala aún no tiene opciones
+                                          configuradas.
+                                        </NoOptionsText>
+                                      )}
+                                    </>
+                                  );
+                                default:
+                                  return (
+                                    <>
+                                      <FormLabel>Valor ofrecido *</FormLabel>
+                                      <FormInput
+                                        type="text"
+                                        value={respuesta.valorTexto}
+                                        onChange={(e) =>
+                                          handleTextoRespuestaChange(
+                                            criterio.id,
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="Ingrese su valor para este criterio"
+                                      />
+                                    </>
+                                  );
+                              }
+                            })()}
+                          </CriterioInput>
+                        </CriterioCard>
+                      );
+                    })}
                   </FormGroup>
                 )
               )}
@@ -2463,7 +2926,7 @@ const LicitacionesProveedor = () => {
                 <FormLabel>Archivo adjunto</FormLabel>
                 <FormHint style={{ marginBottom: "15px" }}>
                   Puede adjuntar documentos adicionales que respalden su
-                  propuesta
+                  propuesta.
                 </FormHint>
 
                 <FileUploadContainer>
@@ -2522,15 +2985,7 @@ const LicitacionesProveedor = () => {
                   postulando ||
                   !propuestaForm.descripcion.trim() ||
                   !propuestaForm.presupuestoOfrecido ||
-                  (criteriosLicitacion.length > 0 &&
-                    criteriosLicitacion.some(
-                      (criterio) =>
-                        !respuestasCriterios[
-                          criterio.criterioID ||
-                            criterio.CriterioID ||
-                            criterio.id
-                        ]?.trim()
-                    )) ||
+                  hasIncompleteCriterios ||
                   (selectedFile && !!uploadError)
                 }
               >

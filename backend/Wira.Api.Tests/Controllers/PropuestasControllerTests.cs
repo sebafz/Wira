@@ -118,7 +118,7 @@ namespace Wira.Api.Tests.Controllers
                 Nombre = "Precio",
                 Descripcion = "Evaluación del precio",
                 Peso = 100,
-                ModoEvaluacion = "MENOR_MEJOR"
+                MayorMejor = false
             };
             _context.CriteriosLicitacion.Add(criterio);
 
@@ -371,10 +371,10 @@ namespace Wira.Api.Tests.Controllers
             // Setup mock para el servicio de notificaciones
             _mockNotificacionService
                 .Setup(x => x.CrearNotificacionNuevaPropuesta(
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
                     It.IsAny<int>()))
                 .Returns(Task.CompletedTask);
 
@@ -387,7 +387,7 @@ namespace Wira.Api.Tests.Controllers
 
             // Verificar que la propuesta se creó en la base de datos
             var propuestaEnDb = await _context.Propuestas.FirstOrDefaultAsync();
-            
+
             if (propuestaEnDb == null)
             {
                 // Si no se creó la propuesta, el controlador falló
@@ -400,7 +400,7 @@ namespace Wira.Api.Tests.Controllers
                     throw new Exception($"La propuesta no se creó pero no se devolvió error 500. Resultado: {result.GetType().Name}");
                 }
             }
-            
+
             // Si llegamos aquí, la propuesta se creó exitosamente
             propuestaEnDb.PresupuestoOfrecido.Should().Be(45000);
             propuestaEnDb.EstadoPropuestaID.Should().Be(1); // Enviada por defecto
@@ -408,10 +408,10 @@ namespace Wira.Api.Tests.Controllers
             // Verificar que se llamó al servicio de notificaciones
             _mockNotificacionService.Verify(
                 x => x.CrearNotificacionNuevaPropuesta(
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
                     It.IsAny<int>()),
                 Times.Once);
         }

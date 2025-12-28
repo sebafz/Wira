@@ -18,6 +18,7 @@ namespace Wira.Api.Data
         public DbSet<EstadoLicitacion> EstadosLicitacion { get; set; }
         public DbSet<Licitacion> Licitaciones { get; set; }
         public DbSet<CriterioLicitacion> CriteriosLicitacion { get; set; }
+        public DbSet<CriterioOpcion> CriteriosOpciones { get; set; }
         public DbSet<EstadoPropuesta> EstadosPropuesta { get; set; }
         public DbSet<Propuesta> Propuestas { get; set; }
         public DbSet<RespuestaCriterioLicitacion> RespuestasCriteriosLicitacion { get; set; }
@@ -70,10 +71,28 @@ namespace Wira.Api.Data
                 .HasIndex(ep => ep.NombreEstado)
                 .IsUnique();
 
-            // Configuración de restricciones CHECK para ModoEvaluacion
-            modelBuilder.Entity<CriterioLicitacion>()
-                .ToTable(t => t.HasCheckConstraint("CK_CriterioLicitacion_ModoEvaluacion",
-                    "[ModoEvaluacion] IN ('MENOR_MEJOR', 'MAYOR_MEJOR')"));
+            modelBuilder.Entity<CriterioLicitacion>(entity =>
+            {
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable",
+                        "[Tipo] = 1 OR [MayorMejor] IS NULL");
+                    t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido",
+                        "[Tipo] <> 1 OR [MayorMejor] IS NOT NULL");
+                    t.HasCheckConstraint("CK_CriterioLicitacion_Valores",
+                        "[ValorMinimo] IS NULL OR [ValorMaximo] IS NULL OR [ValorMinimo] <= [ValorMaximo]");
+                    t.HasCheckConstraint("CK_CriterioLicitacion_Tipo",
+                        "[Tipo] IN (1,2,3,4)");
+                    t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable",
+                        "[Tipo] = 2 OR [ValorRequeridoBooleano] IS NULL");
+                    t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido",
+                        "[Tipo] <> 2 OR [EsPuntuable] = 0 OR [ValorRequeridoBooleano] IS NOT NULL");
+                });
+            });
+
+            modelBuilder.Entity<CriterioOpcion>()
+                .HasIndex(o => new { o.CriterioID, o.Valor })
+                .IsUnique();
 
             // Configuración de restricciones CHECK para EntidadTipo en ArchivosAdjuntos
             modelBuilder.Entity<ArchivoAdjunto>()
@@ -200,6 +219,12 @@ namespace Wira.Api.Data
                 .HasForeignKey(c => c.LicitacionID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<CriterioOpcion>()
+                .HasOne(o => o.Criterio)
+                .WithMany(c => c.Opciones)
+                .HasForeignKey(o => o.CriterioID)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<RespuestaCriterioLicitacion>()
                 .HasOne(r => r.Propuesta)
                 .WithMany(p => p.RespuestasCriterios)
@@ -210,6 +235,12 @@ namespace Wira.Api.Data
                 .HasOne(r => r.Criterio)
                 .WithMany(c => c.RespuestasCriterios)
                 .HasForeignKey(r => r.CriterioID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RespuestaCriterioLicitacion>()
+                .HasOne(r => r.OpcionSeleccionada)
+                .WithMany()
+                .HasForeignKey(r => r.CriterioOpcionID)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CalificacionPostLicitacion>()

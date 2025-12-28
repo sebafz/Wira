@@ -90,7 +90,7 @@ const TableTitle = styled.h2`
 const TableSubtitle = styled.p`
   margin: 0;
   color: #475569;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 `;
 
 const Table = styled.table`
@@ -107,8 +107,7 @@ const Table = styled.table`
   th {
     font-size: 0.85rem;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #94a3b8;
+    color: #555;
   }
 
   tr:hover td {

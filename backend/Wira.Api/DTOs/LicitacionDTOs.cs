@@ -1,3 +1,5 @@
+using Wira.Api.Models;
+
 namespace Wira.Api.DTOs
 {
     public class LicitacionDto
@@ -34,7 +36,23 @@ namespace Wira.Api.DTOs
         public string Nombre { get; set; } = string.Empty;
         public string? Descripcion { get; set; }
         public decimal Peso { get; set; }
-        public string ModoEvaluacion { get; set; } = string.Empty;
+        public TipoCriterio Tipo { get; set; } = TipoCriterio.Numerico;
+        public bool EsExcluyente { get; set; }
+        public bool EsPuntuable { get; set; } = true;
+        public bool? MayorMejor { get; set; }
+        public decimal? ValorMinimo { get; set; }
+        public decimal? ValorMaximo { get; set; }
+        public bool? ValorRequeridoBooleano { get; set; }
+        public List<CriterioOpcionDto> Opciones { get; set; } = new List<CriterioOpcionDto>();
+    }
+
+    public class CriterioOpcionDto
+    {
+        public int OpcionID { get; set; }
+        public string Valor { get; set; } = string.Empty;
+        public string? Descripcion { get; set; }
+        public decimal? Puntaje { get; set; }
+        public int Orden { get; set; }
     }
 
     public class ArchivoAdjuntoDto

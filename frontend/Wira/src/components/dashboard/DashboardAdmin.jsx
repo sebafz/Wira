@@ -25,8 +25,9 @@ const HeroCard = styled.section`
 `;
 
 const HeroTitle = styled.h1`
-  font-size: 2.4rem;
-  margin: 0 0 12px;
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 10px;
 `;
 
 const HeroSubtitle = styled.p`

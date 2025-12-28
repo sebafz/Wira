@@ -28,7 +28,7 @@ const FormTitle = styled.h1`
   color: #333;
   font-size: 2rem;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
+  background: #0f172a;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -57,7 +57,7 @@ const FormInput = styled.input`
   padding: 12px 16px;
   border: 2px solid #e1e5e9;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   transition: border-color 0.3s ease;
 
   &:focus {
@@ -77,7 +77,7 @@ const FormTextarea = styled.textarea`
   padding: 12px 16px;
   border: 2px solid #e1e5e9;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
   transition: border-color 0.3s ease;
@@ -159,7 +159,7 @@ const FormSelect = styled.select`
   padding: 12px 16px;
   border: 2px solid #e1e5e9;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   background: white;
   transition: border-color 0.3s ease;
 
@@ -207,7 +207,7 @@ const CriterioItem = styled.div`
 
 const CriterioHeader = styled.div`
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
 `;
@@ -217,7 +217,7 @@ const CriterioName = styled.input`
   padding: 8px 12px;
   border: 1px solid #e1e5e9;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin-right: 10px;
 `;
 
@@ -226,7 +226,7 @@ const CriterioWeight = styled.input`
   padding: 8px 12px;
   border: 1px solid #e1e5e9;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   text-align: center;
   margin-right: 10px;
 `;
@@ -236,7 +236,7 @@ const CriterioSelect = styled.select`
   padding: 8px 12px;
   border: 1px solid #e1e5e9;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin-right: 10px;
 `;
 
@@ -263,11 +263,164 @@ const AddCriterioButton = styled.button`
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  margin-top: 15px;
 
   &:hover {
     background: #218838;
   }
+`;
+
+const ToggleRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 12px;
+`;
+
+const ToggleLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #444;
+`;
+
+const ToggleInput = styled.input`
+  width: 18px;
+  height: 18px;
+`;
+
+const RangeRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 15px;
+`;
+
+const RangeField = styled.label`
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #555;
+  flex: 1;
+  min-width: 140px;
+`;
+
+const RangeInput = styled.input`
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 0.95rem;
+`;
+
+const TipoConfigBanner = styled.div`
+  margin-top: 15px;
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px dashed #ffb889;
+  background: #fff4ec;
+`;
+
+const BannerTitle = styled.p`
+  margin: 0 0 12px 0;
+  font-weight: 600;
+  color: #cc5804;
+`;
+
+const BannerSelect = styled.select`
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #f3c5a5;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fffaf5;
+
+  &:focus {
+    outline: none;
+    border-color: #fc6b0a;
+    box-shadow: 0 0 0 3px rgba(252, 107, 10, 0.15);
+  }
+`;
+
+const OpcionesContainer = styled.div`
+  margin-top: 15px;
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px dashed #ffb889;
+  background: #fff4ec;
+`;
+
+const OpcionRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+`;
+
+const OpcionInput = styled.input`
+  flex: 1;
+  min-width: 140px;
+  padding: 8px 12px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 0.95rem;
+`;
+
+const OpcionPuntajeInput = styled.input`
+  width: 120px;
+  padding: 8px 12px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 0.95rem;
+`;
+
+const RemoveOptionButton = styled.button`
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #c82333;
+  }
+`;
+
+const AddOptionButton = styled.button`
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover {
+    background: #0069d9;
+  }
+`;
+
+const BooleanChoiceRow = styled.div`
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+`;
+
+const BooleanChoiceLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: #444;
+`;
+
+const BooleanChoiceInput = styled.input`
+  width: 16px;
+  height: 16px;
 `;
 
 const ErrorText = styled.div`
@@ -320,7 +473,7 @@ const TooltipContent = styled.div`
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 0.85rem;
-  line-height: 1.4;
+  line-height: 1.2;
   white-space: nowrap;
   max-width: 350px;
   white-space: normal;
@@ -330,6 +483,7 @@ const TooltipContent = styled.div`
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease;
+  font-weight: 400;
 
   &::after {
     content: "";
@@ -596,6 +750,41 @@ const CrearLicitacion = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const tipoCriterioOptions = [
+    { value: "Numerico", label: "Valor numérico" },
+    { value: "Booleano", label: "Sí / No" },
+    { value: "Descriptivo", label: "Respuesta descriptiva" },
+    { value: "Escala", label: "Escala personalizada" },
+  ];
+
+  const createCriterio = (id, overrides = {}) => ({
+    id,
+    nombre: "",
+    descripcion: "",
+    peso: 0,
+    tipo: "Numerico",
+    mayorMejor: true,
+    esExcluyente: false,
+    esPuntuable: true,
+    valorMinimo: "",
+    valorMaximo: "",
+    valorRequeridoBooleano: null,
+    opciones: [],
+    ...overrides,
+  });
+
+  const createOpcion = (overrides = {}) => ({
+    tempId: `opt_${Math.random().toString(36).slice(2, 9)}`,
+    valor: "",
+    descripcion: "",
+    puntaje: "",
+    orden: 0,
+    ...overrides,
+  });
+
+  const getOptionKey = (option, fallback) =>
+    option.opcionID ?? option.tempId ?? fallback;
+
   // Obtener la fecha y hora actual en formato ISO local
   const getCurrentDateTime = () => {
     const now = new Date();
@@ -618,36 +807,32 @@ const CrearLicitacion = () => {
     condiciones: "",
   });
 
-  const [criterios, setCriterios] = useState([
-    {
-      id: 1,
+  const [criterios, setCriterios] = useState(() => [
+    createCriterio(1, {
       nombre: "Precio",
       descripcion: "Costo total de la propuesta (en pesos argentinos)",
       peso: 25,
-      modoEvaluacion: "MENOR_MEJOR",
-    },
-    {
-      id: 2,
+      tipo: "Numerico",
+      mayorMejor: false,
+    }),
+    createCriterio(2, {
       nombre: "Experiencia",
       descripcion: "Años de experiencia en el rubro",
       peso: 25,
-      modoEvaluacion: "MAYOR_MEJOR",
-    },
-    {
-      id: 3,
+    }),
+    createCriterio(3, {
       nombre: "Proyectos realizados",
       descripcion:
         "Cantidad de proyectos realizados con características comparables",
       peso: 25,
-      modoEvaluacion: "MAYOR_MEJOR",
-    },
-    {
-      id: 4,
+    }),
+    createCriterio(4, {
       nombre: "Tiempo de entrega",
       descripcion: "Plazo de entrega propuesto (en días)",
       peso: 25,
-      modoEvaluacion: "MENOR_MEJOR",
-    },
+      tipo: "Numerico",
+      mayorMejor: false,
+    }),
   ]);
 
   const [rubros, setRubros] = useState([]);
@@ -769,24 +954,125 @@ const CrearLicitacion = () => {
 
   const handleCriterioChange = (id, field, value) => {
     setCriterios((prev) =>
+      prev.map((criterio) => {
+        if (criterio.id !== id) return criterio;
+
+        const updated = { ...criterio, [field]: value };
+
+        if (field === "tipo") {
+          const existingOptions = criterio.opciones || [];
+          if (
+            value === "Numerico" &&
+            (criterio.mayorMejor === null || criterio.mayorMejor === undefined)
+          ) {
+            updated.mayorMejor = true;
+          }
+
+          if (value !== "Numerico") {
+            updated.valorMinimo = "";
+            updated.valorMaximo = "";
+            updated.mayorMejor = null;
+          }
+
+          if (value !== "Booleano") {
+            updated.valorRequeridoBooleano = null;
+          }
+
+          if (value !== "Escala") {
+            updated.opciones = [];
+          } else if (!existingOptions.length) {
+            updated.opciones = [
+              createOpcion({ orden: 1 }),
+              createOpcion({ orden: 2 }),
+            ];
+          } else {
+            updated.opciones = existingOptions;
+          }
+        }
+
+        if (field === "esPuntuable" && !value) {
+          updated.esPuntuable = false;
+          updated.valorRequeridoBooleano = null;
+        }
+
+        if (updated.tipo === "Descriptivo") {
+          updated.esExcluyente = false;
+          updated.esPuntuable = false;
+          updated.valorRequeridoBooleano = null;
+        }
+
+        if (updated.tipo !== "Escala" && updated.opciones?.length) {
+          updated.opciones = [];
+        }
+
+        return updated;
+      })
+    );
+  };
+
+  const addCriterioOption = (criterioId) => {
+    setCriterios((prev) =>
       prev.map((criterio) =>
-        criterio.id === id ? { ...criterio, [field]: value } : criterio
+        criterio.id === criterioId
+          ? {
+              ...criterio,
+              opciones: [
+                ...(criterio.opciones || []),
+                createOpcion({
+                  orden: (criterio.opciones?.length || 0) + 1,
+                }),
+              ],
+            }
+          : criterio
       )
     );
   };
 
+  const removeCriterioOption = (criterioId, optionId) => {
+    setCriterios((prev) =>
+      prev.map((criterio) => {
+        if (criterio.id !== criterioId) return criterio;
+
+        const remaining = (criterio.opciones || []).filter(
+          (opcion) => getOptionKey(opcion, opcion.orden) !== optionId
+        );
+
+        return {
+          ...criterio,
+          opciones: remaining.map((opcion, index) => ({
+            ...opcion,
+            orden: index + 1,
+          })),
+        };
+      })
+    );
+  };
+
+  const handleOpcionChange = (criterioId, optionId, field, value) => {
+    setCriterios((prev) =>
+      prev.map((criterio) => {
+        if (criterio.id !== criterioId) return criterio;
+
+        return {
+          ...criterio,
+          opciones: (criterio.opciones || []).map((opcion) => {
+            const key = getOptionKey(opcion, opcion.orden);
+            if (key !== optionId) return opcion;
+            return {
+              ...opcion,
+              [field]: value,
+            };
+          }),
+        };
+      })
+    );
+  };
+
   const addCriterio = () => {
-    const newId = Math.max(...criterios.map((c) => c.id)) + 1;
-    const newCriteriosList = [
-      ...criterios,
-      {
-        id: newId,
-        nombre: "",
-        descripcion: "",
-        peso: 0,
-        modoEvaluacion: "MAYOR_MEJOR",
-      },
-    ];
+    const newId = criterios.length
+      ? Math.max(...criterios.map((c) => c.id)) + 1
+      : 1;
+    const newCriteriosList = [...criterios, createCriterio(newId)];
 
     // Redistribuir pesos automáticamente
     const redistributedCriterios =
@@ -845,6 +1131,83 @@ const CrearLicitacion = () => {
         newErrors[`criterio_${criterio.id}_peso`] =
           "El peso debe ser mayor a 0";
       }
+
+      if (criterio.tipo === "Numerico") {
+        if (criterio.mayorMejor === null || criterio.mayorMejor === undefined) {
+          newErrors[`criterio_${criterio.id}_modo`] =
+            "Selecciona si valores mayores o menores puntúan mejor";
+        }
+
+        const hasMin =
+          criterio.valorMinimo !== "" &&
+          criterio.valorMinimo !== null &&
+          criterio.valorMinimo !== undefined;
+        const hasMax =
+          criterio.valorMaximo !== "" &&
+          criterio.valorMaximo !== null &&
+          criterio.valorMaximo !== undefined;
+
+        if (hasMin) {
+          const minValue = parseFloat(criterio.valorMinimo);
+          if (Number.isNaN(minValue)) {
+            newErrors[`criterio_${criterio.id}_min`] =
+              "El valor mínimo debe ser numérico";
+          }
+        }
+
+        if (hasMax) {
+          const maxValue = parseFloat(criterio.valorMaximo);
+          if (Number.isNaN(maxValue)) {
+            newErrors[`criterio_${criterio.id}_max`] =
+              "El valor máximo debe ser numérico";
+          }
+        }
+
+        if (hasMin && hasMax) {
+          const minValue = parseFloat(criterio.valorMinimo);
+          const maxValue = parseFloat(criterio.valorMaximo);
+          if (!Number.isNaN(minValue) && !Number.isNaN(maxValue)) {
+            if (minValue > maxValue) {
+              newErrors[`criterio_${criterio.id}_range`] =
+                "El mínimo no puede ser mayor que el máximo";
+            }
+          }
+        }
+      }
+
+      if (criterio.tipo === "Escala") {
+        if (!criterio.opciones || criterio.opciones.length < 2) {
+          newErrors[`criterio_${criterio.id}_opciones`] =
+            "Agrega al menos dos opciones para la escala";
+        }
+
+        (criterio.opciones || []).forEach((opcion, index) => {
+          const optionKey = getOptionKey(opcion, `idx_${criterio.id}_${index}`);
+          if (!opcion.valor?.trim()) {
+            newErrors[`criterio_${criterio.id}_opcion_${optionKey}_valor`] =
+              "La etiqueta es obligatoria";
+          }
+
+          if (criterio.esPuntuable) {
+            const puntajeValue =
+              opcion.puntaje === "" ? NaN : parseFloat(opcion.puntaje);
+            if (Number.isNaN(puntajeValue)) {
+              newErrors[`criterio_${criterio.id}_opcion_${optionKey}_puntaje`] =
+                "Indica un puntaje válido";
+            }
+          }
+        });
+      }
+
+      if (
+        criterio.tipo === "Booleano" &&
+        criterio.esPuntuable &&
+        (criterio.valorRequeridoBooleano === null ||
+          criterio.valorRequeridoBooleano === undefined)
+      ) {
+        newErrors[`criterio_${criterio.id}_booleano`] =
+          "Selecciona la respuesta correcta para este criterio";
+      }
     });
 
     setErrors(newErrors);
@@ -869,6 +1232,67 @@ const CrearLicitacion = () => {
 
     try {
       // Crear licitación primero
+      const criteriosPayload = criterios.map((criterio) => {
+        const esNumerico = criterio.tipo === "Numerico";
+        const esEscala = criterio.tipo === "Escala";
+        const esDescriptivo = criterio.tipo === "Descriptivo";
+        const esBooleano = criterio.tipo === "Booleano";
+
+        const rawMin = esNumerico ? criterio.valorMinimo : null;
+        const rawMax = esNumerico ? criterio.valorMaximo : null;
+        const minValue =
+          rawMin === null || rawMin === "" ? null : parseFloat(rawMin);
+        const maxValue =
+          rawMax === null || rawMax === "" ? null : parseFloat(rawMax);
+
+        const opciones = esEscala
+          ? (criterio.opciones || []).map((opcion, index) => {
+              const puntajeValue =
+                criterio.esPuntuable && opcion.puntaje !== ""
+                  ? parseFloat(opcion.puntaje)
+                  : null;
+
+              return {
+                Valor: opcion.valor,
+                Descripcion: opcion.descripcion,
+                Puntaje:
+                  criterio.esPuntuable &&
+                  puntajeValue !== null &&
+                  !Number.isNaN(puntajeValue)
+                    ? puntajeValue
+                    : null,
+                Orden: index + 1,
+              };
+            })
+          : [];
+
+        return {
+          Nombre: criterio.nombre,
+          Descripcion: criterio.descripcion,
+          Peso: parseFloat(criterio.peso),
+          MayorMejor:
+            esNumerico && criterio.mayorMejor !== undefined
+              ? criterio.mayorMejor
+              : null,
+          Tipo: criterio.tipo,
+          EsExcluyente: esDescriptivo ? false : !!criterio.esExcluyente,
+          EsPuntuable: esDescriptivo ? false : !!criterio.esPuntuable,
+          ValorMinimo:
+            esNumerico && minValue !== null && !Number.isNaN(minValue)
+              ? minValue
+              : null,
+          ValorMaximo:
+            esNumerico && maxValue !== null && !Number.isNaN(maxValue)
+              ? maxValue
+              : null,
+          ValorRequeridoBooleano:
+            esBooleano && criterio.esPuntuable
+              ? criterio.valorRequeridoBooleano
+              : null,
+          Opciones: opciones,
+        };
+      });
+
       const licitacionData = {
         MineraID: user?.minera?.mineraID || 1, // Obtener el ID de la minera del usuario autenticado
         RubroID: parseInt(formData.rubroID),
@@ -884,12 +1308,7 @@ const CrearLicitacion = () => {
           : null,
         Condiciones: formData.condiciones,
         ArchivoID: null, // Inicialmente null, se actualizará si hay archivo
-        Criterios: criterios.map((c) => ({
-          Nombre: c.nombre,
-          Descripcion: c.descripcion,
-          Peso: parseFloat(c.peso),
-          ModoEvaluacion: c.modoEvaluacion,
-        })),
+        Criterios: criteriosPayload,
       };
 
       const response = await fetch("http://localhost:5242/api/licitaciones", {
@@ -1300,30 +1719,36 @@ const CrearLicitacion = () => {
                   <TooltipContent>
                     <strong>¿Qué son los criterios de evaluación?</strong>
                     <br />
-                    Los criterios determinan cómo se evaluarán las propuestas de
-                    los proveedores.
+                    Definen cómo se comparan las propuestas y qué información es
+                    obligatoria para los proveedores.
                     <br />
                     <br />
-                    <strong>Pesos:</strong> Cada criterio tiene un peso (%) que
-                    indica su importancia. La suma debe ser 100%.
+                    <strong>Pesos y redistribución:</strong> Cada criterio
+                    aporta un porcentaje del puntaje total. Deben sumar 100% y
+                    al agregar o quitar criterios se reajustan automáticamente
+                    usando múltiplos de 5 (puedes modificarlos luego).
                     <br />
                     <br />
-                    <strong>Redistribución automática:</strong> Al agregar o
-                    eliminar criterios, los pesos se redistribuyen
-                    automáticamente usando múltiplos de 5.
+                    <strong>Tipos disponibles:</strong>
+                    <br />
+                    • Valor numérico: define si "Mayor" o "Menor" es mejor y
+                    permite límites mínimos/máximos.
+                    <br />
+                    • Sí/No: selecciona la respuesta correcta si el criterio
+                    aporta puntaje.
+                    <br />
+                    • Escala personalizada: crea opciones ordenadas y, si
+                    corresponde, asigna puntaje a cada una.
+                    <br />
+                    • Respuesta descriptiva: recolecta texto libre y no suma ni
+                    resta puntos.
                     <br />
                     <br />
-                    <strong>Evaluación:</strong>
+                    <strong>Configuraciones adicionales:</strong>
                     <br />
-                    • "Mayor es mejor": Valores más altos obtienen mejor
-                    puntuación
-                    <br />
-                    • "Menor es mejor": Valores más bajos obtienen mejor
-                    puntuación
-                    <br />
-                    <br />
-                    Puedes modificar los pesos manualmente después de la
-                    redistribución automática.
+                    • Criterio excluyente: descarta propuestas que no cumplan.
+                    <br />• Aporta puntaje: controla si el criterio suma puntos
+                    (los descriptivos siempre quedan desactivados).
                   </TooltipContent>
                 </InfoTooltip>
                 {getTotalPeso() !== 100 && (
@@ -1343,7 +1768,7 @@ const CrearLicitacion = () => {
                 <CriterioItem key={criterio.id}>
                   <CriterioHeader>
                     <CriterioName
-                      placeholder="Nombre del criterio"
+                      placeholder="Nombre del criterio  *"
                       value={criterio.nombre}
                       onChange={(e) =>
                         handleCriterioChange(
@@ -1369,17 +1794,22 @@ const CrearLicitacion = () => {
                       }
                     />
                     <CriterioSelect
-                      value={criterio.modoEvaluacion}
+                      value={criterio.tipo}
                       onChange={(e) =>
                         handleCriterioChange(
                           criterio.id,
-                          "modoEvaluacion",
+                          "tipo",
                           e.target.value
                         )
                       }
+                      aria-label="Tipo de criterio"
+                      title="Tipo de criterio"
                     >
-                      <option value="MAYOR_MEJOR">Mayor es mejor</option>
-                      <option value="MENOR_MEJOR">Menor es mejor</option>
+                      {tipoCriterioOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </CriterioSelect>
                     {criterios.length > 1 && (
                       <RemoveButton
@@ -1393,7 +1823,7 @@ const CrearLicitacion = () => {
                   </CriterioHeader>
 
                   <FormTextarea
-                    placeholder="Descripción del criterio (opcional)"
+                    placeholder="Descripción del criterio"
                     value={criterio.descripcion}
                     onChange={(e) =>
                       handleCriterioChange(
@@ -1404,6 +1834,272 @@ const CrearLicitacion = () => {
                     }
                     style={{ minHeight: "80px" }}
                   />
+
+                  <ToggleRow>
+                    <ToggleLabel>
+                      <ToggleInput
+                        type="checkbox"
+                        checked={!!criterio.esExcluyente}
+                        onChange={(e) =>
+                          handleCriterioChange(
+                            criterio.id,
+                            "esExcluyente",
+                            e.target.checked
+                          )
+                        }
+                        disabled={criterio.tipo === "Descriptivo"}
+                      />
+                      Criterio excluyente
+                    </ToggleLabel>
+                    <ToggleLabel>
+                      <ToggleInput
+                        type="checkbox"
+                        checked={!!criterio.esPuntuable}
+                        onChange={(e) =>
+                          handleCriterioChange(
+                            criterio.id,
+                            "esPuntuable",
+                            e.target.checked
+                          )
+                        }
+                        disabled={criterio.tipo === "Descriptivo"}
+                      />
+                      Aporta puntaje
+                    </ToggleLabel>
+                  </ToggleRow>
+
+                  {criterio.tipo === "Descriptivo" && (
+                    <InfoText>
+                      Las respuestas descriptivas sirven como contexto, pero no
+                      impactan en puntajes ni pueden excluir proveedores.
+                    </InfoText>
+                  )}
+
+                  {criterio.tipo === "Booleano" && (
+                    <TipoConfigBanner>
+                      <BannerTitle>Configuración de puntaje</BannerTitle>
+                      {criterio.esPuntuable ? (
+                        <>
+                          <BooleanChoiceRow>
+                            <BooleanChoiceLabel>
+                              <BooleanChoiceInput
+                                type="radio"
+                                name={`criterio_booleano_${criterio.id}`}
+                                checked={
+                                  criterio.valorRequeridoBooleano === true
+                                }
+                                onChange={() =>
+                                  handleCriterioChange(
+                                    criterio.id,
+                                    "valorRequeridoBooleano",
+                                    true
+                                  )
+                                }
+                              />
+                              Sí / Verdadero
+                            </BooleanChoiceLabel>
+                            <BooleanChoiceLabel>
+                              <BooleanChoiceInput
+                                type="radio"
+                                name={`criterio_booleano_${criterio.id}`}
+                                checked={
+                                  criterio.valorRequeridoBooleano === false
+                                }
+                                onChange={() =>
+                                  handleCriterioChange(
+                                    criterio.id,
+                                    "valorRequeridoBooleano",
+                                    false
+                                  )
+                                }
+                              />
+                              No / Falso
+                            </BooleanChoiceLabel>
+                          </BooleanChoiceRow>
+                          <InfoText>
+                            Seleccione qué respuesta otorga puntaje para este
+                            criterio.
+                          </InfoText>
+                          {errors[`criterio_${criterio.id}_booleano`] && (
+                            <ErrorText>
+                              {errors[`criterio_${criterio.id}_booleano`]}
+                            </ErrorText>
+                          )}
+                        </>
+                      ) : (
+                        <InfoText>
+                          Activa "Aporta puntaje" si querés evaluar esta
+                          respuesta como válida o inválida.
+                        </InfoText>
+                      )}
+                    </TipoConfigBanner>
+                  )}
+
+                  {criterio.tipo === "Numerico" && (
+                    <TipoConfigBanner>
+                      <BannerTitle>Configuración numérica</BannerTitle>
+                      <BannerSelect
+                        value={criterio.mayorMejor === false ? "false" : "true"}
+                        onChange={(e) =>
+                          handleCriterioChange(
+                            criterio.id,
+                            "mayorMejor",
+                            e.target.value === "true"
+                          )
+                        }
+                      >
+                        <option value="true">Mayor es mejor</option>
+                        <option value="false">Menor es mejor</option>
+                      </BannerSelect>
+                      <RangeRow>
+                        <RangeField>
+                          Valor mínimo
+                          <RangeInput
+                            type="number"
+                            placeholder="Ej: 0"
+                            value={criterio.valorMinimo || ""}
+                            onChange={(e) =>
+                              handleCriterioChange(
+                                criterio.id,
+                                "valorMinimo",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </RangeField>
+                        <RangeField>
+                          Valor máximo
+                          <RangeInput
+                            type="number"
+                            placeholder="Ej: 100"
+                            value={criterio.valorMaximo || ""}
+                            onChange={(e) =>
+                              handleCriterioChange(
+                                criterio.id,
+                                "valorMaximo",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </RangeField>
+                      </RangeRow>
+                      {errors[`criterio_${criterio.id}_min`] && (
+                        <ErrorText>
+                          {errors[`criterio_${criterio.id}_min`]}
+                        </ErrorText>
+                      )}
+                      {errors[`criterio_${criterio.id}_max`] && (
+                        <ErrorText>
+                          {errors[`criterio_${criterio.id}_max`]}
+                        </ErrorText>
+                      )}
+                      {errors[`criterio_${criterio.id}_range`] && (
+                        <ErrorText>
+                          {errors[`criterio_${criterio.id}_range`]}
+                        </ErrorText>
+                      )}
+                      {errors[`criterio_${criterio.id}_modo`] && (
+                        <ErrorText>
+                          {errors[`criterio_${criterio.id}_modo`]}
+                        </ErrorText>
+                      )}
+                    </TipoConfigBanner>
+                  )}
+
+                  {criterio.tipo === "Escala" && (
+                    <OpcionesContainer>
+                      <BannerTitle>Configuración de escala</BannerTitle>
+                      {(criterio.opciones?.length ?? 0) === 0 && (
+                        <InfoText>
+                          Agrega los distintos valores que los proveedores
+                          podrán seleccionar.
+                        </InfoText>
+                      )}
+                      {(criterio.opciones || []).map((opcion, index) => {
+                        const optionKey = getOptionKey(
+                          opcion,
+                          `idx_${criterio.id}_${index}`
+                        );
+                        const valorError =
+                          errors[
+                            `criterio_${criterio.id}_opcion_${optionKey}_valor`
+                          ];
+                        const puntajeError =
+                          errors[
+                            `criterio_${criterio.id}_opcion_${optionKey}_puntaje`
+                          ];
+                        return (
+                          <div key={optionKey}>
+                            <OpcionRow>
+                              <OpcionInput
+                                placeholder="Etiqueta"
+                                value={opcion.valor || ""}
+                                onChange={(e) =>
+                                  handleOpcionChange(
+                                    criterio.id,
+                                    optionKey,
+                                    "valor",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                              <OpcionInput
+                                placeholder="Descripción"
+                                value={opcion.descripcion || ""}
+                                onChange={(e) =>
+                                  handleOpcionChange(
+                                    criterio.id,
+                                    optionKey,
+                                    "descripcion",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                              <OpcionPuntajeInput
+                                type="number"
+                                step="0.5"
+                                placeholder="Puntaje"
+                                value={opcion.puntaje ?? ""}
+                                onChange={(e) =>
+                                  handleOpcionChange(
+                                    criterio.id,
+                                    optionKey,
+                                    "puntaje",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={!criterio.esPuntuable}
+                              />
+                              <RemoveOptionButton
+                                type="button"
+                                onClick={() =>
+                                  removeCriterioOption(criterio.id, optionKey)
+                                }
+                                title="Eliminar opción"
+                              >
+                                ×
+                              </RemoveOptionButton>
+                            </OpcionRow>
+                            {valorError && <ErrorText>{valorError}</ErrorText>}
+                            {puntajeError && (
+                              <ErrorText>{puntajeError}</ErrorText>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <AddOptionButton
+                        type="button"
+                        onClick={() => addCriterioOption(criterio.id)}
+                      >
+                        + Agregar opción
+                      </AddOptionButton>
+                      {errors[`criterio_${criterio.id}_opciones`] && (
+                        <ErrorText>
+                          {errors[`criterio_${criterio.id}_opciones`]}
+                        </ErrorText>
+                      )}
+                    </OpcionesContainer>
+                  )}
 
                   {errors[`criterio_${criterio.id}_nombre`] && (
                     <ErrorText>

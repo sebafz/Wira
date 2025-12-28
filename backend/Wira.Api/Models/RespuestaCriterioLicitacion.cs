@@ -18,11 +18,21 @@ namespace Wira.Api.Models
         [StringLength(255)]
         public string? ValorProveedor { get; set; }
 
+        [Column(TypeName = "decimal(18,4)")]
+        public decimal? ValorNumerico { get; set; }
+
+        public bool? ValorBooleano { get; set; }
+
+        public int? CriterioOpcionID { get; set; }
+
         // Navegación
         [ForeignKey("PropuestaID")]
         public virtual Propuesta Propuesta { get; set; } = null!;
 
         [ForeignKey("CriterioID")]
         public virtual CriterioLicitacion Criterio { get; set; } = null!;
+
+        [ForeignKey(nameof(CriterioOpcionID))]
+        public virtual CriterioOpcion? OpcionSeleccionada { get; set; }
     }
 }

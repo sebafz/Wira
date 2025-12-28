@@ -96,7 +96,7 @@ namespace Wira.Api.Controllers
                         CriterioNombre = r.Criterio.Nombre,
                         CriterioDescripcion = r.Criterio.Descripcion,
                         CriterioPeso = r.Criterio.Peso,
-                        CriterioModoEvaluacion = r.Criterio.ModoEvaluacion
+                        CriterioMayorMejor = r.Criterio.MayorMejor
                     })
                     .ToListAsync();
 

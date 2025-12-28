@@ -23,10 +23,10 @@ namespace Wira.Api.Data
             // Agregar roles iniciales
             var roles = new[]
             {
-                new Rol { Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera administrador" },
-                new Rol { Nombre = RoleNames.MineraUsuario, Descripcion = "Minera usuario" },
-                new Rol { Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor administrador" },
-                new Rol { Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor usuario" },
+                new Rol { Nombre = RoleNames.MineraAdministrador, Descripcion = "Minera - Administrador" },
+                new Rol { Nombre = RoleNames.MineraUsuario, Descripcion = "Minera - Usuario" },
+                new Rol { Nombre = RoleNames.ProveedorAdministrador, Descripcion = "Proveedor - Administrador" },
+                new Rol { Nombre = RoleNames.ProveedorUsuario, Descripcion = "Proveedor - Usuario" },
                 new Rol { Nombre = RoleNames.AdministradorSistema, Descripcion = "Administrador del sistema" }
             };
 
@@ -60,16 +60,16 @@ namespace Wira.Api.Data
             // Agregar rubros iniciales
             var rubros = new[]
             {
-                new Rubro { Nombre = "Construcción e Infraestructura", Activo = true },
-                new Rubro { Nombre = "Transporte y Logística", Activo = true },
-                new Rubro { Nombre = "Equipos y Maquinarias", Activo = true },
-                new Rubro { Nombre = "Servicios Profesionales", Activo = true },
-                new Rubro { Nombre = "Suministros y Materiales", Activo = true },
-                new Rubro { Nombre = "Mantenimiento y Reparaciones", Activo = true },
-                new Rubro { Nombre = "Seguridad Industrial", Activo = true },
-                new Rubro { Nombre = "Medio Ambiente y Sustentabilidad", Activo = true },
-                new Rubro { Nombre = "Reactivos Químicos", Activo = true },
-                new Rubro { Nombre = "Tecnología y Software", Activo = true }
+                new Rubro { Nombre = "Construcción e infraestructura", Activo = true },
+                new Rubro { Nombre = "Transporte y logística", Activo = true },
+                new Rubro { Nombre = "Equipos y maquinarias", Activo = true },
+                new Rubro { Nombre = "Servicios profesionales", Activo = true },
+                new Rubro { Nombre = "Suministros y materiales", Activo = true },
+                new Rubro { Nombre = "Mantenimiento y reparaciones", Activo = true },
+                new Rubro { Nombre = "Seguridad industrial", Activo = true },
+                new Rubro { Nombre = "Medio ambiente y sustentabilidad", Activo = true },
+                new Rubro { Nombre = "Reactivos químicos", Activo = true },
+                new Rubro { Nombre = "Tecnología y software", Activo = true }
             };
 
             await context.Rubros.AddRangeAsync(rubros);
@@ -79,7 +79,7 @@ namespace Wira.Api.Data
             {
                 new Empresa { Nombre = "Borax Argentina", RazonSocial = "Borax Argentina SA", CUIT = "30-12345678-9", EmailContacto = "contacto@borax.com", Telefono = "+54 9 11 4000 0001", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now },
                 new Empresa { Nombre = "Bajo de la Alumbrera", RazonSocial = "Bajo de la Alumbrera SA", CUIT = "30-87654321-2", EmailContacto = "info@bajoalumbrera.com", Telefono = "+54 9 11 4000 0002", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now },
-                new Empresa { Nombre = "Cauchari-Olaroz", RazonSocial = "Cauchari-Olaroz SA", CUIT = "30-11223344-5", EmailContacto = "admin@cauchari-olaroz.com", Telefono = "+54 9 11 4000 0003", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now }
+                new Empresa { Nombre = "Cauchari-Olaroz", RazonSocial = "Cauchari-Olaroz SA", CUIT = "30-11223344-5", EmailContacto = "contacto@cauchari-olaroz.com", Telefono = "+54 9 11 4000 0003", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now }
             };
 
             await context.Empresas.AddRangeAsync(mineras);
@@ -88,10 +88,10 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Obtener IDs de rubros para asignar a proveedores
-            var rubroTransporte = await context.Rubros.FirstAsync(r => r.Nombre == "Transporte y Logística");
-            var rubroEquipos = await context.Rubros.FirstAsync(r => r.Nombre == "Equipos y Maquinarias");
-            var rubroMantenimiento = await context.Rubros.FirstAsync(r => r.Nombre == "Mantenimiento y Reparaciones");
-            var rubroQuimicos = await context.Rubros.FirstAsync(r => r.Nombre == "Reactivos Químicos");
+            var rubroTransporte = await context.Rubros.FirstAsync(r => r.Nombre == "Transporte y logística");
+            var rubroEquipos = await context.Rubros.FirstAsync(r => r.Nombre == "Equipos y maquinarias");
+            var rubroMantenimiento = await context.Rubros.FirstAsync(r => r.Nombre == "Mantenimiento y reparaciones");
+            var rubroQuimicos = await context.Rubros.FirstAsync(r => r.Nombre == "Reactivos químicos");
 
             // Agregar proveedores de ejemplo con rubros asignados
             var proveedores = new[]
@@ -131,7 +131,7 @@ namespace Wira.Api.Data
                     Nombre = "Usuario Minera",
                     Apellido = "Demo",
                     DNI = "20000001",
-                    Telefono = "+54 9 11 4000 1001",
+                    Telefono = "+54 9 387 4000 1001",
                     Activo = true,
                     ValidadoEmail = true,
                     FechaBaja = null,
@@ -145,7 +145,7 @@ namespace Wira.Api.Data
                     Nombre = "Usuario Proveedor",
                     Apellido = "Demo",
                     DNI = "20000002",
-                    Telefono = "+54 9 11 4000 2001",
+                    Telefono = "+54 9 387 3000 2001",
                     Activo = true,
                     ValidadoEmail = true,
                     FechaBaja = null,
@@ -159,7 +159,7 @@ namespace Wira.Api.Data
                     Nombre = "Admin",
                     Apellido = "Principal",
                     DNI = "20000000",
-                    Telefono = "+54 9 11 4000 0000",
+                    Telefono = "+54 9 387 4000 1111",
                     Activo = true,
                     ValidadoEmail = true,
                     FechaBaja = null,
@@ -173,7 +173,7 @@ namespace Wira.Api.Data
                     Nombre = "Admin Minera",
                     Apellido = "Demo",
                     DNI = "20000003",
-                    Telefono = "+54 9 11 4000 1002",
+                    Telefono = "+54 9 387 5000 1002",
                     Activo = true,
                     ValidadoEmail = true,
                     FechaBaja = null,

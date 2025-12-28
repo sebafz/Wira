@@ -90,6 +90,7 @@ namespace Wira.Api.Controllers
                     .Include(l => l.EstadoLicitacion)
                     .Include(l => l.ProyectoMinero)
                     .Include(l => l.CriteriosLicitacion)
+                        .ThenInclude(c => c.Opciones)
                     .Where(l => l.LicitacionID == id && !l.Eliminado)
                     .FirstOrDefaultAsync();
 
@@ -126,10 +127,28 @@ namespace Wira.Api.Controllers
                     Criterios = licitacion.CriteriosLicitacion.Select(c => new CriterioLicitacionDto
                     {
                         CriterioID = c.CriterioID,
+                        LicitacionID = c.LicitacionID,
                         Nombre = c.Nombre,
                         Descripcion = c.Descripcion,
                         Peso = c.Peso,
-                        ModoEvaluacion = c.ModoEvaluacion
+                        Tipo = c.Tipo,
+                        EsExcluyente = c.EsExcluyente,
+                        EsPuntuable = c.EsPuntuable,
+                        MayorMejor = c.MayorMejor,
+                        ValorMinimo = c.ValorMinimo,
+                        ValorMaximo = c.ValorMaximo,
+                        ValorRequeridoBooleano = c.ValorRequeridoBooleano,
+                        Opciones = c.Opciones
+                            .OrderBy(o => o.Orden)
+                            .Select(o => new CriterioOpcionDto
+                            {
+                                OpcionID = o.OpcionID,
+                                Valor = o.Valor,
+                                Descripcion = o.Descripcion,
+                                Puntaje = o.Puntaje,
+                                Orden = o.Orden
+                            })
+                            .ToList()
                     }).ToList()
                 };
 
@@ -181,16 +200,10 @@ namespace Wira.Api.Controllers
                     return BadRequest("La fecha de cierre debe ser posterior a la fecha de inicio.");
                 }
 
-                // Validar criterios
-                if (request.Criterios == null || !request.Criterios.Any())
+                var criteriosValidationError = ValidateCriteriosPayload(request.Criterios);
+                if (criteriosValidationError is not null)
                 {
-                    return BadRequest("Debe especificar al menos un criterio de evaluación.");
-                }
-
-                var totalPeso = request.Criterios.Sum(c => c.Peso);
-                if (Math.Abs(totalPeso - 100) > 0.01m)
-                {
-                    return BadRequest("El peso total de los criterios debe sumar exactamente 100%.");
+                    return BadRequest(criteriosValidationError);
                 }
 
                 // Obtener el estado inicial de licitación ("Publicada")
@@ -223,14 +236,42 @@ namespace Wira.Api.Controllers
                 // Crear los criterios de evaluación
                 foreach (var criterioRequest in request.Criterios)
                 {
+                    bool esDescriptivo = criterioRequest.Tipo == TipoCriterio.Descriptivo;
+                    bool esNumerico = criterioRequest.Tipo == TipoCriterio.Numerico;
+                    bool esBooleano = criterioRequest.Tipo == TipoCriterio.Booleano;
+                    bool esEscala = criterioRequest.Tipo == TipoCriterio.Escala;
+
                     var criterio = new CriterioLicitacion
                     {
                         LicitacionID = licitacion.LicitacionID,
                         Nombre = criterioRequest.Nombre,
                         Descripcion = criterioRequest.Descripcion,
                         Peso = criterioRequest.Peso,
-                        ModoEvaluacion = criterioRequest.ModoEvaluacion
+                        Tipo = criterioRequest.Tipo,
+                        EsExcluyente = esDescriptivo ? false : criterioRequest.EsExcluyente,
+                        EsPuntuable = esDescriptivo ? false : criterioRequest.EsPuntuable,
+                        MayorMejor = esNumerico ? criterioRequest.MayorMejor : null,
+                        ValorMinimo = esNumerico ? criterioRequest.ValorMinimo : null,
+                        ValorMaximo = esNumerico ? criterioRequest.ValorMaximo : null,
+                        ValorRequeridoBooleano = esBooleano && criterioRequest.EsPuntuable
+                            ? criterioRequest.ValorRequeridoBooleano
+                            : null
                     };
+
+                    if (esEscala && criterioRequest.Opciones != null)
+                    {
+                        for (int i = 0; i < criterioRequest.Opciones.Count; i++)
+                        {
+                            var opcionRequest = criterioRequest.Opciones[i];
+                            criterio.Opciones.Add(new CriterioOpcion
+                            {
+                                Valor = opcionRequest.Valor,
+                                Descripcion = opcionRequest.Descripcion,
+                                Puntaje = criterio.EsPuntuable ? opcionRequest.Puntaje : null,
+                                Orden = opcionRequest.Orden ?? (i + 1)
+                            });
+                        }
+                    }
 
                     _context.CriteriosLicitacion.Add(criterio);
                 }
@@ -261,13 +302,45 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var licitacion = await _context.Licitaciones.FindAsync(id);
-                if (licitacion == null || licitacion.Eliminado)
+                var licitacion = await _context.Licitaciones
+                    .Include(l => l.CriteriosLicitacion)
+                        .ThenInclude(c => c.Opciones)
+                    .FirstOrDefaultAsync(l => l.LicitacionID == id && !l.Eliminado);
+
+                if (licitacion == null)
                 {
                     return NotFound();
                 }
 
-                // Actualizar campos
+                if (request.FechaInicio >= request.FechaCierre)
+                {
+                    return BadRequest("La fecha de cierre debe ser posterior a la fecha de inicio.");
+                }
+
+                var rubro = await _context.Rubros.FindAsync(request.RubroID);
+                if (rubro == null)
+                {
+                    return BadRequest("El rubro especificado no existe.");
+                }
+
+                if (request.ProyectoMineroID.HasValue)
+                {
+                    var proyecto = await _context.ProyectosMineros
+                        .FirstOrDefaultAsync(p => p.ProyectoMineroID == request.ProyectoMineroID.Value &&
+                                                  p.MineraID == licitacion.MineraID &&
+                                                  p.Activo);
+                    if (proyecto == null)
+                    {
+                        return BadRequest("El proyecto minero especificado no existe o no pertenece a la minera.");
+                    }
+                }
+
+                var criteriosValidationError = ValidateCriteriosPayload(request.Criterios);
+                if (criteriosValidationError is not null)
+                {
+                    return BadRequest(criteriosValidationError);
+                }
+
                 licitacion.Titulo = request.Titulo;
                 licitacion.Descripcion = request.Descripcion;
                 licitacion.FechaInicio = request.FechaInicio;
@@ -276,6 +349,54 @@ namespace Wira.Api.Controllers
                 licitacion.Condiciones = request.Condiciones;
                 licitacion.ArchivoID = request.ArchivoID;
                 licitacion.ProyectoMineroID = request.ProyectoMineroID;
+                licitacion.RubroID = request.RubroID;
+
+                if (licitacion.CriteriosLicitacion.Any())
+                {
+                    _context.CriteriosLicitacion.RemoveRange(licitacion.CriteriosLicitacion);
+                }
+
+                foreach (var criterioRequest in request.Criterios)
+                {
+                    bool esDescriptivo = criterioRequest.Tipo == TipoCriterio.Descriptivo;
+                    bool esNumerico = criterioRequest.Tipo == TipoCriterio.Numerico;
+                    bool esBooleano = criterioRequest.Tipo == TipoCriterio.Booleano;
+                    bool esEscala = criterioRequest.Tipo == TipoCriterio.Escala;
+
+                    var criterio = new CriterioLicitacion
+                    {
+                        LicitacionID = licitacion.LicitacionID,
+                        Nombre = criterioRequest.Nombre,
+                        Descripcion = criterioRequest.Descripcion,
+                        Peso = criterioRequest.Peso,
+                        Tipo = criterioRequest.Tipo,
+                        EsExcluyente = esDescriptivo ? false : criterioRequest.EsExcluyente,
+                        EsPuntuable = esDescriptivo ? false : criterioRequest.EsPuntuable,
+                        MayorMejor = esNumerico ? criterioRequest.MayorMejor : null,
+                        ValorMinimo = esNumerico ? criterioRequest.ValorMinimo : null,
+                        ValorMaximo = esNumerico ? criterioRequest.ValorMaximo : null,
+                        ValorRequeridoBooleano = esBooleano && criterioRequest.EsPuntuable
+                            ? criterioRequest.ValorRequeridoBooleano
+                            : null
+                    };
+
+                    if (esEscala && criterioRequest.Opciones != null)
+                    {
+                        for (int i = 0; i < criterioRequest.Opciones.Count; i++)
+                        {
+                            var opcionRequest = criterioRequest.Opciones[i];
+                            criterio.Opciones.Add(new CriterioOpcion
+                            {
+                                Valor = opcionRequest.Valor,
+                                Descripcion = opcionRequest.Descripcion,
+                                Puntaje = criterio.EsPuntuable ? opcionRequest.Puntaje : null,
+                                Orden = opcionRequest.Orden ?? (i + 1)
+                            });
+                        }
+                    }
+
+                    _context.CriteriosLicitacion.Add(criterio);
+                }
 
                 await _context.SaveChangesAsync();
 
@@ -339,7 +460,23 @@ namespace Wira.Api.Controllers
                         c.Nombre,
                         c.Descripcion,
                         c.Peso,
-                        c.ModoEvaluacion
+                        c.MayorMejor,
+                        c.Tipo,
+                        c.EsExcluyente,
+                        c.EsPuntuable,
+                        c.ValorMinimo,
+                        c.ValorMaximo,
+                        c.ValorRequeridoBooleano,
+                        Opciones = c.Opciones
+                            .OrderBy(o => o.Orden)
+                            .Select(o => new
+                            {
+                                o.OpcionID,
+                                o.Valor,
+                                o.Descripcion,
+                                o.Puntaje,
+                                o.Orden
+                            }).ToList()
                     })
                     .OrderBy(c => c.Nombre)
                     .ToListAsync();
@@ -533,6 +670,82 @@ namespace Wira.Api.Controllers
                 return StatusCode(500, new { message = "Error interno del servidor" });
             }
         }
+
+        private string? ValidateCriteriosPayload(List<CreateCriterioRequest>? criterios)
+        {
+            if (criterios == null || !criterios.Any())
+            {
+                return "Debe especificar al menos un criterio de evaluación.";
+            }
+
+            var totalPeso = criterios.Sum(c => c.Peso);
+            if (Math.Abs(totalPeso - 100) > 0.01m)
+            {
+                return "El peso total de los criterios debe sumar exactamente 100%.";
+            }
+
+            foreach (var criterioRequest in criterios)
+            {
+                if (!Enum.IsDefined(typeof(TipoCriterio), criterioRequest.Tipo))
+                {
+                    return $"Tipo de criterio inválido para '{criterioRequest.Nombre}'.";
+                }
+
+                bool esNumerico = criterioRequest.Tipo == TipoCriterio.Numerico;
+                bool esBooleano = criterioRequest.Tipo == TipoCriterio.Booleano;
+                bool esEscala = criterioRequest.Tipo == TipoCriterio.Escala;
+
+                if (esNumerico)
+                {
+                    if (criterioRequest.MayorMejor is null)
+                    {
+                        return $"Define si un valor mayor o menor es mejor para el criterio '{criterioRequest.Nombre}'.";
+                    }
+
+                    if (criterioRequest.ValorMinimo.HasValue && criterioRequest.ValorMaximo.HasValue &&
+                        criterioRequest.ValorMinimo > criterioRequest.ValorMaximo)
+                    {
+                        return $"El rango numérico del criterio '{criterioRequest.Nombre}' es inválido (mínimo mayor al máximo).";
+                    }
+                }
+                else if (criterioRequest.MayorMejor is not null)
+                {
+                    return $"Solo los criterios numéricos pueden definir si mayor o menor es mejor (ver '{criterioRequest.Nombre}').";
+                }
+
+                if (esBooleano && criterioRequest.EsPuntuable && criterioRequest.ValorRequeridoBooleano is null)
+                {
+                    return $"Debes seleccionar el valor correcto para el criterio booleano puntuable '{criterioRequest.Nombre}'.";
+                }
+
+                if (esEscala)
+                {
+                    if (criterioRequest.Opciones == null || criterioRequest.Opciones.Count < 2)
+                    {
+                        return $"El criterio '{criterioRequest.Nombre}' debe incluir al menos dos opciones.";
+                    }
+
+                    foreach (var opcion in criterioRequest.Opciones)
+                    {
+                        if (string.IsNullOrWhiteSpace(opcion.Valor))
+                        {
+                            return $"Todas las opciones del criterio '{criterioRequest.Nombre}' deben tener una etiqueta.";
+                        }
+
+                        if (criterioRequest.EsPuntuable && !opcion.Puntaje.HasValue)
+                        {
+                            return $"Debes definir el puntaje de cada opción para el criterio '{criterioRequest.Nombre}'.";
+                        }
+                    }
+                }
+                else if (criterioRequest.Opciones?.Any() == true)
+                {
+                    return $"Solo los criterios de tipo escala pueden incluir opciones (ver '{criterioRequest.Nombre}').";
+                }
+            }
+
+            return null;
+        }
     }
 
     public class CreateLicitacionRequest
@@ -580,12 +793,41 @@ namespace Wira.Api.Controllers
         public decimal Peso { get; set; }
 
         [Required]
-        [StringLength(20)]
-        public string ModoEvaluacion { get; set; } = string.Empty;
+        public TipoCriterio Tipo { get; set; } = TipoCriterio.Numerico;
+
+        public bool EsExcluyente { get; set; }
+
+        public bool EsPuntuable { get; set; } = true;
+
+        public bool? MayorMejor { get; set; }
+
+        public decimal? ValorMinimo { get; set; }
+
+        public decimal? ValorMaximo { get; set; }
+
+        public bool? ValorRequeridoBooleano { get; set; }
+
+        public List<CreateCriterioOpcionRequest> Opciones { get; set; } = new List<CreateCriterioOpcionRequest>();
+    }
+
+    public class CreateCriterioOpcionRequest
+    {
+        [Required]
+        [StringLength(100)]
+        public string Valor { get; set; } = string.Empty;
+
+        public string? Descripcion { get; set; }
+
+        public decimal? Puntaje { get; set; }
+
+        public int? Orden { get; set; }
     }
 
     public class UpdateLicitacionRequest
     {
+        [Required]
+        public int RubroID { get; set; }
+
         [Required]
         [StringLength(255)]
         public string Titulo { get; set; } = string.Empty;
@@ -605,5 +847,8 @@ namespace Wira.Api.Controllers
         public int? ArchivoID { get; set; }
 
         public int? ProyectoMineroID { get; set; }
+
+        [Required]
+        public List<CreateCriterioRequest> Criterios { get; set; } = new List<CreateCriterioRequest>();
     }
 }

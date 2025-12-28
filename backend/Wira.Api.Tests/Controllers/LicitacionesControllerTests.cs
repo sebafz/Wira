@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Linq;
 using Wira.Api.Controllers;
 using Wira.Api.Data;
 using Wira.Api.DTOs;
@@ -251,19 +252,19 @@ namespace Wira.Api.Tests.Controllers
                 Condiciones = "Condiciones de la licitación",
                 Criterios = new List<CreateCriterioRequest>
                 {
-                    new CreateCriterioRequest 
-                    { 
-                        Nombre = "Precio", 
+                    new CreateCriterioRequest
+                    {
+                        Nombre = "Precio",
                         Descripcion = "Evaluación del precio ofrecido",
-                        Peso = 60, 
-                        ModoEvaluacion = "MENOR_MEJOR" 
+                        Peso = 60,
+                        MayorMejor = false
                     },
-                    new CreateCriterioRequest 
-                    { 
-                        Nombre = "Calidad", 
+                    new CreateCriterioRequest
+                    {
+                        Nombre = "Calidad",
                         Descripcion = "Evaluación de la calidad",
-                        Peso = 40, 
-                        ModoEvaluacion = "MAYOR_MEJOR" 
+                        Peso = 40,
+                        MayorMejor = true
                     }
                 }
             };
@@ -291,8 +292,8 @@ namespace Wira.Api.Tests.Controllers
             // Verificar que se llamó al servicio de notificaciones
             _mockNotificacionService.Verify(
                 x => x.CrearNotificacionLicitacionPublicada(
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
                     It.IsAny<int>()),
                 Times.Once);
         }
@@ -312,7 +313,7 @@ namespace Wira.Api.Tests.Controllers
                 PresupuestoEstimado = 50000,
                 Criterios = new List<CreateCriterioRequest>
                 {
-                    new CreateCriterioRequest { Nombre = "Precio", Peso = 100, ModoEvaluacion = "MENOR_MEJOR" }
+                    new CreateCriterioRequest { Nombre = "Precio", Peso = 100, MayorMejor = false }
                 }
             };
 
@@ -338,7 +339,7 @@ namespace Wira.Api.Tests.Controllers
                 PresupuestoEstimado = 50000,
                 Criterios = new List<CreateCriterioRequest>
                 {
-                    new CreateCriterioRequest { Nombre = "Precio", Peso = 100, ModoEvaluacion = "MENOR_MEJOR" }
+                    new CreateCriterioRequest { Nombre = "Precio", Peso = 100, MayorMejor = false }
                 }
             };
 
@@ -364,8 +365,8 @@ namespace Wira.Api.Tests.Controllers
                 PresupuestoEstimado = 50000,
                 Criterios = new List<CreateCriterioRequest>
                 {
-                    new CreateCriterioRequest { Nombre = "Precio", Peso = 60, ModoEvaluacion = "MENOR_MEJOR" },
-                    new CreateCriterioRequest { Nombre = "Calidad", Peso = 30, ModoEvaluacion = "MAYOR_MEJOR" }
+                    new CreateCriterioRequest { Nombre = "Precio", Peso = 60, MayorMejor = false },
+                    new CreateCriterioRequest { Nombre = "Calidad", Peso = 30, MayorMejor = true }
                     // Total: 90% (debería ser 100%)
                 }
             };
@@ -400,12 +401,31 @@ namespace Wira.Api.Tests.Controllers
 
             var updateRequest = new UpdateLicitacionRequest
             {
+                RubroID = 1,
                 Titulo = "Licitación Actualizada",
                 Descripcion = "Descripción Actualizada",
                 FechaInicio = DateTime.UtcNow,
                 FechaCierre = DateTime.UtcNow.AddDays(45),
                 PresupuestoEstimado = 150000,
-                Condiciones = "Condiciones actualizadas"
+                Condiciones = "Condiciones actualizadas",
+                Criterios = new List<CreateCriterioRequest>
+                {
+                    new CreateCriterioRequest
+                    {
+                        Nombre = "Precio Actualizado",
+                        Peso = 60,
+                        Tipo = TipoCriterio.Numerico,
+                        MayorMejor = false
+                    },
+                    new CreateCriterioRequest
+                    {
+                        Nombre = "Calidad Actualizada",
+                        Peso = 40,
+                        Tipo = TipoCriterio.Descriptivo,
+                        Descripcion = "Evaluación cualitativa",
+                        EsPuntuable = false
+                    }
+                }
             };
 
             // Act
@@ -418,6 +438,14 @@ namespace Wira.Api.Tests.Controllers
             licitacionActualizada!.Titulo.Should().Be("Licitación Actualizada");
             licitacionActualizada.Descripcion.Should().Be("Descripción Actualizada");
             licitacionActualizada.PresupuestoEstimado.Should().Be(150000);
+            licitacionActualizada.RubroID.Should().Be(1);
+
+            var criteriosActualizados = await _context.CriteriosLicitacion
+                .Where(c => c.LicitacionID == 1)
+                .ToListAsync();
+            criteriosActualizados.Should().HaveCount(2);
+            criteriosActualizados.Select(c => c.Nombre)
+                .Should().Contain(new[] { "Precio Actualizado", "Calidad Actualizada" });
         }
 
         [Fact]
@@ -426,11 +454,22 @@ namespace Wira.Api.Tests.Controllers
             // Arrange
             var updateRequest = new UpdateLicitacionRequest
             {
+                RubroID = 1,
                 Titulo = "Licitación Actualizada",
                 Descripcion = "Descripción Actualizada",
                 FechaInicio = DateTime.UtcNow,
                 FechaCierre = DateTime.UtcNow.AddDays(45),
-                PresupuestoEstimado = 150000
+                PresupuestoEstimado = 150000,
+                Criterios = new List<CreateCriterioRequest>
+                {
+                    new CreateCriterioRequest
+                    {
+                        Nombre = "Precio",
+                        Peso = 100,
+                        Tipo = TipoCriterio.Numerico,
+                        MayorMejor = false
+                    }
+                }
             };
 
             // Act
@@ -507,7 +546,7 @@ namespace Wira.Api.Tests.Controllers
                 Nombre = "Precio",
                 Descripcion = "Evaluación del precio",
                 Peso = 60,
-                ModoEvaluacion = "MENOR_MEJOR"
+                MayorMejor = false
             };
 
             var criterio2 = new CriterioLicitacion
@@ -517,7 +556,7 @@ namespace Wira.Api.Tests.Controllers
                 Nombre = "Calidad",
                 Descripcion = "Evaluación de la calidad",
                 Peso = 40,
-                ModoEvaluacion = "MAYOR_MEJOR"
+                MayorMejor = true
             };
 
             _context.CriteriosLicitacion.AddRange(criterio1, criterio2);
@@ -561,14 +600,14 @@ namespace Wira.Api.Tests.Controllers
             var licitacionActualizada = await _context.Licitaciones
                 .Include(l => l.EstadoLicitacion)
                 .FirstOrDefaultAsync(l => l.LicitacionID == 1);
-            
+
             licitacionActualizada!.EstadoLicitacionID.Should().Be(2); // En Evaluación
 
             // Verificar que se llamó al servicio de notificaciones
             _mockNotificacionService.Verify(
                 x => x.CrearNotificacionLicitacionCerrada(
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
                     It.IsAny<int>()),
                 Times.Once);
         }
@@ -605,8 +644,8 @@ namespace Wira.Api.Tests.Controllers
             // Verificar que se llamó al servicio de notificaciones
             _mockNotificacionService.Verify(
                 x => x.CrearNotificacionLicitacionAdjudicada(
-                    It.IsAny<int>(), 
-                    It.IsAny<string>(), 
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
                     It.IsAny<int>()),
                 Times.Once);
         }

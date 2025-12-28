@@ -647,10 +647,10 @@ const CriteriosSection = styled.div`
 `;
 
 const CriterioItem = styled.div`
-  background: #f8f9fa;
-  padding: 15px;
+  border: 1px solid #e1e5e9;
   border-radius: 8px;
-  border-left: 4px solid #8b8b8b;
+  padding: 15px;
+  background: #f8f9fa;
 `;
 
 const CriterioName = styled.div`

@@ -231,9 +231,9 @@ const LicitacionStatus = styled.span`
 const PropuestasCountBadge = styled.span`
   background: #e3f2fd;
   color: #1976d2;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1749,11 +1749,15 @@ const LicitacionesMinera = () => {
         const valorNumerico = parseFloat(respuesta.valorProveedor);
 
         if (!isNaN(valorNumerico) && peso > 0) {
-          const modoEvaluacion =
-            criterio.modoEvaluacion || criterio.ModoEvaluacion || "MAYOR_MEJOR";
+          const mayorMejor =
+            typeof criterio.mayorMejor === "boolean"
+              ? criterio.mayorMejor
+              : typeof criterio.MayorMejor === "boolean"
+              ? criterio.MayorMejor
+              : true;
 
           let valorNormalizado;
-          if (modoEvaluacion === "MENOR_MEJOR") {
+          if (!mayorMejor) {
             valorNormalizado = 100 / (1 + valorNumerico);
           } else {
             valorNormalizado = valorNumerico;
