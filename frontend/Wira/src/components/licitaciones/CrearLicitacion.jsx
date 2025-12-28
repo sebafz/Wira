@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../shared/Navbar";
+import apiService from "../../services/apiService";
 
 const FormContainer = styled.div`
   min-height: 100vh;
@@ -785,6 +786,13 @@ const CrearLicitacion = () => {
   const getOptionKey = (option, fallback) =>
     option.opcionID ?? option.tempId ?? fallback;
 
+  const normalizeMoneda = (moneda) => ({
+    id: moneda?.monedaID ?? moneda?.MonedaID ?? moneda?.id ?? 0,
+    codigo: moneda?.codigo ?? moneda?.Codigo ?? "",
+    nombre: moneda?.nombre ?? moneda?.Nombre ?? "",
+    simbolo: moneda?.simbolo ?? moneda?.Simbolo ?? "",
+  });
+
   // Obtener la fecha y hora actual en formato ISO local
   const getCurrentDateTime = () => {
     const now = new Date();
@@ -800,6 +808,7 @@ const CrearLicitacion = () => {
     titulo: "",
     descripcion: "",
     rubroID: "",
+    monedaID: "",
     proyectoMineroID: "",
     fechaInicio: getCurrentDateTime(),
     fechaCierre: "",
@@ -810,7 +819,7 @@ const CrearLicitacion = () => {
   const [criterios, setCriterios] = useState(() => [
     createCriterio(1, {
       nombre: "Precio",
-      descripcion: "Costo total de la propuesta (en pesos argentinos)",
+      descripcion: "Costo total de la propuesta",
       peso: 25,
       tipo: "Numerico",
       mayorMejor: false,
@@ -849,6 +858,9 @@ const CrearLicitacion = () => {
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [rubrosError, setRubrosError] = useState("");
   const [proyectosError, setProyectosError] = useState("");
+  const [monedas, setMonedas] = useState([]);
+  const [loadingMonedas, setLoadingMonedas] = useState(true);
+  const [monedasError, setMonedasError] = useState("");
 
   // Estado para modal de confirmación
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
@@ -923,6 +935,40 @@ const CrearLicitacion = () => {
       setLoadingProyectos(false);
     }
   }, [user?.minera?.mineraID]);
+
+  useEffect(() => {
+    const fetchMonedas = async () => {
+      try {
+        setLoadingMonedas(true);
+        setMonedasError("");
+        const response = await apiService.getMonedas();
+        const payload = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.value)
+          ? response.data.value
+          : [];
+        const normalized = payload
+          .map((moneda) => normalizeMoneda(moneda))
+          .filter((moneda) => moneda.id);
+        setMonedas(normalized);
+        if (normalized.length > 0) {
+          setFormData((prev) =>
+            prev.monedaID
+              ? prev
+              : { ...prev, monedaID: String(normalized[0].id) }
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching monedas:", error);
+        setMonedasError("No se pudieron cargar las monedas disponibles.");
+        setMonedas([]);
+      } finally {
+        setLoadingMonedas(false);
+      }
+    };
+
+    fetchMonedas();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1100,6 +1146,7 @@ const CrearLicitacion = () => {
     if (!formData.descripcion.trim())
       newErrors.descripcion = "La descripción es requerida";
     if (!formData.rubroID) newErrors.rubroID = "Debe seleccionar un rubro";
+    if (!formData.monedaID) newErrors.monedaID = "Debe seleccionar una moneda";
     if (!formData.fechaInicio)
       newErrors.fechaInicio = "La fecha de inicio es requerida";
     if (!formData.fechaCierre)
@@ -1296,6 +1343,7 @@ const CrearLicitacion = () => {
       const licitacionData = {
         MineraID: user?.minera?.mineraID || 1, // Obtener el ID de la minera del usuario autenticado
         RubroID: parseInt(formData.rubroID),
+        MonedaID: parseInt(formData.monedaID),
         ProyectoMineroID: formData.proyectoMineroID
           ? parseInt(formData.proyectoMineroID)
           : null,
@@ -1426,6 +1474,11 @@ const CrearLicitacion = () => {
       0
     );
   };
+
+  const getSelectedMoneda = () =>
+    monedas.find((moneda) => String(moneda.id) === String(formData.monedaID));
+
+  const selectedMoneda = getSelectedMoneda();
 
   // Funciones para manejo de archivos
   const formatFileSize = (bytes) => {
@@ -1677,6 +1730,40 @@ const CrearLicitacion = () => {
             </FormRow>
 
             <FormGroup>
+              <FormLabel htmlFor="monedaID">
+                Moneda de la licitación *
+              </FormLabel>
+              <FormSelect
+                id="monedaID"
+                name="monedaID"
+                value={formData.monedaID}
+                onChange={handleInputChange}
+                disabled={loadingMonedas || monedas.length === 0}
+                required
+              >
+                <option value="">
+                  {loadingMonedas
+                    ? "Cargando monedas..."
+                    : monedas.length === 0
+                    ? "No hay monedas disponibles"
+                    : "Seleccionar moneda"}
+                </option>
+                {monedas.map((moneda) => (
+                  <option key={moneda.id} value={moneda.id}>
+                    {moneda.nombre}
+                    {moneda.codigo ? ` (${moneda.codigo})` : ""}
+                  </option>
+                ))}
+              </FormSelect>
+              {errors.monedaID && <ErrorText>{errors.monedaID}</ErrorText>}
+              {monedasError && (
+                <InfoText style={{ color: "#fc6b0a", marginTop: "5px" }}>
+                  ⚠️ {monedasError}
+                </InfoText>
+              )}
+            </FormGroup>
+
+            <FormGroup>
               <FormLabel htmlFor="presupuestoEstimado">
                 Presupuesto estimado
               </FormLabel>
@@ -1690,7 +1777,17 @@ const CrearLicitacion = () => {
                 step="0.01"
                 min="0"
               />
-              <InfoText>Opcional: Monto estimado in pesos argentinos</InfoText>
+              <InfoText>
+                Opcional: monto estimado en{" "}
+                {selectedMoneda
+                  ? selectedMoneda.nombre
+                  : "la moneda seleccionada"}
+                {selectedMoneda?.simbolo
+                  ? ` (${selectedMoneda.simbolo})`
+                  : selectedMoneda?.codigo
+                  ? ` (${selectedMoneda.codigo})`
+                  : ""}
+              </InfoText>
             </FormGroup>
 
             <FormGroup>

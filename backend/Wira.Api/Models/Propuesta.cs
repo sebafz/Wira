@@ -26,6 +26,9 @@ namespace Wira.Api.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal PresupuestoOfrecido { get; set; }
 
+        [Required]
+        public int MonedaID { get; set; }
+
         public DateTime? FechaEntrega { get; set; }
 
         public bool CumpleRequisitos { get; set; } = true;
@@ -44,6 +47,9 @@ namespace Wira.Api.Models
 
         [ForeignKey("EstadoPropuestaID")]
         public virtual EstadoPropuesta EstadoPropuesta { get; set; } = null!;
+
+        [ForeignKey("MonedaID")]
+        public virtual Moneda Moneda { get; set; } = null!;
 
         public virtual ICollection<RespuestaCriterioLicitacion> RespuestasCriterios { get; set; } = new List<RespuestaCriterioLicitacion>();
         public virtual ICollection<ArchivoAdjunto> ArchivosAdjuntos { get; set; } = new List<ArchivoAdjunto>();

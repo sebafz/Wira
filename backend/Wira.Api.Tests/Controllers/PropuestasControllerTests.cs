@@ -31,6 +31,14 @@ namespace Wira.Api.Tests.Controllers
 
         private void SeedTestData()
         {
+            if (!_context.Monedas.Any())
+            {
+                _context.Monedas.AddRange(
+                    new Moneda { MonedaID = 1, Codigo = "ARS", Nombre = "Peso argentino", Simbolo = "$", Activo = true },
+                    new Moneda { MonedaID = 2, Codigo = "USD", Nombre = "Dólar estadounidense", Simbolo = "US$", Activo = true }
+                );
+            }
+
             // Seed Minera
             var minera = new Minera
             {
@@ -103,6 +111,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 PresupuestoEstimado = 100000,
                 FechaCreacion = DateTime.UtcNow,
@@ -138,6 +147,7 @@ namespace Wira.Api.Tests.Controllers
                 EstadoPropuestaID = 1,
                 Descripcion = "Propuesta Test",
                 PresupuestoOfrecido = 50000,
+                MonedaID = 1,
                 FechaEntrega = DateTime.UtcNow.AddDays(15),
                 CumpleRequisitos = true,
                 Eliminado = false
@@ -166,6 +176,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaEnvio = DateTime.UtcNow,
                 EstadoPropuestaID = 1,
                 PresupuestoOfrecido = 50000,
+                MonedaID = 1,
                 Eliminado = false
             };
 
@@ -177,6 +188,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaEnvio = DateTime.UtcNow,
                 EstadoPropuestaID = 1,
                 PresupuestoOfrecido = 60000,
+                MonedaID = 1,
                 Eliminado = true
             };
 
@@ -205,6 +217,7 @@ namespace Wira.Api.Tests.Controllers
                 EstadoPropuestaID = 1,
                 Descripcion = "Propuesta Test",
                 PresupuestoOfrecido = 50000,
+                MonedaID = 1,
                 Eliminado = false
             };
             _context.Propuestas.Add(propuesta);

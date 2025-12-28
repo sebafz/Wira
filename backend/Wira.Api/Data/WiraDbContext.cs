@@ -29,6 +29,7 @@ namespace Wira.Api.Data
         public DbSet<CalificacionPostLicitacion> CalificacionesPostLicitacion { get; set; }
         public DbSet<Auditoria> Auditoria { get; set; }
         public DbSet<ProyectoMinero> ProyectosMineros { get; set; }
+        public DbSet<Moneda> Monedas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,6 +53,10 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.DNI)
+                .IsUnique();
+
+            modelBuilder.Entity<Moneda>()
+                .HasIndex(m => m.Codigo)
                 .IsUnique();
 
             modelBuilder.Entity<Empresa>()
@@ -129,6 +134,10 @@ namespace Wira.Api.Data
                 .Property(u => u.ValidadoEmail)
                 .HasDefaultValue(false);
 
+            modelBuilder.Entity<Moneda>()
+                .Property(m => m.Activo)
+                .HasDefaultValue(true);
+
             modelBuilder.Entity<Empresa>()
                 .Property(e => e.Activo)
                 .HasDefaultValue(true);
@@ -161,6 +170,12 @@ namespace Wira.Api.Data
                 .HasForeignKey(l => l.RubroID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Licitacion>()
+                .HasOne(l => l.Moneda)
+                .WithMany(m => m.Licitaciones)
+                .HasForeignKey(l => l.MonedaID)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Propuesta>()
                 .Property(p => p.FechaEnvio)
                 .HasDefaultValueSql("GETDATE()");
@@ -168,6 +183,12 @@ namespace Wira.Api.Data
             modelBuilder.Entity<Propuesta>()
                 .Property(p => p.Eliminado)
                 .HasDefaultValue(false);
+
+            modelBuilder.Entity<Propuesta>()
+                .HasOne(p => p.Moneda)
+                .WithMany(m => m.Propuestas)
+                .HasForeignKey(p => p.MonedaID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ArchivoAdjunto>()
                 .Property(a => a.FechaSubida)

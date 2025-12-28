@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../shared/Navbar";
+import apiService from "../../services/apiService";
 
 const FormContainer = styled.div`
   min-height: 100vh;
@@ -882,6 +883,13 @@ const resolveTipoValue = (tipoValue) => {
 const normalizeDecimalInput = (value) =>
   value === null || value === undefined ? "" : String(value);
 
+const normalizeMoneda = (moneda) => ({
+  id: moneda?.monedaID ?? moneda?.MonedaID ?? moneda?.id ?? 0,
+  codigo: moneda?.codigo ?? moneda?.Codigo ?? "",
+  nombre: moneda?.nombre ?? moneda?.Nombre ?? "",
+  simbolo: moneda?.simbolo ?? moneda?.Simbolo ?? "",
+});
+
 const EditarLicitacion = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -903,6 +911,7 @@ const EditarLicitacion = () => {
     titulo: "",
     descripcion: "",
     rubroID: "",
+    monedaID: "",
     proyectoMineroID: "",
     fechaInicio: "",
     fechaCierre: "",
@@ -914,13 +923,16 @@ const EditarLicitacion = () => {
   const [proyectosMineros, setProyectosMineros] = useState([]);
   const [loadingProyectos, setLoadingProyectos] = useState(true);
   const [proyectosError, setProyectosError] = useState("");
+  const [monedas, setMonedas] = useState([]);
+  const [loadingMonedas, setLoadingMonedas] = useState(true);
+  const [monedasError, setMonedasError] = useState("");
   const [errors, setErrors] = useState({});
 
   // Estado para criterios de evaluación
   const [criterios, setCriterios] = useState(() => [
     createCriterio(1, {
       nombre: "Precio",
-      descripcion: "Costo total de la propuesta (en pesos argentinos)",
+      descripcion: "Costo total de la propuesta",
       peso: 25,
       tipo: "Numerico",
       mayorMejor: false,
@@ -979,6 +991,40 @@ const EditarLicitacion = () => {
     }
   }, [id, user?.MineraID, user?.mineraID]);
 
+  useEffect(() => {
+    const fetchMonedas = async () => {
+      try {
+        setLoadingMonedas(true);
+        setMonedasError("");
+        const response = await apiService.getMonedas();
+        const payload = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.value)
+          ? response.data.value
+          : [];
+        const normalized = payload
+          .map((moneda) => normalizeMoneda(moneda))
+          .filter((moneda) => moneda.id);
+        setMonedas(normalized);
+        if (normalized.length > 0) {
+          setFormData((prev) =>
+            prev.monedaID
+              ? prev
+              : { ...prev, monedaID: String(normalized[0].id) }
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching monedas:", error);
+        setMonedasError("No se pudieron cargar las monedas disponibles.");
+        setMonedas([]);
+      } finally {
+        setLoadingMonedas(false);
+      }
+    };
+
+    fetchMonedas();
+  }, []);
+
   const fetchLicitacion = useCallback(async () => {
     try {
       setLoading(true);
@@ -1026,6 +1072,7 @@ const EditarLicitacion = () => {
         titulo: licitacion.titulo || licitacion.Titulo || "",
         descripcion: licitacion.descripcion || licitacion.Descripcion || "",
         rubroID: String(licitacion.rubroID || licitacion.RubroID || ""),
+        monedaID: String(licitacion.monedaID || licitacion.MonedaID || ""),
         proyectoMineroID: String(
           licitacion.proyectoMineroID || licitacion.ProyectoMineroID || ""
         ),
@@ -1106,7 +1153,7 @@ const EditarLicitacion = () => {
         setCriterios([
           createCriterio(1, {
             nombre: "Precio",
-            descripcion: "Costo total de la propuesta (en pesos argentinos)",
+            descripcion: "Costo total de la propuesta",
             peso: 50,
             tipo: "Numerico",
             mayorMejor: false,
@@ -1474,6 +1521,11 @@ const EditarLicitacion = () => {
     );
   };
 
+  const getSelectedMoneda = () =>
+    monedas.find((moneda) => String(moneda.id) === String(formData.monedaID));
+
+  const selectedMoneda = getSelectedMoneda();
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -1487,6 +1539,10 @@ const EditarLicitacion = () => {
 
     if (!formData.rubroID) {
       newErrors.rubroID = "Debe seleccionar un rubro";
+    }
+
+    if (!formData.monedaID) {
+      newErrors.monedaID = "Debe seleccionar una moneda";
     }
 
     if (!formData.fechaInicio) {
@@ -1680,6 +1736,7 @@ const EditarLicitacion = () => {
       titulo: formData.titulo.trim(),
       descripcion: formData.descripcion.trim(),
       rubroID: parseInt(formData.rubroID),
+      MonedaID: parseInt(formData.monedaID),
       fechaInicio: new Date(formData.fechaInicio).toISOString(),
       fechaCierre: new Date(formData.fechaCierre).toISOString(),
       presupuestoEstimado: formData.presupuestoEstimado
@@ -1988,6 +2045,40 @@ const EditarLicitacion = () => {
             </FormRow>
 
             <FormGroup>
+              <FormLabel htmlFor="monedaID">
+                Moneda de la licitación *
+              </FormLabel>
+              <FormSelect
+                id="monedaID"
+                name="monedaID"
+                value={formData.monedaID}
+                onChange={handleInputChange}
+                disabled={loadingMonedas || monedas.length === 0}
+                required
+              >
+                <option value="">
+                  {loadingMonedas
+                    ? "Cargando monedas..."
+                    : monedas.length === 0
+                    ? "No hay monedas disponibles"
+                    : "Seleccionar moneda"}
+                </option>
+                {monedas.map((moneda) => (
+                  <option key={moneda.id} value={moneda.id}>
+                    {moneda.nombre}
+                    {moneda.codigo ? ` (${moneda.codigo})` : ""}
+                  </option>
+                ))}
+              </FormSelect>
+              {errors.monedaID && <ErrorText>{errors.monedaID}</ErrorText>}
+              {monedasError && (
+                <InfoText style={{ color: "#fc6b0a", marginTop: "5px" }}>
+                  ⚠️ {monedasError}
+                </InfoText>
+              )}
+            </FormGroup>
+
+            <FormGroup>
               <FormLabel htmlFor="presupuestoEstimado">
                 Presupuesto estimado
               </FormLabel>
@@ -2001,7 +2092,17 @@ const EditarLicitacion = () => {
                 step="0.01"
                 min="0"
               />
-              <InfoText>Opcional: Monto estimado en pesos argentinos</InfoText>
+              <InfoText>
+                Opcional: monto estimado en{" "}
+                {selectedMoneda
+                  ? selectedMoneda.nombre
+                  : "la moneda seleccionada"}
+                {selectedMoneda?.simbolo
+                  ? ` (${selectedMoneda.simbolo})`
+                  : selectedMoneda?.codigo
+                  ? ` (${selectedMoneda.codigo})`
+                  : ""}
+              </InfoText>
             </FormGroup>
 
             <FormGroup>

@@ -20,13 +20,32 @@ namespace Wira.Api.Tests.Helpers
         public static async Task SeedTestDataAsync(WiraDbContext context)
         {
             // Limpiar datos existentes
+            context.RespuestasCriteriosLicitacion.RemoveRange(context.RespuestasCriteriosLicitacion);
+            context.ArchivosAdjuntos.RemoveRange(context.ArchivosAdjuntos);
+            context.Propuestas.RemoveRange(context.Propuestas);
+            context.Licitaciones.RemoveRange(context.Licitaciones);
+            context.CriteriosOpcion.RemoveRange(context.CriteriosOpcion);
+            context.CriteriosLicitacion.RemoveRange(context.CriteriosLicitacion);
+            context.ProyectosMineros.RemoveRange(context.ProyectosMineros);
+            context.Auditoria.RemoveRange(context.Auditoria);
+            context.HistorialProveedorLicitacion.RemoveRange(context.HistorialProveedorLicitacion);
+            context.NotificacionesUsuarios.RemoveRange(context.NotificacionesUsuarios);
+            context.Notificaciones.RemoveRange(context.Notificaciones);
+            context.CalificacionesPostLicitacion.RemoveRange(context.CalificacionesPostLicitacion);
             context.Usuarios.RemoveRange(context.Usuarios);
+            context.UsuariosRoles.RemoveRange(context.UsuariosRoles);
             context.Roles.RemoveRange(context.Roles);
+            context.Monedas.RemoveRange(context.Monedas);
             context.Empresas.RemoveRange(context.Empresas);
             context.Rubros.RemoveRange(context.Rubros);
-            context.Licitaciones.RemoveRange(context.Licitaciones);
-            context.Propuestas.RemoveRange(context.Propuestas);
             await context.SaveChangesAsync();
+
+            var monedas = new[]
+            {
+                new Moneda { MonedaID = 1, Codigo = "ARS", Nombre = "Peso argentino", Simbolo = "$", Activo = true },
+                new Moneda { MonedaID = 2, Codigo = "USD", Nombre = "Dólar estadounidense", Simbolo = "US$", Activo = true }
+            };
+            context.Monedas.AddRange(monedas);
 
             // Seed Roles
             var roles = new[]

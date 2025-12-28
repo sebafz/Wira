@@ -118,20 +118,35 @@ namespace Wira.Api.Controllers
                                l.FechaCierre > DateTime.Now)
                     .CountAsync();
 
-                // Valor promedio de propuestas recibidas
-                var valorPromedioRespuesta = await _context.Propuestas
+                // Valor promedio de propuestas recibidas por moneda
+                var valorPromedioPorMoneda = await _context.Propuestas
                     .Include(p => p.Licitacion)
+                    .Include(p => p.Moneda)
                     .Where(p => p.Licitacion.MineraID == mineraId && !p.Eliminado)
-                    .Select(p => p.PresupuestoOfrecido)
-                    .DefaultIfEmpty(0)
-                    .AverageAsync();
+                    .GroupBy(p => new
+                    {
+                        p.MonedaID,
+                        Codigo = p.Moneda.Codigo,
+                        Nombre = p.Moneda.Nombre,
+                        Simbolo = p.Moneda.Simbolo
+                    })
+                    .Select(g => new ValorPromedioMonedaDto
+                    {
+                        MonedaID = g.Key.MonedaID,
+                        MonedaCodigo = g.Key.Codigo,
+                        MonedaNombre = g.Key.Nombre,
+                        MonedaSimbolo = g.Key.Simbolo,
+                        Promedio = Math.Round(g.Average(p => p.PresupuestoOfrecido), 2)
+                    })
+                    .OrderByDescending(x => x.Promedio)
+                    .ToListAsync();
 
                 var response = new EstadisticasRecientesResponse
                 {
                     LicitacionesCreadas30Dias = licitacionesRecientes,
                     PropuestasRecibidas30Dias = propuestasRecientes,
                     LicitacionesProximasVencer = licitacionesProximasVencer,
-                    ValorPromedioRespuestas = Math.Round(valorPromedioRespuesta, 2)
+                    ValorPromedioRespuestas = valorPromedioPorMoneda
                 };
 
                 return Ok(response);
@@ -221,6 +236,15 @@ namespace Wira.Api.Controllers
         public int LicitacionesCreadas30Dias { get; set; }
         public int PropuestasRecibidas30Dias { get; set; }
         public int LicitacionesProximasVencer { get; set; }
-        public decimal ValorPromedioRespuestas { get; set; }
+        public List<ValorPromedioMonedaDto> ValorPromedioRespuestas { get; set; } = new();
+    }
+
+    public class ValorPromedioMonedaDto
+    {
+        public int MonedaID { get; set; }
+        public string MonedaCodigo { get; set; } = string.Empty;
+        public string MonedaNombre { get; set; } = string.Empty;
+        public string? MonedaSimbolo { get; set; }
+        public decimal Promedio { get; set; }
     }
 }

@@ -7,6 +7,7 @@ namespace Wira.Api.DTOs
         public int LicitacionID { get; set; }
         public int MineraID { get; set; }
         public int RubroID { get; set; }
+        public int MonedaID { get; set; }
         public string Titulo { get; set; } = string.Empty;
         public string? Descripcion { get; set; }
         public DateTime FechaInicio { get; set; }
@@ -24,6 +25,9 @@ namespace Wira.Api.DTOs
         public string EstadoNombre { get; set; } = string.Empty;
         public string? ArchivoNombre { get; set; }
         public string? ProyectoMineroNombre { get; set; }
+        public string MonedaCodigo { get; set; } = string.Empty;
+        public string MonedaNombre { get; set; } = string.Empty;
+        public string? MonedaSimbolo { get; set; }
 
         // Criterios de evaluación
         public List<CriterioLicitacionDto> Criterios { get; set; } = new List<CriterioLicitacionDto>();

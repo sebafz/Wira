@@ -32,6 +32,7 @@ namespace Wira.Api.Controllers
                     .Include(l => l.Minera)
                     .Include(l => l.Rubro)
                     .Include(l => l.EstadoLicitacion)
+                    .Include(l => l.Moneda)
                     .Include(l => l.ProyectoMinero)
                     .Where(l => !l.Eliminado)
                     .ToListAsync();
@@ -50,6 +51,7 @@ namespace Wira.Api.Controllers
                         LicitacionID = l.LicitacionID,
                         MineraID = l.MineraID,
                         RubroID = l.RubroID,
+                        MonedaID = l.MonedaID,
                         Titulo = l.Titulo,
                         Descripcion = l.Descripcion,
                         FechaInicio = l.FechaInicio,
@@ -64,7 +66,10 @@ namespace Wira.Api.Controllers
                         RubroNombre = l.Rubro.Nombre,
                         EstadoNombre = l.EstadoLicitacion.NombreEstado,
                         ArchivoNombre = archivoAdjunto?.NombreArchivo,
-                        ProyectoMineroNombre = l.ProyectoMinero?.Nombre
+                        ProyectoMineroNombre = l.ProyectoMinero?.Nombre,
+                        MonedaCodigo = l.Moneda.Codigo,
+                        MonedaNombre = l.Moneda.Nombre,
+                        MonedaSimbolo = l.Moneda.Simbolo
                     };
 
                     licitacionDtos.Add(licitacionDto);
@@ -88,6 +93,7 @@ namespace Wira.Api.Controllers
                     .Include(l => l.Minera)
                     .Include(l => l.Rubro)
                     .Include(l => l.EstadoLicitacion)
+                    .Include(l => l.Moneda)
                     .Include(l => l.ProyectoMinero)
                     .Include(l => l.CriteriosLicitacion)
                         .ThenInclude(c => c.Opciones)
@@ -109,6 +115,7 @@ namespace Wira.Api.Controllers
                     LicitacionID = licitacion.LicitacionID,
                     MineraID = licitacion.MineraID,
                     RubroID = licitacion.RubroID,
+                    MonedaID = licitacion.MonedaID,
                     Titulo = licitacion.Titulo,
                     Descripcion = licitacion.Descripcion,
                     FechaInicio = licitacion.FechaInicio,
@@ -124,6 +131,9 @@ namespace Wira.Api.Controllers
                     EstadoNombre = licitacion.EstadoLicitacion.NombreEstado,
                     ArchivoNombre = archivoAdjunto?.NombreArchivo,
                     ProyectoMineroNombre = licitacion.ProyectoMinero?.Nombre,
+                    MonedaCodigo = licitacion.Moneda.Codigo,
+                    MonedaNombre = licitacion.Moneda.Nombre,
+                    MonedaSimbolo = licitacion.Moneda.Simbolo,
                     Criterios = licitacion.CriteriosLicitacion.Select(c => new CriterioLicitacionDto
                     {
                         CriterioID = c.CriterioID,
@@ -181,6 +191,13 @@ namespace Wira.Api.Controllers
                     return BadRequest("El rubro especificado no existe.");
                 }
 
+                var moneda = await _context.Monedas
+                    .FirstOrDefaultAsync(m => m.MonedaID == request.MonedaID && m.Activo);
+                if (moneda == null)
+                {
+                    return BadRequest("La moneda especificada no existe o está inactiva.");
+                }
+
                 // Validar que el proyecto minero existe y pertenece a la minera (si se especifica)
                 if (request.ProyectoMineroID.HasValue)
                 {
@@ -218,6 +235,7 @@ namespace Wira.Api.Controllers
                 {
                     MineraID = request.MineraID,
                     RubroID = request.RubroID,
+                    MonedaID = request.MonedaID,
                     Titulo = request.Titulo,
                     Descripcion = request.Descripcion,
                     FechaInicio = request.FechaInicio,
@@ -350,6 +368,7 @@ namespace Wira.Api.Controllers
                 licitacion.ArchivoID = request.ArchivoID;
                 licitacion.ProyectoMineroID = request.ProyectoMineroID;
                 licitacion.RubroID = request.RubroID;
+                licitacion.MonedaID = request.MonedaID;
 
                 if (licitacion.CriteriosLicitacion.Any())
                 {
@@ -757,6 +776,9 @@ namespace Wira.Api.Controllers
         public int RubroID { get; set; }
 
         [Required]
+        public int MonedaID { get; set; }
+
+        [Required]
         [StringLength(255)]
         public string Titulo { get; set; } = string.Empty;
 
@@ -827,6 +849,9 @@ namespace Wira.Api.Controllers
     {
         [Required]
         public int RubroID { get; set; }
+
+        [Required]
+        public int MonedaID { get; set; }
 
         [Required]
         [StringLength(255)]

@@ -33,6 +33,14 @@ namespace Wira.Api.Tests.Controllers
 
         private void SeedTestData()
         {
+            if (!_context.Monedas.Any())
+            {
+                _context.Monedas.AddRange(
+                    new Moneda { MonedaID = 1, Codigo = "ARS", Nombre = "Peso argentino", Simbolo = "$", Activo = true },
+                    new Moneda { MonedaID = 2, Codigo = "USD", Nombre = "Dólar estadounidense", Simbolo = "US$", Activo = true }
+                );
+            }
+
             // Seed Minera
             var minera = new Minera
             {
@@ -105,6 +113,7 @@ namespace Wira.Api.Tests.Controllers
                 MineraID = 1,
                 ProyectoMineroID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 PresupuestoEstimado = 100000,
                 FechaCreacion = DateTime.UtcNow,
@@ -135,6 +144,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = false
@@ -149,6 +159,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = true
@@ -180,6 +191,7 @@ namespace Wira.Api.Tests.Controllers
                 MineraID = 1,
                 ProyectoMineroID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 PresupuestoEstimado = 100000,
                 FechaCreacion = DateTime.UtcNow,
@@ -221,6 +233,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = true
@@ -248,6 +261,7 @@ namespace Wira.Api.Tests.Controllers
                 MineraID = 1,
                 ProyectoMineroID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 PresupuestoEstimado = 50000,
                 Condiciones = "Condiciones de la licitación",
                 Criterios = new List<CreateCriterioRequest>
@@ -310,6 +324,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 999, // Minera que no existe
                 RubroID = 1,
+                MonedaID = 1,
                 PresupuestoEstimado = 50000,
                 Criterios = new List<CreateCriterioRequest>
                 {
@@ -336,6 +351,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(5), // Fecha de cierre antes de inicio
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 PresupuestoEstimado = 50000,
                 Criterios = new List<CreateCriterioRequest>
                 {
@@ -362,6 +378,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 PresupuestoEstimado = 50000,
                 Criterios = new List<CreateCriterioRequest>
                 {
@@ -391,6 +408,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 PresupuestoEstimado = 100000,
                 FechaCreacion = DateTime.UtcNow,
@@ -402,6 +420,7 @@ namespace Wira.Api.Tests.Controllers
             var updateRequest = new UpdateLicitacionRequest
             {
                 RubroID = 1,
+                MonedaID = 1,
                 Titulo = "Licitación Actualizada",
                 Descripcion = "Descripción Actualizada",
                 FechaInicio = DateTime.UtcNow,
@@ -455,6 +474,7 @@ namespace Wira.Api.Tests.Controllers
             var updateRequest = new UpdateLicitacionRequest
             {
                 RubroID = 1,
+                MonedaID = 1,
                 Titulo = "Licitación Actualizada",
                 Descripcion = "Descripción Actualizada",
                 FechaInicio = DateTime.UtcNow,
@@ -492,6 +512,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1,
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = false
@@ -584,6 +605,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1, // Publicada
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = false
@@ -625,6 +647,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 2, // En Evaluación
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = false
@@ -663,6 +686,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 1, // Publicada (estado incorrecto)
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = false
@@ -690,6 +714,7 @@ namespace Wira.Api.Tests.Controllers
                 FechaCierre = DateTime.UtcNow.AddDays(30),
                 MineraID = 1,
                 RubroID = 1,
+                MonedaID = 1,
                 EstadoLicitacionID = 3, // Adjudicada
                 FechaCreacion = DateTime.UtcNow,
                 Eliminado = false

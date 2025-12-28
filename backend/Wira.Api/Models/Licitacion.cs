@@ -16,6 +16,9 @@ namespace Wira.Api.Models
         public int RubroID { get; set; }
 
         [Required]
+        public int MonedaID { get; set; }
+
+        [Required]
         [StringLength(255)]
         public string Titulo { get; set; } = string.Empty;
 
@@ -60,6 +63,9 @@ namespace Wira.Api.Models
 
         [ForeignKey("ProyectoMineroID")]
         public virtual ProyectoMinero? ProyectoMinero { get; set; }
+
+        [ForeignKey("MonedaID")]
+        public virtual Moneda Moneda { get; set; } = null!;
 
         public virtual ICollection<CriterioLicitacion> CriteriosLicitacion { get; set; } = new List<CriterioLicitacion>();
         public virtual ICollection<Propuesta> Propuestas { get; set; } = new List<Propuesta>();

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using Wira.Api.Data;
 using Wira.Api.Models;
 using Wira.Api.Services;
@@ -32,12 +33,14 @@ namespace Wira.Api.Controllers
                         .ThenInclude(l => l.Minera)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
                     .Select(p => new
                     {
                         p.PropuestaID,
                         p.LicitacionID,
                         p.ProveedorID,
+                        p.MonedaID,
                         p.FechaEnvio,
                         p.EstadoPropuestaID,
                         p.Descripcion,
@@ -45,6 +48,9 @@ namespace Wira.Api.Controllers
                         p.FechaEntrega,
                         p.CumpleRequisitos,
                         p.CalificacionFinal,
+                        MonedaCodigo = p.Moneda.Codigo,
+                        MonedaNombre = p.Moneda.Nombre,
+                        MonedaSimbolo = p.Moneda.Simbolo,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
                         MineraNombre = p.Licitacion.Minera.Nombre,
@@ -76,6 +82,7 @@ namespace Wira.Api.Controllers
                         .ThenInclude(l => l.Minera)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
                     .FirstOrDefaultAsync();
 
@@ -105,6 +112,7 @@ namespace Wira.Api.Controllers
                     propuesta.PropuestaID,
                     propuesta.LicitacionID,
                     propuesta.ProveedorID,
+                    propuesta.MonedaID,
                     propuesta.FechaEnvio,
                     propuesta.EstadoPropuestaID,
                     propuesta.Descripcion,
@@ -112,6 +120,9 @@ namespace Wira.Api.Controllers
                     propuesta.FechaEntrega,
                     propuesta.CumpleRequisitos,
                     propuesta.CalificacionFinal,
+                    MonedaCodigo = propuesta.Moneda.Codigo,
+                    MonedaNombre = propuesta.Moneda.Nombre,
+                    MonedaSimbolo = propuesta.Moneda.Simbolo,
                     EstadoNombre = propuesta.EstadoPropuesta.NombreEstado,
                     LicitacionTitulo = propuesta.Licitacion.Titulo,
                     MineraNombre = propuesta.Licitacion.Minera.Nombre,
@@ -141,12 +152,14 @@ namespace Wira.Api.Controllers
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.Minera)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
                     .Select(p => new
                     {
                         p.PropuestaID,
                         p.LicitacionID,
                         p.ProveedorID,
+                        p.MonedaID,
                         p.FechaEnvio,
                         p.EstadoPropuestaID,
                         p.Descripcion,
@@ -154,6 +167,9 @@ namespace Wira.Api.Controllers
                         p.FechaEntrega,
                         p.CumpleRequisitos,
                         p.CalificacionFinal,
+                        MonedaCodigo = p.Moneda.Codigo,
+                        MonedaNombre = p.Moneda.Nombre,
+                        MonedaSimbolo = p.Moneda.Simbolo,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
                         MineraNombre = p.Licitacion.Minera.Nombre,
@@ -182,12 +198,14 @@ namespace Wira.Api.Controllers
                     .Where(p => p.LicitacionID == licitacionId && !p.Eliminado)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
                     .Select(p => new
                     {
                         p.PropuestaID,
                         p.LicitacionID,
                         p.ProveedorID,
+                        p.MonedaID,
                         p.FechaEnvio,
                         p.EstadoPropuestaID,
                         p.Descripcion,
@@ -195,6 +213,9 @@ namespace Wira.Api.Controllers
                         p.FechaEntrega,
                         p.CumpleRequisitos,
                         p.CalificacionFinal,
+                        MonedaCodigo = p.Moneda.Codigo,
+                        MonedaNombre = p.Moneda.Nombre,
+                        MonedaSimbolo = p.Moneda.Simbolo,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         ProveedorNombre = p.Proveedor.Nombre,
                         ArchivosAdjuntos = p.ArchivosAdjuntos
@@ -232,6 +253,14 @@ namespace Wira.Api.Controllers
                     return BadRequest(new { message = "La licitación no existe o no está disponible" });
                 }
 
+                var moneda = await _context.Monedas
+                    .FirstOrDefaultAsync(m => m.MonedaID == createDto.MonedaID && m.Activo);
+
+                if (moneda == null)
+                {
+                    return BadRequest(new { message = "La moneda seleccionada no existe o está inactiva" });
+                }
+
                 // Verificar que el proveedor existe
                 var proveedor = await _context.Empresas
                     .FirstOrDefaultAsync(p => p.EmpresaID == createDto.ProveedorID && p.TipoEmpresa == EmpresaTipos.Proveedor && p.Activo);
@@ -260,6 +289,7 @@ namespace Wira.Api.Controllers
                     EstadoPropuestaID = 1, // Estado inicial - "Enviada"
                     Descripcion = createDto.Descripcion,
                     PresupuestoOfrecido = createDto.PresupuestoOfrecido,
+                    MonedaID = createDto.MonedaID,
                     FechaEntrega = createDto.FechaEntrega,
                     CumpleRequisitos = createDto.CumpleRequisitos ?? true
                 };
@@ -346,6 +376,19 @@ namespace Wira.Api.Controllers
                 if (updateDto.PresupuestoOfrecido.HasValue)
                 {
                     propuesta.PresupuestoOfrecido = updateDto.PresupuestoOfrecido.Value;
+                }
+
+                if (updateDto.MonedaID.HasValue)
+                {
+                    var moneda = await _context.Monedas
+                        .FirstOrDefaultAsync(m => m.MonedaID == updateDto.MonedaID.Value && m.Activo);
+
+                    if (moneda == null)
+                    {
+                        return BadRequest(new { message = "La moneda seleccionada no existe o está inactiva" });
+                    }
+
+                    propuesta.MonedaID = updateDto.MonedaID.Value;
                 }
 
                 if (updateDto.FechaEntrega.HasValue)
@@ -436,6 +479,8 @@ namespace Wira.Api.Controllers
         public int ProveedorID { get; set; }
         public string? Descripcion { get; set; }
         public decimal PresupuestoOfrecido { get; set; }
+        [Required]
+        public int MonedaID { get; set; }
         public DateTime? FechaEntrega { get; set; }
         public bool? CumpleRequisitos { get; set; } = true;
         public List<RespuestaCriterioDto>? RespuestasCriterios { get; set; }
@@ -452,6 +497,7 @@ namespace Wira.Api.Controllers
         public int? EstadoPropuestaID { get; set; }
         public string? Descripcion { get; set; }
         public decimal? PresupuestoOfrecido { get; set; }
+        public int? MonedaID { get; set; }
         public DateTime? FechaEntrega { get; set; }
         public bool? CumpleRequisitos { get; set; }
         public decimal? CalificacionFinal { get; set; }

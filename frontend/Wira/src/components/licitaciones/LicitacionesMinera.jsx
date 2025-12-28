@@ -1452,17 +1452,53 @@ const LicitacionesMinera = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount || amount === 0) return "No especificado";
+  const formatCurrency = (amount, monedaInfo) => {
+    if (amount === null || amount === undefined) return "No especificado";
+    const numericAmount = Number(amount);
+    if (Number.isNaN(numericAmount)) return "No especificado";
+
+    const currencyCode =
+      monedaInfo?.codigo ||
+      monedaInfo?.Codigo ||
+      monedaInfo?.monedaCodigo ||
+      monedaInfo?.MonedaCodigo ||
+      "ARS";
+    const currencySymbol =
+      monedaInfo?.simbolo ||
+      monedaInfo?.Simbolo ||
+      monedaInfo?.monedaSimbolo ||
+      monedaInfo?.MonedaSimbolo;
+
     try {
       return new Intl.NumberFormat("es-AR", {
         style: "currency",
-        currency: "ARS",
-      }).format(amount);
+        currency: currencyCode,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numericAmount);
     } catch {
-      return "No especificado";
+      const formatted = numericAmount.toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      if (currencySymbol) {
+        return `${currencySymbol} ${formatted}`;
+      }
+      return `${currencyCode} ${formatted}`;
     }
   };
+
+  const getLicitacionCurrency = (licitacion) => ({
+    codigo: licitacion?.monedaCodigo || licitacion?.MonedaCodigo,
+    simbolo: licitacion?.monedaSimbolo || licitacion?.MonedaSimbolo,
+    nombre: licitacion?.monedaNombre || licitacion?.MonedaNombre,
+  });
+
+  const getPropuestaCurrency = (propuesta) => ({
+    codigo: propuesta?.monedaCodigo || propuesta?.MonedaCodigo,
+    simbolo: propuesta?.monedaSimbolo || propuesta?.MonedaSimbolo,
+    nombre: propuesta?.monedaNombre || propuesta?.MonedaNombre,
+  });
 
   // Funciones de API consolidadas
   const apiRequest = async (url, options = {}) => {
@@ -2365,6 +2401,12 @@ const LicitacionesMinera = () => {
 
   // Datos filtrados para renderizado
   const filteredLicitaciones = licitaciones;
+  const selectedLicitacionCurrency = selectedLicitacion
+    ? getLicitacionCurrency(selectedLicitacion)
+    : null;
+  const selectedPropuestaCurrency = selectedPropuesta
+    ? getPropuestaCurrency(selectedPropuesta)
+    : null;
 
   // Componente principal JSX
   return (
@@ -2551,6 +2593,7 @@ const LicitacionesMinera = () => {
                   licitacion.presupuestoMaximo || licitacion.PresupuestoMaximo;
                 const rubroNombre =
                   licitacion.rubroNombre || licitacion.RubroNombre;
+                const monedaInfo = getLicitacionCurrency(licitacion);
                 const count = propuestasCount[licitacionId] || 0;
 
                 return (
@@ -2581,7 +2624,9 @@ const LicitacionesMinera = () => {
                       </MetaItem>
                       <MetaItem>
                         <MetaLabel>Presupuesto máximo</MetaLabel>
-                        <MetaValue>{formatCurrency(presupuestoMax)}</MetaValue>
+                        <MetaValue>
+                          {formatCurrency(presupuestoMax, monedaInfo)}
+                        </MetaValue>
                       </MetaItem>
                       <MetaItem>
                         <MetaLabel>Rubro</MetaLabel>
@@ -2631,7 +2676,8 @@ const LicitacionesMinera = () => {
                       <BudgetValue>
                         {formatCurrency(
                           selectedLicitacion.presupuestoMaximo ||
-                            selectedLicitacion.PresupuestoMaximo
+                            selectedLicitacion.PresupuestoMaximo,
+                          selectedLicitacionCurrency
                         )}
                       </BudgetValue>
                     </BudgetCard>
@@ -2767,6 +2813,8 @@ const LicitacionesMinera = () => {
                         const presupuesto =
                           propuesta.presupuestoOfrecido ||
                           propuesta.PresupuestoOfrecido;
+                        const propuestaCurrency =
+                          getPropuestaCurrency(propuesta);
                         const fechaEnvio =
                           propuesta.fechaEnvio || propuesta.FechaEnvio;
                         const estado =
@@ -2851,7 +2899,10 @@ const LicitacionesMinera = () => {
                                   Presupuesto
                                 </PropuestaInfoLabel>
                                 <PropuestaInfoValue>
-                                  {formatCurrency(presupuesto)}
+                                  {formatCurrency(
+                                    presupuesto,
+                                    propuestaCurrency
+                                  )}
                                 </PropuestaInfoValue>
                               </PropuestaInfoItem>
                               <PropuestaInfoItem>
@@ -3065,46 +3116,50 @@ const LicitacionesMinera = () => {
                 </GanadorInstruccion>
 
                 <GanadorPropuestasList>
-                  {propuestas.map((propuesta, index) => (
-                    <GanadorPropuestaItem
-                      key={propuesta.propuestaID || propuesta.PropuestaID}
-                      selected={
-                        selectedGanador &&
-                        (selectedGanador.propuestaID ||
-                          selectedGanador.PropuestaID) ===
-                          (propuesta.propuestaID || propuesta.PropuestaID)
-                      }
-                      onClick={() => setSelectedGanador(propuesta)}
-                    >
-                      <GanadorPropuestaHeader>
-                        <GanadorProveedorNombre>
-                          {propuesta.proveedorNombre ||
-                            propuesta.ProveedorNombre}
-                        </GanadorProveedorNombre>
-                        <GanadorPropuestaRanking position={index + 1}>
-                          Puesto #{index + 1}
-                        </GanadorPropuestaRanking>
-                      </GanadorPropuestaHeader>
+                  {propuestas.map((propuesta, index) => {
+                    const monedaInfo = getPropuestaCurrency(propuesta);
+                    return (
+                      <GanadorPropuestaItem
+                        key={propuesta.propuestaID || propuesta.PropuestaID}
+                        selected={
+                          selectedGanador &&
+                          (selectedGanador.propuestaID ||
+                            selectedGanador.PropuestaID) ===
+                            (propuesta.propuestaID || propuesta.PropuestaID)
+                        }
+                        onClick={() => setSelectedGanador(propuesta)}
+                      >
+                        <GanadorPropuestaHeader>
+                          <GanadorProveedorNombre>
+                            {propuesta.proveedorNombre ||
+                              propuesta.ProveedorNombre}
+                          </GanadorProveedorNombre>
+                          <GanadorPropuestaRanking position={index + 1}>
+                            Puesto #{index + 1}
+                          </GanadorPropuestaRanking>
+                        </GanadorPropuestaHeader>
 
-                      <GanadorPropuestaInfo>
-                        <div>
-                          <strong>Presupuesto:</strong>{" "}
-                          {formatCurrency(
-                            propuesta.presupuestoOfrecido ||
-                              propuesta.PresupuestoOfrecido
-                          )}
-                        </div>
-                        <div>
-                          <strong>Puntuación:</strong>{" "}
-                          {(
-                            propuesta.scoreCalculado ||
-                            propuesta.scoreTotal ||
-                            0
-                          ).toFixed(1)}
-                        </div>
-                      </GanadorPropuestaInfo>
-                    </GanadorPropuestaItem>
-                  ))}
+                        <GanadorPropuestaInfo>
+                          <div>
+                            <strong>Presupuesto:</strong>{" "}
+                            {formatCurrency(
+                              propuesta.presupuestoOfrecido ||
+                                propuesta.PresupuestoOfrecido,
+                              monedaInfo
+                            )}
+                          </div>
+                          <div>
+                            <strong>Puntuación:</strong>{" "}
+                            {(
+                              propuesta.scoreCalculado ||
+                              propuesta.scoreTotal ||
+                              0
+                            ).toFixed(1)}
+                          </div>
+                        </GanadorPropuestaInfo>
+                      </GanadorPropuestaItem>
+                    );
+                  })}
                 </GanadorPropuestasList>
               </GanadorModalBody>
 
@@ -3153,7 +3208,8 @@ const LicitacionesMinera = () => {
                       <PropuestaDetailInfoValue>
                         {formatCurrency(
                           selectedPropuesta.presupuestoOfrecido ||
-                            selectedPropuesta.PresupuestoOfrecido
+                            selectedPropuesta.PresupuestoOfrecido,
+                          selectedPropuestaCurrency
                         )}
                       </PropuestaDetailInfoValue>
                     </PropuestaInfoCard>

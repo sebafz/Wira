@@ -341,6 +341,7 @@ namespace Wira.Api.Controllers
                 var propuestaGanadora = await _context.Propuestas
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
+                    .Include(p => p.Moneda)
                     .Include(p => p.RespuestasCriterios)
                         .ThenInclude(rc => rc.Criterio)
                     .Where(p => p.LicitacionID == licitacionId && p.ProveedorID == historialGanador.ProveedorID)
@@ -353,6 +354,10 @@ namespace Wira.Api.Controllers
                         p.FechaEnvio,
                         p.FechaEntrega,
                         p.PresupuestoOfrecido,
+                        p.MonedaID,
+                        MonedaCodigo = p.Moneda.Codigo,
+                        MonedaNombre = p.Moneda.Nombre,
+                        MonedaSimbolo = p.Moneda.Simbolo,
                         p.Descripcion,
                         p.CumpleRequisitos,
                         p.CalificacionFinal,

@@ -63,6 +63,7 @@ export const apiService = {
   getMineras: () => apiClient.get("/mineras"),
   getProveedores: () => apiClient.get("/proveedores"),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
+  getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
   getUsuarios: () => apiClient.get("/auth/users"),

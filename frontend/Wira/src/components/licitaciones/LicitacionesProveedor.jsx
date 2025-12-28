@@ -1511,16 +1511,87 @@ const LicitacionesProveedor = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount || amount === 0) return "No especificado";
+  const formatCurrency = (amount, monedaInfo) => {
+    if (amount === null || amount === undefined) return "No especificado";
+    const numericAmount = Number(amount);
+    if (Number.isNaN(numericAmount)) return "No especificado";
+
+    const currencyCode =
+      monedaInfo?.codigo ||
+      monedaInfo?.Codigo ||
+      monedaInfo?.monedaCodigo ||
+      monedaInfo?.MonedaCodigo ||
+      "ARS";
+    const currencySymbol =
+      monedaInfo?.simbolo ||
+      monedaInfo?.Simbolo ||
+      monedaInfo?.monedaSimbolo ||
+      monedaInfo?.MonedaSimbolo;
+
     try {
       return new Intl.NumberFormat("es-AR", {
         style: "currency",
-        currency: "ARS",
-      }).format(amount);
+        currency: currencyCode,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numericAmount);
     } catch {
-      return "No especificado";
+      const formatted = numericAmount.toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      if (currencySymbol) {
+        return `${currencySymbol} ${formatted}`;
+      }
+      return `${currencyCode} ${formatted}`;
     }
+  };
+
+  const getLicitacionCurrency = (licitacion) => ({
+    codigo: licitacion?.monedaCodigo || licitacion?.MonedaCodigo,
+    simbolo: licitacion?.monedaSimbolo || licitacion?.MonedaSimbolo,
+    nombre: licitacion?.monedaNombre || licitacion?.MonedaNombre,
+  });
+
+  const getCurrencyLabelText = (currency) => {
+    if (!currency) return "ARS";
+
+    const code =
+      currency?.codigo ||
+      currency?.Codigo ||
+      currency?.monedaCodigo ||
+      currency?.MonedaCodigo;
+    const name =
+      currency?.nombre ||
+      currency?.Nombre ||
+      currency?.monedaNombre ||
+      currency?.MonedaNombre;
+    const symbol =
+      currency?.simbolo ||
+      currency?.Simbolo ||
+      currency?.monedaSimbolo ||
+      currency?.MonedaSimbolo;
+
+    if (code && name) return `${code} - ${name}`;
+    if (code && symbol) return `${code} (${symbol})`;
+    if (symbol && name) return `${symbol} - ${name}`;
+    return code || symbol || name || "ARS";
+  };
+
+  const getCurrencyAbbreviation = (currency) => {
+    if (!currency) return "ARS";
+
+    return (
+      currency?.codigo ||
+      currency?.Codigo ||
+      currency?.monedaCodigo ||
+      currency?.MonedaCodigo ||
+      currency?.simbolo ||
+      currency?.Simbolo ||
+      currency?.monedaSimbolo ||
+      currency?.MonedaSimbolo ||
+      "ARS"
+    );
   };
 
   const calculateTimeRemaining = (fechaCierre) => {
@@ -1846,6 +1917,16 @@ const LicitacionesProveedor = () => {
     setSelectedFile(null);
     setUploadError("");
   };
+
+  const selectedLicitacionCurrency = selectedLicitacion
+    ? getLicitacionCurrency(selectedLicitacion)
+    : null;
+  const selectedPropuestaCurrencyLabel = getCurrencyLabelText(
+    selectedLicitacionCurrency
+  );
+  const selectedPropuestaCurrencyAbbr = getCurrencyAbbreviation(
+    selectedLicitacionCurrency
+  );
 
   const updateRespuestaCriterio = (criterioId, updates) => {
     setRespuestasCriterios((prev) => ({
@@ -2375,6 +2456,7 @@ const LicitacionesProveedor = () => {
                 const hasApplied = hasUserApplied(
                   licitacion.licitacionID || licitacion.LicitacionID
                 );
+                const monedaInfo = getLicitacionCurrency(licitacion);
 
                 return (
                   <LicitacionCard
@@ -2434,7 +2516,8 @@ const LicitacionesProveedor = () => {
                         <MetaValue>
                           {formatCurrency(
                             licitacion.presupuestoEstimado ||
-                              licitacion.PresupuestoEstimado
+                              licitacion.PresupuestoEstimado,
+                            monedaInfo
                           )}
                         </MetaValue>
                       </MetaItem>
@@ -2535,7 +2618,8 @@ const LicitacionesProveedor = () => {
                     <BudgetValue>
                       {formatCurrency(
                         selectedLicitacion.presupuestoEstimado ||
-                          selectedLicitacion.PresupuestoEstimado
+                          selectedLicitacion.PresupuestoEstimado,
+                        selectedLicitacionCurrency
                       )}
                     </BudgetValue>
                   </BudgetCard>
@@ -2647,7 +2731,9 @@ const LicitacionesProveedor = () => {
               </FormGroup>
 
               <FormGroup>
-                <FormLabel>Presupuesto ofrecido (ARS) *</FormLabel>
+                <FormLabel>
+                  {`Presupuesto ofrecido (${selectedPropuestaCurrencyAbbr}) *`}
+                </FormLabel>
                 <FormInput
                   type="number"
                   value={propuestaForm.presupuestoOfrecido}
@@ -2657,7 +2743,11 @@ const LicitacionesProveedor = () => {
                       presupuestoOfrecido: e.target.value,
                     }))
                   }
-                  placeholder="0.00"
+                  placeholder={
+                    selectedLicitacionCurrency?.simbolo
+                      ? `${selectedLicitacionCurrency.simbolo} 0.00`
+                      : "0.00"
+                  }
                   min="0"
                   step="0.01"
                   required
@@ -2666,7 +2756,8 @@ const LicitacionesProveedor = () => {
                   Presupuesto estimado:{" "}
                   {formatCurrency(
                     selectedLicitacion.presupuestoEstimado ||
-                      selectedLicitacion.PresupuestoEstimado
+                      selectedLicitacion.PresupuestoEstimado,
+                    selectedLicitacionCurrency
                   )}
                   .
                 </FormHint>

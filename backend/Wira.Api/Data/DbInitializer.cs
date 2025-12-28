@@ -14,6 +14,18 @@ namespace Wira.Api.Data
                 throw new InvalidOperationException("No se puede conectar a la base de datos");
             }
 
+            if (!await context.Monedas.AnyAsync())
+            {
+                var monedas = new[]
+                {
+                    new Moneda { Codigo = "ARS", Nombre = "Peso argentino", Simbolo = "$", Activo = true },
+                    new Moneda { Codigo = "USD", Nombre = "Dólar estadounidense", Simbolo = "US$", Activo = true }
+                };
+
+                await context.Monedas.AddRangeAsync(monedas);
+                await context.SaveChangesAsync();
+            }
+
             // Verificar si ya hay datos
             if (await context.Roles.AnyAsync())
             {
