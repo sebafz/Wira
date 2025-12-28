@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
+import Navbar from "../shared/Navbar";
 import { toast } from "react-toastify";
 
 const DashboardContainer = styled.div`
@@ -59,71 +59,67 @@ const CompanyDetail = styled.p`
 
 const ActionsSection = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-top: 30px;
 `;
 
-const ActionCard = styled.div`
+const ActionCard = styled.article`
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 
   &:hover {
-    border-color: #fc6b0a;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(252, 107, 10, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.15);
   }
 `;
 
 const ActionIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: white;
+  font-size: 1.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 1.5rem;
-  color: white;
+  margin-bottom: 18px;
 `;
 
 const ActionTitle = styled.h3`
-  color: #333;
+  margin: 0 0 8px;
+  color: #0f172a;
   font-size: 1.3rem;
-  margin-bottom: 10px;
 `;
 
 const ActionDescription = styled.p`
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 20px;
+  margin: 0 0 20px;
+  color: #475569;
   line-height: 1.5;
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
   border: none;
-  padding: 12px 24px;
   border-radius: 8px;
-  font-size: 1rem;
+  padding: 10px 20px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: #fb6b0a;
+  color: white;
+  transition: background 0.2s ease;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(252, 107, 10, 0.3);
+    background: #ff8740;
   }
 
-  &:active {
-    transform: translateY(0);
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
@@ -305,12 +301,7 @@ const DashboardMinera = () => {
               Genere reportes detallados sobre el rendimiento de sus procesos de
               licitación.
             </ActionDescription>
-            <ActionButton
-              disabled
-              style={{ opacity: 0.6, cursor: "not-allowed" }}
-            >
-              Próximamente
-            </ActionButton>
+            <ActionButton disabled>Próximamente</ActionButton>
           </ActionCard>
         </ActionsSection>
       </MainContent>

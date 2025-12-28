@@ -15,6 +15,7 @@ import Dashboard from "./components/dashboard/Dashboard";
 import DashboardRouter from "./components/dashboard/DashboardRouter";
 import DashboardMinera from "./components/dashboard/DashboardMinera";
 import DashboardProveedor from "./components/dashboard/DashboardProveedor";
+import DashboardAdmin from "./components/dashboard/DashboardAdmin";
 import CrearLicitacion from "./components/licitaciones/CrearLicitacion";
 import EditarLicitacion from "./components/licitaciones/EditarLicitacion";
 import LicitacionesMinera from "./components/licitaciones/LicitacionesMinera";
@@ -24,6 +25,9 @@ import EditarPropuesta from "./components/propuestas/EditarPropuesta";
 import HistorialProveedor from "./components/historial/HistorialProveedor";
 import Profile from "./components/profile/Profile";
 import ColorPalette from "./components/shared/ColorPalette";
+import AdminMineras from "./components/admin/AdminMineras";
+import AdminProveedores from "./components/admin/AdminProveedores";
+import AdminUsuarios from "./components/admin/AdminUsuarios";
 import "./App.css";
 
 function App() {
@@ -74,6 +78,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardProveedor />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard-admin"
+              element={
+                <ProtectedRoute>
+                  <DashboardAdmin />
                 </ProtectedRoute>
               }
             />
@@ -146,6 +159,33 @@ function App() {
               element={
                 <ProtectedRoute>
                   <HistorialProveedor />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/mineras"
+              element={
+                <ProtectedRoute>
+                  <AdminMineras />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/proveedores"
+              element={
+                <ProtectedRoute>
+                  <AdminProveedores />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/usuarios"
+              element={
+                <ProtectedRoute>
+                  <AdminUsuarios />
                 </ProtectedRoute>
               }
             />

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-// import { useAuth } from "../contexts/AuthContext"; // Currently not used
+// import { useAuth } from "../../contexts/AuthContext"; // Currently not used
 import { useNavigate } from "react-router-dom";
-import { apiService } from "../services/apiService";
-import logoWira from "../assets/logoWira.png";
+import { apiService } from "../../services/apiService";
+import logoWira from "../../assets/logoWira.png";
 
 const RegisterContainer = styled.div`
   min-height: 100vh;

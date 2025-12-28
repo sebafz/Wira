@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
-import { apiService } from "../services/apiService";
-import Navbar from "./Navbar";
+import { useAuth } from "../../contexts/AuthContext";
+import { apiService } from "../../services/apiService";
+import Navbar from "../shared/Navbar";
 
 const ProfileContainer = styled.div`
   min-height: 100vh;

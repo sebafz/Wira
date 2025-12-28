@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
-import Navbar from "./Navbar";
+import { useAuth } from "../../contexts/AuthContext";
+import Navbar from "../shared/Navbar";
 
 const DashboardContainer = styled.div`
   min-height: 100vh;

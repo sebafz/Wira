@@ -62,6 +62,14 @@ export const apiService = {
   // Data endpoints
   getMineras: () => apiClient.get("/mineras"),
   getProveedores: () => apiClient.get("/proveedores"),
+  getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
+
+  // Admin endpoints
+  getUsuarios: () => apiClient.get("/auth/users"),
+  updateUsuarioStatus: (usuarioId, activo) =>
+    apiClient.patch(`/auth/users/${usuarioId}/status`, { activo }),
+  updateUsuarioRoles: (usuarioId, roles) =>
+    apiClient.put(`/auth/users/${usuarioId}/roles`, { roles }),
 
   // Test endpoints
   testConnection: () => apiClient.get("/test/connection"),

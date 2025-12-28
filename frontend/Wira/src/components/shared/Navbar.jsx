@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import logoWira from "../assets/logoWira.png";
+import logoWira from "../../assets/logoWira.png";
 import { toast } from "react-toastify";
 
 const NavbarContainer = styled.nav`

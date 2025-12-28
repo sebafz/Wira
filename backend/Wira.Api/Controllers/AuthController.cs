@@ -205,6 +205,94 @@ namespace Wira.Api.Controllers
             }
         }
 
+        [HttpGet("users")]
+        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        public async Task<IActionResult> GetUsers()
+        {
+            var usuarios = await AdminUsersQuery()
+                .OrderBy(u => u.Nombre ?? string.Empty)
+                .ThenBy(u => u.Apellido ?? string.Empty)
+                .ThenBy(u => u.Email)
+                .ToListAsync();
+
+            var result = usuarios.Select(MapAdminUserDto).ToList();
+            return Ok(result);
+        }
+
+        [HttpPatch("users/{usuarioId:int}/status")]
+        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        public async Task<IActionResult> UpdateUserStatus(int usuarioId, [FromBody] UpdateUserStatusRequest request)
+        {
+            var usuario = await AdminUsersQuery()
+                .FirstOrDefaultAsync(u => u.UsuarioID == usuarioId);
+
+            if (usuario == null)
+            {
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            usuario.Activo = request.Activo;
+            usuario.FechaBaja = request.Activo ? null : DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                usuario = MapAdminUserDto(usuario)
+            });
+        }
+
+        [HttpPut("users/{usuarioId:int}/roles")]
+        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        public async Task<IActionResult> UpdateUserRoles(int usuarioId, [FromBody] UpdateUserRolesRequest request)
+        {
+            var requestedRoles = request.Roles
+                ?.Where(r => !string.IsNullOrWhiteSpace(r))
+                .Select(r => r.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new List<string>();
+
+            var usuario = await AdminUsersQuery()
+                .FirstOrDefaultAsync(u => u.UsuarioID == usuarioId);
+
+            if (usuario == null)
+            {
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            var rolesDisponibles = await _context.Roles
+                .Where(r => requestedRoles.Contains(r.NombreRol))
+                .ToListAsync();
+
+            if (rolesDisponibles.Count != requestedRoles.Count)
+            {
+                return BadRequest(new { message = "Alguno de los roles especificados no existe" });
+            }
+
+            _context.UsuariosRoles.RemoveRange(usuario.UsuariosRoles);
+
+            foreach (var rol in rolesDisponibles)
+            {
+                _context.UsuariosRoles.Add(new UsuarioRol
+                {
+                    UsuarioID = usuario.UsuarioID,
+                    RolID = rol.RolID
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            var usuarioActualizado = await AdminUsersQuery()
+                .FirstOrDefaultAsync(u => u.UsuarioID == usuarioId);
+
+            return Ok(new
+            {
+                success = true,
+                usuario = usuarioActualizado == null ? null : MapAdminUserDto(usuarioActualizado)
+            });
+        }
+
         [HttpPut("profile")]
         [Authorize]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
@@ -282,6 +370,44 @@ namespace Wira.Api.Controllers
                 Console.WriteLine($"Error updating profile: {ex.Message}");
                 return StatusCode(500, new { success = false, message = "Error al actualizar el perfil" });
             }
+        }
+
+        private IQueryable<Usuario> AdminUsersQuery()
+        {
+            return _context.Usuarios
+                .Include(u => u.UsuariosRoles)
+                    .ThenInclude(ur => ur.Rol)
+                .Include(u => u.Empresa);
+        }
+
+        private static AdminUserDto MapAdminUserDto(Usuario usuario)
+        {
+            return new AdminUserDto
+            {
+                UsuarioID = usuario.UsuarioID,
+                Email = usuario.Email,
+                Nombre = usuario.Nombre,
+                Apellido = usuario.Apellido,
+                DNI = usuario.DNI,
+                Telefono = usuario.Telefono,
+                Activo = usuario.Activo,
+                FechaRegistro = usuario.FechaRegistro,
+                FechaBaja = usuario.FechaBaja,
+                ValidadoEmail = usuario.ValidadoEmail,
+                Roles = usuario.UsuariosRoles
+                    .Select(ur => ur.Rol.NombreRol)
+                    .OrderBy(r => r)
+                    .ToList(),
+                Empresa = usuario.Empresa == null
+                    ? null
+                    : new AdminUserEmpresaDto
+                    {
+                        EmpresaID = usuario.Empresa.EmpresaID,
+                        Nombre = usuario.Empresa.Nombre,
+                        CUIT = usuario.Empresa.CUIT,
+                        TipoEmpresa = usuario.Empresa.TipoEmpresa
+                    }
+            };
         }
     }
 }

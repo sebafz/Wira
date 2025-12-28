@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { getDashboardRouteForUser } from "../utils/roleUtils";
+import { getDashboardRouteForUser } from "../../utils/roleUtils";
 
 const LoadingContainer = styled.div`
   min-height: 100vh;
