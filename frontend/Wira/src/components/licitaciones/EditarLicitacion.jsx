@@ -499,7 +499,7 @@ const TooltipContent = styled.div`
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 0.85rem;
-  line-height: 1.4;
+  line-height: 1.2;
   white-space: nowrap;
   max-width: 350px;
   white-space: normal;
@@ -1057,7 +1057,7 @@ const EditarLicitacion = () => {
         licitacionMineraID &&
         String(userMineraID) !== String(licitacionMineraID)
       ) {
-        throw new Error("No tienes permisos para editar esta licitación");
+        throw new Error("No tiene permisos para editar esta licitación");
       }
 
       // Formatear las fechas para los inputs datetime-local
@@ -1356,7 +1356,7 @@ const EditarLicitacion = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      console.error("Error al desacargar el archivo:", error);
       toast.error("Error al descargar el archivo");
     }
   };
@@ -1627,7 +1627,7 @@ const EditarLicitacion = () => {
       if (criterio.tipo === "Escala") {
         if (!criterio.opciones || criterio.opciones.length < 2) {
           newErrors[`criterio_${criterio.id}_opciones`] =
-            "Agrega al menos dos opciones para la escala";
+            "Agregue al menos dos opciones para la escala";
         }
 
         (criterio.opciones || []).forEach((opcion, index) => {
@@ -1642,7 +1642,7 @@ const EditarLicitacion = () => {
               opcion.puntaje === "" ? NaN : parseFloat(opcion.puntaje);
             if (Number.isNaN(puntajeValue)) {
               newErrors[`criterio_${criterio.id}_opcion_${optionKey}_puntaje`] =
-                "Indica un puntaje válido";
+                "Indique un puntaje válido";
             }
           }
         });
@@ -1655,7 +1655,7 @@ const EditarLicitacion = () => {
           criterio.valorRequeridoBooleano === undefined)
       ) {
         newErrors[`criterio_${criterio.id}_booleano`] =
-          "Selecciona la respuesta correcta para este criterio";
+          "Seleccione la respuesta correcta para este criterio";
       }
     });
 
@@ -1965,8 +1965,8 @@ const EditarLicitacion = () => {
                   <InfoIcon>?</InfoIcon>
                   <TooltipContent>
                     Seleccione el proyecto minero al cual pertenece esta
-                    licitación. Este campo es opcional y te ayudará a organizar
-                    mejor tus licitaciones.
+                    licitación. Este campo es opcional y le ayudará a organizar
+                    mejor sus licitaciones.
                   </TooltipContent>
                 </InfoTooltip>
               </FormLabel>
@@ -2061,7 +2061,7 @@ const EditarLicitacion = () => {
                     ? "Cargando monedas..."
                     : monedas.length === 0
                     ? "No hay monedas disponibles"
-                    : "Seleccionar moneda"}
+                    : "Seleccione moneda"}
                 </option>
                 {monedas.map((moneda) => (
                   <option key={moneda.id} value={moneda.id}>
@@ -2131,30 +2131,36 @@ const EditarLicitacion = () => {
                   <TooltipContent>
                     <strong>¿Qué son los criterios de evaluación?</strong>
                     <br />
-                    Los criterios determinan cómo se evaluarán las propuestas de
-                    los proveedores.
+                    Definen cómo se comparan las propuestas y qué información es
+                    obligatoria para los proveedores.
                     <br />
                     <br />
-                    <strong>Pesos:</strong> Cada criterio tiene un peso (%) que
-                    indica su importancia. La suma debe ser 100%.
+                    <strong>Pesos y redistribución:</strong> Cada criterio
+                    aporta un porcentaje del puntaje total. Deben sumar 100% y
+                    al agregar o quitar criterios se reajustan automáticamente
+                    usando múltiplos de 5 (puedes modificarlos luego).
                     <br />
                     <br />
-                    <strong>Redistribución automática:</strong> Al agregar o
-                    eliminar criterios, los pesos se redistribuyen
-                    automáticamente usando múltiplos de 5.
+                    <strong>Tipos disponibles:</strong>
+                    <br />
+                    • Valor numérico: define si "Mayor" o "Menor" es mejor y
+                    permite límites mínimos/máximos.
+                    <br />
+                    • Sí/No: selecciona la respuesta correcta si el criterio
+                    aporta puntaje.
+                    <br />
+                    • Escala personalizada: crea opciones ordenadas y, si
+                    corresponde, asigna puntaje a cada una.
+                    <br />
+                    • Respuesta descriptiva: recolecta texto libre y no suma ni
+                    resta puntos.
                     <br />
                     <br />
-                    <strong>Evaluación:</strong>
+                    <strong>Configuraciones adicionales:</strong>
                     <br />
-                    • "Mayor es mejor": Valores más altos obtienen mejor
-                    puntuación
-                    <br />
-                    • "Menor es mejor": Valores más bajos obtienen mejor
-                    puntuación
-                    <br />
-                    <br />
-                    Puedes modificar los pesos manualmente después de la
-                    redistribución automática.
+                    • Criterio excluyente: descarta propuestas que no cumplan.
+                    <br />• Aporta puntaje: controla si el criterio suma puntos
+                    (los descriptivos siempre quedan desactivados).
                   </TooltipContent>
                 </InfoTooltip>
                 {getTotalPeso() !== 100 && (
@@ -2334,7 +2340,7 @@ const EditarLicitacion = () => {
                         </>
                       ) : (
                         <InfoText>
-                          Activa "Aporta puntaje" si querés evaluar esta
+                          Active "Aporta puntaje" si quiere evaluar esta
                           respuesta como válida o inválida.
                         </InfoText>
                       )}
@@ -2417,7 +2423,7 @@ const EditarLicitacion = () => {
                       <BannerTitle>Configuración de escala</BannerTitle>
                       {(criterio.opciones?.length ?? 0) === 0 && (
                         <InfoText>
-                          Agrega los distintos valores que los proveedores
+                          Agregue los distintos valores que los proveedores
                           podrán seleccionar.
                         </InfoText>
                       )}
@@ -2535,7 +2541,7 @@ const EditarLicitacion = () => {
               <FormLabel>Archivo adjunto</FormLabel>
               <InfoText style={{ marginBottom: "15px" }}>
                 Puede adjuntar un documento que complemente la información de la
-                licitación
+                licitación.
               </InfoText>
 
               <FileUploadContainer>

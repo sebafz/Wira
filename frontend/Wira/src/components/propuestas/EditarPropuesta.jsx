@@ -1106,7 +1106,7 @@ const EditarPropuesta = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      console.error("Error al descargar el archivo:", error);
       toast.error("Error al descargar el archivo");
     }
   };
@@ -1128,7 +1128,7 @@ const EditarPropuesta = () => {
 
       if (criterio.tipo === "Numerico") {
         if (criterio.valorNumericoInput === "") {
-          newErrors[errorKey] = "Ingresa un valor numérico";
+          newErrors[errorKey] = "Ingrese un valor numérico";
           return;
         }
 
@@ -1163,14 +1163,14 @@ const EditarPropuesta = () => {
 
       if (criterio.tipo === "Booleano") {
         if (criterio.valorBooleano === null) {
-          newErrors[errorKey] = "Selecciona una opción";
+          newErrors[errorKey] = "Seleccione una opción";
         }
         return;
       }
 
       if (criterio.tipo === "Escala") {
         if (!criterio.opcionSeleccionadaId) {
-          newErrors[errorKey] = "Selecciona un valor de la escala";
+          newErrors[errorKey] = "Seleccione un valor de la escala";
         }
         return;
       }
@@ -1300,7 +1300,7 @@ const EditarPropuesta = () => {
       <MainContent>
         <FormCard>
           <FormTitle>Editar propuesta</FormTitle>
-          <FormSubtitle>Modifica los datos de tu propuesta</FormSubtitle>
+          <FormSubtitle>Modifique los datos de su propuesta</FormSubtitle>
 
           <form onSubmit={handleSubmit}>
             <FormGroup>
@@ -1390,7 +1390,7 @@ const EditarPropuesta = () => {
                                 e.target.value
                               )
                             }
-                            placeholder="Describe tu aporte para este criterio"
+                            placeholder="Describa su aporte para este criterio"
                           />
                         </FormGroup>
                       )}
@@ -1407,7 +1407,7 @@ const EditarPropuesta = () => {
                                 e.target.value
                               )
                             }
-                            placeholder="Ingresa un número"
+                            placeholder="Ingrese un número"
                           />
                           {(criterio.valorMinimo !== null ||
                             criterio.valorMaximo !== null) && (

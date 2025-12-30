@@ -1225,7 +1225,7 @@ const CrearLicitacion = () => {
       if (criterio.tipo === "Escala") {
         if (!criterio.opciones || criterio.opciones.length < 2) {
           newErrors[`criterio_${criterio.id}_opciones`] =
-            "Agrega al menos dos opciones para la escala";
+            "Agregue al menos dos opciones para la escala";
         }
 
         (criterio.opciones || []).forEach((opcion, index) => {
@@ -1240,7 +1240,7 @@ const CrearLicitacion = () => {
               opcion.puntaje === "" ? NaN : parseFloat(opcion.puntaje);
             if (Number.isNaN(puntajeValue)) {
               newErrors[`criterio_${criterio.id}_opcion_${optionKey}_puntaje`] =
-                "Indica un puntaje válido";
+                "Indique un puntaje válido";
             }
           }
         });
@@ -1253,7 +1253,7 @@ const CrearLicitacion = () => {
           criterio.valorRequeridoBooleano === undefined)
       ) {
         newErrors[`criterio_${criterio.id}_booleano`] =
-          "Selecciona la respuesta correcta para este criterio";
+          "Seleccione la respuesta correcta para este criterio";
       }
     });
 
@@ -1425,7 +1425,7 @@ const CrearLicitacion = () => {
       }
 
       toast.success(
-        "🎉 ¡Licitación creada exitosamente! Serás redirigido al inicio en unos segundos...",
+        "🎉 ¡Licitación creada exitosamente! Será redirigido al inicio en unos segundos...",
         {
           position: "top-right",
           autoClose: 3000,
@@ -1625,7 +1625,7 @@ const CrearLicitacion = () => {
                     ? "Cargando rubros..."
                     : rubros.length === 0
                     ? "No hay rubros disponibles"
-                    : "Seleccionar rubro"}
+                    : "Seleccione rubro"}
                 </option>
                 {rubros.map((rubro) => (
                   <option key={rubro.rubroID} value={rubro.rubroID}>
@@ -1648,8 +1648,8 @@ const CrearLicitacion = () => {
                   <InfoIcon>?</InfoIcon>
                   <TooltipContent>
                     Seleccione el proyecto minero al cual pertenece esta
-                    licitación. Este campo es opcional y te ayudará a organizar
-                    mejor tus licitaciones.
+                    licitación. Este campo es opcional y le ayudará a organizar
+                    mejor sus licitaciones.
                   </TooltipContent>
                 </InfoTooltip>
               </FormLabel>
@@ -1746,7 +1746,7 @@ const CrearLicitacion = () => {
                     ? "Cargando monedas..."
                     : monedas.length === 0
                     ? "No hay monedas disponibles"
-                    : "Seleccionar moneda"}
+                    : "Seleccione moneda"}
                 </option>
                 {monedas.map((moneda) => (
                   <option key={moneda.id} value={moneda.id}>
@@ -2025,7 +2025,7 @@ const CrearLicitacion = () => {
                         </>
                       ) : (
                         <InfoText>
-                          Activa "Aporta puntaje" si querés evaluar esta
+                          Active "Aporta puntaje" si quiere evaluar esta
                           respuesta como válida o inválida.
                         </InfoText>
                       )}
@@ -2108,7 +2108,7 @@ const CrearLicitacion = () => {
                       <BannerTitle>Configuración de escala</BannerTitle>
                       {(criterio.opciones?.length ?? 0) === 0 && (
                         <InfoText>
-                          Agrega los distintos valores que los proveedores
+                          Agregue los distintos valores que los proveedores
                           podrán seleccionar.
                         </InfoText>
                       )}
@@ -2233,10 +2233,10 @@ const CrearLicitacion = () => {
                 >
                   <FileUploadIcon>📎</FileUploadIcon>
                   <FileUploadText>
-                    Arrastra y suelta tu archivo aquí
+                    Arrastre y suelte su archivo aquí
                   </FileUploadText>
                   <FileUploadSubtext>
-                    O haz clic para seleccionar archivo (máx. 50MB)
+                    O haga clic para seleccionar archivo (máx. 50MB)
                   </FileUploadSubtext>
                   <FileInput
                     type="file"
@@ -2310,7 +2310,7 @@ const CrearLicitacion = () => {
           <ConfirmContent>
             <ConfirmTitle>🏗️ Confirmar creación de licitación</ConfirmTitle>
             <ConfirmText>
-              ¿Estás seguro que deseas crear esta licitación?
+              ¿Está seguro que desea crear esta licitación?
               <br />
               <br />
               <strong>Título:</strong> {formData.titulo}

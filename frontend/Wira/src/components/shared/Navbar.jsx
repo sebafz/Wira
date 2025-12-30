@@ -608,7 +608,7 @@ const Navbar = () => {
                   </LoadingNotifications>
                 ) : notifications.length === 0 ? (
                   <EmptyNotifications>
-                    No tienes notificaciones
+                    No tiene notificaciones
                   </EmptyNotifications>
                 ) : (
                   <>

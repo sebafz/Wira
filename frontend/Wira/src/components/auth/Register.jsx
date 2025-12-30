@@ -630,7 +630,7 @@ const Register = () => {
 
         <div style={{ textAlign: "center" }}>
           <LinkButton onClick={() => navigate("/login")}>
-            ¿Ya tenés cuenta? Iniciá sesión
+            ¿Ya tiene cuenta? Inicie sesión
           </LinkButton>
         </div>
       </RegisterCard>

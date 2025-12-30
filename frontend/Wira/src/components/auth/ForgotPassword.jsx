@@ -228,7 +228,7 @@ const ForgotPassword = () => {
             </div>
             <Title>¡Email enviado!</Title>
             <Description>
-              Hemos enviado las instrucciones para restablecer tu contraseña a{" "}
+              Hemos enviado las instrucciones para restablecer su contraseña a{" "}
               <strong>{email}</strong>
             </Description>
           </div>
@@ -236,10 +236,10 @@ const ForgotPassword = () => {
           <SuccessMessage>
             <strong>Próximos pasos:</strong>
             <br />
-            • Revisá tu bandeja de entrada
+            • Revise su bandeja de entrada
             <br />
-            • Seguí las instrucciones del email
-            <br />• Si no lo encontrás, revisá la carpeta de spam
+            • Siga las instrucciones del email
+            <br />• Si no lo encuentra, revise la carpeta de spam
           </SuccessMessage>
 
           <Button onClick={() => navigate("/login")}>
@@ -248,7 +248,7 @@ const ForgotPassword = () => {
 
           <div style={{ textAlign: "center" }}>
             <LinkButton onClick={() => setSuccess(false)}>
-              ¿No recibiste el email? Intentar de nuevo
+              ¿No recibió el email? Intente de nuevo
             </LinkButton>
           </div>
         </ForgotPasswordCard>
@@ -264,10 +264,10 @@ const ForgotPassword = () => {
           <p>Restablecer contraseña</p>
         </Logo>
 
-        <Title>¿Olvidaste tu contraseña?</Title>
+        <Title>¿Olvidó su contraseña?</Title>
         <Description>
-          No te preocupés. Ingresá tu email y te enviaremos las instrucciones
-          para restablecer tu contraseña.
+          No se preocupe. Ingrese su email y le enviaremos las instrucciones
+          para restablecer su contraseña.
         </Description>
 
         <Form onSubmit={handleSubmit}>

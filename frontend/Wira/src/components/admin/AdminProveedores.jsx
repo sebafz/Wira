@@ -234,7 +234,7 @@ const AdminProveedores = () => {
         <PageHeader>
           <Title>Proveedores activos</Title>
           <Subtitle>
-            Controlá y validá los proveedores que pueden participar en
+            Controle y valide los proveedores que pueden participar en
             licitaciones activas.
           </Subtitle>
         </PageHeader>

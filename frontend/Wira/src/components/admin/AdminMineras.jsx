@@ -203,7 +203,7 @@ const AdminMineras = () => {
         <PageHeader>
           <Title>Mineras activas</Title>
           <Subtitle>
-            Visualizá el padrón de compañías habilitadas para operar dentro de
+            Visualice el padrón de compañías habilitadas para operar dentro de
             la plataforma.
           </Subtitle>
         </PageHeader>
