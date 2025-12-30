@@ -1886,7 +1886,7 @@ const EditarLicitacion = () => {
         <FormCard>
           <FormTitle>Editar licitación</FormTitle>
           <FormSubtitle>
-            Modifica los datos de la licitación de {getCompanyName()}
+            Modifique los datos de la licitación de {getCompanyName()}
           </FormSubtitle>
 
           <form onSubmit={handleSubmit}>
@@ -2006,8 +2006,8 @@ const EditarLicitacion = () => {
                 !loadingProyectos &&
                 !proyectosError && (
                   <InfoText style={{ color: "#6c757d", marginTop: "5px" }}>
-                    No hay proyectos mineros registrados. Puedes crear uno desde
-                    la configuración de tu perfil.
+                    No hay proyectos mineros registrados. Puede crear uno desde
+                    la configuración de su perfil.
                   </InfoText>
                 )}
             </FormGroup>
