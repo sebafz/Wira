@@ -413,7 +413,7 @@ const AdminUsuarios = () => {
         <PageHeader>
           <Title>Gestión de usuarios</Title>
           <Subtitle>
-            Administrá altas, bajas y roles de cada usuario dentro del sistema.
+            Administre altas, bajas y roles de cada usuario dentro del sistema.
           </Subtitle>
         </PageHeader>
 

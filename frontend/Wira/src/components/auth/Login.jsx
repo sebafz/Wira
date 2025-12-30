@@ -270,11 +270,11 @@ const Login = () => {
 
         <div style={{ textAlign: "center" }}>
           <LinkButton onClick={() => navigate("/forgot-password")}>
-            ¿Olvidaste tu contraseña?
+            ¿Olvidó su contraseña?
           </LinkButton>
           <br />
           <LinkButton onClick={() => navigate("/register")}>
-            ¿No tenés cuenta? Creala acá
+            ¿No tiene cuenta? Créela aquí
           </LinkButton>
         </div>
       </LoginCard>

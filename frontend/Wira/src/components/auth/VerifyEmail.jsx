@@ -385,7 +385,7 @@ const VerifyEmail = () => {
             style={{ background: "#6c757d" }}
             onClick={() => navigate("/login")}
           >
-            Volver al inico de sesión
+            Volver al inicio de sesión
           </Button>
         </div>
       </VerifyCard>

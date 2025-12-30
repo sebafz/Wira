@@ -627,7 +627,7 @@ const HistorialProveedor = () => {
               <EmptyTitle>No hay participaciones</EmptyTitle>
               <EmptyDescription>
                 {historial.length === 0
-                  ? "Aún no has participado en ninguna licitación. ¡Explora las licitaciones disponibles!"
+                  ? "Aún no ha participado en ninguna licitación. ¡Explore las licitaciones disponibles!"
                   : "No se encontraron participaciones que coincidan con los filtros aplicados."}
               </EmptyDescription>
             </EmptyState>

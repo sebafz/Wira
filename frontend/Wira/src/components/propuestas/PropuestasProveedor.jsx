@@ -931,7 +931,7 @@ const PropuestasProveedor = () => {
         }
       }
     } catch (error) {
-      console.error("Error fetching propuesta details:", error);
+      console.error("Error al descargar detalles de la propuesta:", error);
       toast.error("Error al descargar detalles de la propuesta");
     }
   };
@@ -1056,7 +1056,7 @@ const PropuestasProveedor = () => {
         <MainContent>
           <LoadingContainer>
             <LoadingSpinner />
-            <LoadingText>Cargando tus propuestas...</LoadingText>
+            <LoadingText>Cargando sus propuestas...</LoadingText>
           </LoadingContainer>
         </MainContent>
       </Container>
@@ -1186,13 +1186,13 @@ const PropuestasProveedor = () => {
                 <EmptyIcon>📋</EmptyIcon>
                 <EmptyTitle>
                   {propuestas.length === 0
-                    ? "No tienes propuestas enviadas"
+                    ? "No tiene propuestas enviadas"
                     : "No hay propuestas que coincidan con los filtros"}
                 </EmptyTitle>
                 <EmptyDescription>
                   {propuestas.length === 0
-                    ? "Explora las licitaciones disponibles y envía tu primera propuesta."
-                    : "Prueba ajustando los filtros de búsqueda."}
+                    ? "Explore las licitaciones disponibles y envíe su primera propuesta."
+                    : "Pruebe ajustando los filtros de búsqueda."}
                 </EmptyDescription>
                 {propuestas.length === 0 && (
                   <BrowseButton onClick={handleBrowseLicitaciones}>

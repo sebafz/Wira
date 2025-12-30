@@ -2209,15 +2209,15 @@ const LicitacionesProveedor = () => {
     switch (filters.estadoPostulacion) {
       case "postuladas":
         return {
-          title: "No tienes propuestas enviadas",
+          title: "No tiene propuestas enviadas",
           description:
-            "Aún no has enviado propuestas para ninguna licitación activa. Explora las licitaciones disponibles y envía tu primera propuesta.",
+            "Aún no tiene propuestas enviadas para ninguna licitación activa. Explore las licitaciones disponibles y envíe su primera propuesta.",
         };
       case "no_postuladas":
         return {
           title: "No hay licitaciones disponibles",
           description:
-            "Ya has enviado propuestas para todas las licitaciones activas que coinciden con tus filtros, o no hay licitaciones disponibles en este momento.",
+            "Ya ha enviado propuestas para todas las licitaciones activas que coinciden con sus filtros, o no hay licitaciones disponibles en este momento.",
         };
       default:
         return {
@@ -2866,7 +2866,7 @@ const LicitacionesProveedor = () => {
                                             e.target.value
                                           )
                                         }
-                                        placeholder="Describe tu aporte para este criterio"
+                                        placeholder="Describa su aporte para este criterio"
                                       />
                                     </>
                                   );

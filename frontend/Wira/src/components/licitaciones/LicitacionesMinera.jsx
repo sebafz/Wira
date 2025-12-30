@@ -2569,7 +2569,8 @@ const LicitacionesMinera = () => {
               <EmptyIcon>📋</EmptyIcon>
               <EmptyTitle>No hay licitaciones</EmptyTitle>
               <EmptyDescription>
-                No tiene licitaciones creadas aún. ¡Cree su primera licitación!
+                No tiene licitaciones creadas todavía. ¡Cree su primera
+                licitación!
               </EmptyDescription>
               <CreateButton onClick={handleCrearLicitacion}>
                 Crear primera licitación
@@ -2799,8 +2800,8 @@ const LicitacionesMinera = () => {
                           selectedLicitacion.EstadoNombre) === "Adjudicada" ||
                         (selectedLicitacion.estadoNombre ||
                           selectedLicitacion.EstadoNombre) === "Cerrada"
-                          ? "No se ha definido una propuesta ganadora aún."
-                          : "No hay propuestas recibidas aún."}
+                          ? "Todavía no se ha definido una propuesta ganadora."
+                          : "Todavía no hay propuestas recibidas."}
                       </EmptyPropuestasText>
                     </EmptyPropuestas>
                   ) : (
@@ -2994,7 +2995,7 @@ const LicitacionesMinera = () => {
             <ConfirmContent>
               <ConfirmTitle>⚠️ Confirmar eliminación</ConfirmTitle>
               <ConfirmText>
-                ¿Estás seguro de que deseas eliminar la licitación "
+                ¿Está seguro de que desea eliminar la licitación "
                 {deletingLicitacion?.titulo || deletingLicitacion?.Titulo}"?
                 Esta acción no se puede deshacer.
               </ConfirmText>
@@ -3015,7 +3016,7 @@ const LicitacionesMinera = () => {
             <ConfirmContent>
               <ConfirmTitle>⏰ Confirmar paso a evaluación</ConfirmTitle>
               <ConfirmText>
-                ¿Deseas cerrar la licitación "
+                ¿Desea cerrar la licitación "
                 {closingLicitacion?.titulo || closingLicitacion?.Titulo}" y
                 pasarla a evaluación?
               </ConfirmText>
@@ -3036,7 +3037,7 @@ const LicitacionesMinera = () => {
             <ConfirmContent>
               <ConfirmTitle>✅ Confirmar adjudicación</ConfirmTitle>
               <ConfirmText>
-                ¿Deseas marcar la licitación "
+                ¿Desea marcar la licitación "
                 {adjudicandoLicitacion?.titulo || adjudicandoLicitacion?.Titulo}
                 " como adjudicada?
               </ConfirmText>
@@ -3057,7 +3058,7 @@ const LicitacionesMinera = () => {
             <ConfirmContent>
               <ConfirmYellowTitle>🏁 Confirmar finalización</ConfirmYellowTitle>
               <ConfirmText>
-                ¿Deseas finalizar la licitación "
+                ¿Desea finalizar la licitación "
                 {finalizandoLicitacion?.titulo || finalizandoLicitacion?.Titulo}
                 " y marcarla como cerrada?
               </ConfirmText>
@@ -3081,7 +3082,7 @@ const LicitacionesMinera = () => {
                 🏆 Confirmar selección de ganadora
               </ConfirmSuccessTitle>
               <ConfirmText>
-                ¿Deseas seleccionar la propuesta de "
+                ¿Desea seleccionar la propuesta de "
                 {propuestaGanadora?.proveedorNombre ||
                   propuestaGanadora?.ProveedorNombre}
                 " como ganadora? La licitación pasará a estado "Adjudicada".
@@ -3111,7 +3112,7 @@ const LicitacionesMinera = () => {
 
               <GanadorModalBody>
                 <GanadorInstruccion>
-                  Selecciona la propuesta ganadora de la licitación. Las
+                  Seleccione la propuesta ganadora de la licitación. Las
                   propuestas están ordenadas por puntuación.
                 </GanadorInstruccion>
 
