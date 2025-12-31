@@ -145,6 +145,10 @@ const LinkButton = styled.button`
   }
 `;
 
+const LinkButtonSecondary = styled(LinkButton)`
+  margin-top: 5px;
+`;
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -273,9 +277,9 @@ const Login = () => {
             ¿Olvidó su contraseña?
           </LinkButton>
           <br />
-          <LinkButton onClick={() => navigate("/register")}>
+          <LinkButtonSecondary onClick={() => navigate("/register")}>
             ¿No tiene cuenta? Créela aquí
-          </LinkButton>
+          </LinkButtonSecondary>
         </div>
       </LoginCard>
     </LoginContainer>

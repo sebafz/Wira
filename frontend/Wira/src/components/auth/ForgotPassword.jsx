@@ -46,10 +46,6 @@ const Title = styled.h1`
   color: #333;
   font-size: 1.8rem;
   margin-bottom: 15px;
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 `;
 
 const Description = styled.p`

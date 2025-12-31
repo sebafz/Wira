@@ -76,6 +76,10 @@ export const apiService = {
   deleteProyectoMinero: (proyectoId) =>
     apiClient.delete(`/proyectosmineros/${proyectoId}`),
   getProveedores: () => apiClient.get("/proveedores"),
+  getProveedorById: (proveedorId) =>
+    apiClient.get(`/proveedores/${proveedorId}`),
+  updateProveedor: (proveedorId, proveedor) =>
+    apiClient.put(`/proveedores/${proveedorId}`, proveedor),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
 
@@ -88,6 +92,16 @@ export const apiService = {
     apiClient.put(`/auth/users/${usuarioId}/roles`, { roles }),
   updateUsuario: (usuarioId, usuario) =>
     apiClient.put(`/auth/users/${usuarioId}`, usuario),
+
+  // Approval endpoints
+  getPendingApprovals: (params = {}) =>
+    apiClient.get("/auth/approvals/pending", { params }),
+  getPendingApprovalsCount: (params = {}) =>
+    apiClient.get("/auth/approvals/pending/count", { params }),
+  approveUser: (usuarioId, roles = []) =>
+    apiClient.post(`/auth/approvals/${usuarioId}/approve`, { roles }),
+  rejectUser: (usuarioId, motivo) =>
+    apiClient.post(`/auth/approvals/${usuarioId}/reject`, { motivo }),
 
   // Test endpoints
   testConnection: () => apiClient.get("/test/connection"),

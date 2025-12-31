@@ -18,6 +18,8 @@ namespace Wira.Api.DTOs
         public string DNI { get; set; } = string.Empty;
         public string? Telefono { get; set; }
         public DateTime? FechaBaja { get; set; }
+        public string EstadoAprobacion { get; set; } = string.Empty;
+        public string? MotivoRechazo { get; set; }
         public bool ValidadoEmail { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
         public MineraInfo? Minera { get; set; }

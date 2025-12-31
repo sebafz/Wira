@@ -286,6 +286,20 @@ const FieldInput = styled.input`
   }
 `;
 
+const FieldSelect = styled.select`
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #fff;
+
+  &:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+  }
+`;
+
 const FieldTextarea = styled.textarea`
   border: 1px solid #d7dfe9;
   border-radius: 6px;
@@ -429,6 +443,7 @@ const InlineHelper = styled.p`
 `;
 
 const MINERA_ADMIN_ROLE = "MINERA_ADMINISTRADOR";
+const PROVEEDOR_ADMIN_ROLE = "PROVEEDOR_ADMINISTRADOR";
 
 const ROLE_DESCRIPTIONS = {
   ADMIN_SISTEMA: "Administrador del sistema",
@@ -449,6 +464,21 @@ const buildMineraFormState = (minera = null) => ({
       ? minera.Activo
       : typeof minera?.activo === "boolean"
       ? minera.activo
+      : true,
+});
+
+const buildProveedorFormState = (proveedor = null) => ({
+  nombre: proveedor?.Nombre || proveedor?.nombre || "",
+  razonSocial: proveedor?.RazonSocial || proveedor?.razonSocial || "",
+  cuit: proveedor?.CUIT || proveedor?.cuit || "",
+  emailContacto: proveedor?.EmailContacto || proveedor?.emailContacto || "",
+  telefono: proveedor?.Telefono || proveedor?.telefono || "",
+  rubroID: proveedor?.RubroID ?? proveedor?.rubroID ?? null,
+  activo:
+    typeof proveedor?.Activo === "boolean"
+      ? proveedor.Activo
+      : typeof proveedor?.activo === "boolean"
+      ? proveedor.activo
       : true,
 });
 
@@ -473,11 +503,25 @@ const getUserMineraId = (currentUser) => {
   return minera.MineraID || minera.mineraID || minera.EmpresaID || null;
 };
 
+const getUserProveedorId = (currentUser) => {
+  const proveedor = currentUser?.proveedor || currentUser?.Proveedor;
+  if (!proveedor) return null;
+  return (
+    proveedor.ProveedorID ||
+    proveedor.proveedorID ||
+    proveedor.EmpresaID ||
+    proveedor.empresaID ||
+    null
+  );
+};
+
 const Profile = () => {
   const { user, updateUser } = useAuth();
   const roles = user?.roles || [];
   const isMineraAdmin = roles.includes(MINERA_ADMIN_ROLE);
+  const isProveedorAdmin = roles.includes(PROVEEDOR_ADMIN_ROLE);
   const userMineraId = getUserMineraId(user);
+  const userProveedorId = getUserProveedorId(user);
   const canManageProjects = isMineraAdmin && !!userMineraId;
 
   // Estado para la edición de datos personales
@@ -523,6 +567,31 @@ const Profile = () => {
       baseline.activo !== mineraForm.activo
     );
   }, [mineraDetails, mineraForm]);
+
+  // Estado para el proveedor (solo administradores de proveedor)
+  const [proveedorDetails, setProveedorDetails] = useState(null);
+  const [proveedorForm, setProveedorForm] = useState(() =>
+    buildProveedorFormState()
+  );
+  const [proveedorLoading, setProveedorLoading] = useState(false);
+  const [proveedorSaving, setProveedorSaving] = useState(false);
+  const [proveedorFeedback, setProveedorFeedback] = useState({
+    error: "",
+    success: "",
+  });
+  const [rubros, setRubros] = useState([]);
+  const isProveedorFormDirty = useMemo(() => {
+    const baseline = buildProveedorFormState(proveedorDetails);
+    return (
+      baseline.nombre !== proveedorForm.nombre ||
+      baseline.razonSocial !== proveedorForm.razonSocial ||
+      (baseline.cuit || "") !== (proveedorForm.cuit || "") ||
+      (baseline.emailContacto || "") !== (proveedorForm.emailContacto || "") ||
+      (baseline.telefono || "") !== (proveedorForm.telefono || "") ||
+      (baseline.rubroID || null) !== (proveedorForm.rubroID || null) ||
+      baseline.activo !== proveedorForm.activo
+    );
+  }, [proveedorDetails, proveedorForm]);
 
   // Estado para el modal de proyectos
   const [projectModalOpen, setProjectModalOpen] = useState(false);
@@ -701,6 +770,128 @@ const Profile = () => {
     }
   };
 
+  const handleProveedorFieldChange = (field, value) => {
+    const nextValue =
+      field === "rubroID" ? (value ? Number(value) : null) : value;
+    setProveedorForm((prev) => ({ ...prev, [field]: nextValue }));
+    setProveedorFeedback({ error: "", success: "" });
+  };
+
+  const handleResetProveedorForm = () => {
+    setProveedorForm(buildProveedorFormState(proveedorDetails));
+    setProveedorFeedback({ error: "", success: "" });
+  };
+
+  const handleProveedorSave = async (event) => {
+    event.preventDefault();
+    if (proveedorSaving || !isProveedorAdmin || !userProveedorId) {
+      return;
+    }
+
+    const nombre = proveedorForm.nombre.trim();
+    const razonSocial = proveedorForm.razonSocial.trim();
+    const cuit = (proveedorForm.cuit || "").trim();
+
+    if (!nombre || !razonSocial || !cuit) {
+      setProveedorFeedback({
+        error: "Nombre, razón social y CUIT son obligatorios.",
+        success: "",
+      });
+      return;
+    }
+
+    const payload = {
+      nombre,
+      razonSocial,
+      cuit,
+      emailContacto: (proveedorForm.emailContacto || "").trim() || null,
+      telefono: (proveedorForm.telefono || "").trim() || null,
+      rubroID: proveedorForm.rubroID || null,
+      activo: proveedorForm.activo,
+    };
+
+    setProveedorSaving(true);
+    setProveedorFeedback({ error: "", success: "" });
+
+    try {
+      const response = await apiService.updateProveedor(
+        userProveedorId,
+        payload
+      );
+      const updatedProveedor = response?.data?.proveedor || null;
+
+      if (updatedProveedor) {
+        setProveedorDetails(updatedProveedor);
+        setProveedorForm(buildProveedorFormState(updatedProveedor));
+
+        const mergedProveedor = {
+          ...(user?.proveedor || {}),
+          ...updatedProveedor,
+          Nombre: updatedProveedor.Nombre || updatedProveedor.nombre || nombre,
+          nombre: updatedProveedor.Nombre || updatedProveedor.nombre || nombre,
+          RazonSocial:
+            updatedProveedor.RazonSocial ||
+            updatedProveedor.razonSocial ||
+            razonSocial,
+          razonSocial:
+            updatedProveedor.RazonSocial ||
+            updatedProveedor.razonSocial ||
+            razonSocial,
+          EmailContacto:
+            updatedProveedor.EmailContacto ??
+            updatedProveedor.emailContacto ??
+            proveedorForm.emailContacto,
+          emailContacto:
+            updatedProveedor.EmailContacto ??
+            updatedProveedor.emailContacto ??
+            proveedorForm.emailContacto,
+          Telefono:
+            updatedProveedor.Telefono ??
+            updatedProveedor.telefono ??
+            proveedorForm.telefono,
+          telefono:
+            updatedProveedor.Telefono ??
+            updatedProveedor.telefono ??
+            proveedorForm.telefono,
+          CUIT: updatedProveedor.CUIT || updatedProveedor.cuit || cuit,
+          cuit: updatedProveedor.CUIT || updatedProveedor.cuit || cuit,
+          RubroID:
+            updatedProveedor.RubroID ??
+            updatedProveedor.rubroID ??
+            proveedorForm.rubroID,
+          rubroID:
+            updatedProveedor.RubroID ??
+            updatedProveedor.rubroID ??
+            proveedorForm.rubroID,
+          RubroNombre:
+            updatedProveedor.RubroNombre ??
+            updatedProveedor.rubroNombre ??
+            null,
+          rubroNombre:
+            updatedProveedor.RubroNombre ??
+            updatedProveedor.rubroNombre ??
+            null,
+        };
+
+        await updateUser({ ...user, proveedor: mergedProveedor });
+      }
+
+      setProveedorFeedback({
+        error: "",
+        success: "Datos del proveedor actualizados.",
+      });
+      setTimeout(() => setProveedorFeedback({ error: "", success: "" }), 3500);
+    } catch (error) {
+      console.error("Error al actualizar el proveedor", error);
+      const message =
+        error.response?.data?.message ||
+        "No se pudieron guardar los cambios en el proveedor.";
+      setProveedorFeedback({ error: message, success: "" });
+    } finally {
+      setProveedorSaving(false);
+    }
+  };
+
   const openProjectModal = (mode = "create", proyecto = null) => {
     setProjectFormMode(mode);
     setProjectForm(buildProjectFormState(proyecto));
@@ -858,6 +1049,53 @@ const Profile = () => {
     fetchMineraDetails();
   }, [fetchMineraDetails]);
 
+  const fetchProveedorDetails = useCallback(async () => {
+    if (!isProveedorAdmin || !userProveedorId) {
+      setProveedorDetails(null);
+      setProveedorForm(buildProveedorFormState());
+      return;
+    }
+
+    try {
+      setProveedorLoading(true);
+      setProveedorFeedback({ error: "", success: "" });
+      const response = await apiService.getProveedorById(userProveedorId);
+      const proveedor = response.data?.proveedor || response.data;
+      setProveedorDetails(proveedor);
+      setProveedorForm(buildProveedorFormState(proveedor));
+    } catch (error) {
+      console.error("Error al obtener la información del proveedor", error);
+      const message =
+        error.response?.data?.message ||
+        "No se pudo obtener la información del proveedor.";
+      setProveedorFeedback({ error: message, success: "" });
+    } finally {
+      setProveedorLoading(false);
+    }
+  }, [isProveedorAdmin, userProveedorId]);
+
+  useEffect(() => {
+    fetchProveedorDetails();
+  }, [fetchProveedorDetails]);
+
+  const fetchRubros = useCallback(async () => {
+    if (!isProveedorAdmin) {
+      setRubros([]);
+      return;
+    }
+
+    try {
+      const response = await apiService.getProveedoresRubros();
+      setRubros(response.data || []);
+    } catch (error) {
+      console.error("Error al cargar los rubros de proveedores", error);
+    }
+  }, [isProveedorAdmin]);
+
+  useEffect(() => {
+    fetchRubros();
+  }, [fetchRubros]);
+
   const getUserInitials = () => {
     const nombre = user?.Nombre || user?.nombre;
     if (!nombre) return "U";
@@ -893,8 +1131,12 @@ const Profile = () => {
     const mineraSource =
       (isMineraAdmin && mineraDetails) || user?.minera || null;
 
+    const proveedorSource =
+      (isProveedorAdmin && proveedorDetails) || user?.proveedor || null;
+
     if (mineraSource) {
       return {
+        kind: "minera",
         type: "Información de la minera",
         name: mineraSource.Nombre || mineraSource.nombre || "Sin nombre",
         razonSocial:
@@ -905,25 +1147,31 @@ const Profile = () => {
       };
     }
 
-    if (user?.proveedor) {
+    if (proveedorSource) {
       return {
+        kind: "proveedor",
         type: "Información del proveedor",
-        name: user.proveedor.Nombre || user.proveedor.nombre || "Sin nombre",
+        name: proveedorSource.Nombre || proveedorSource.nombre || "Sin nombre",
         razonSocial:
-          user.proveedor.RazonSocial ||
-          user.proveedor.razonSocial ||
+          proveedorSource.RazonSocial ||
+          proveedorSource.razonSocial ||
           "No definida",
-        cuit: user.proveedor.CUIT || user.proveedor.cuit || "N/D",
-        specialty:
-          user.proveedor.Especialidad || user.proveedor.especialidad || "",
+        cuit: proveedorSource.CUIT || proveedorSource.cuit || "N/D",
+        rubroID: proveedorSource.RubroID || proveedorSource.rubroID || null,
+        rubroNombre:
+          proveedorSource.RubroNombre ||
+          proveedorSource.rubroNombre ||
+          proveedorSource.Especialidad ||
+          proveedorSource.especialidad ||
+          "",
         email:
-          user.proveedor.EmailContacto || user.proveedor.emailContacto || "",
-        telefono: user.proveedor.Telefono || user.proveedor.telefono || "",
+          proveedorSource.EmailContacto || proveedorSource.emailContacto || "",
+        telefono: proveedorSource.Telefono || proveedorSource.telefono || "",
       };
     }
 
     return null;
-  }, [isMineraAdmin, mineraDetails, user]);
+  }, [isMineraAdmin, mineraDetails, isProveedorAdmin, proveedorDetails, user]);
 
   const formatProjectStatus = (status) => {
     const statusMap = {
@@ -1098,7 +1346,7 @@ const Profile = () => {
               <Section>
                 <SectionTitle>{companyInfo.type}</SectionTitle>
 
-                {isMineraAdmin ? (
+                {companyInfo.kind === "minera" && isMineraAdmin ? (
                   <ManagementCard>
                     {mineraLoading ? (
                       <LoadingState>
@@ -1211,6 +1459,160 @@ const Profile = () => {
                       </form>
                     )}
                   </ManagementCard>
+                ) : companyInfo.kind === "proveedor" && isProveedorAdmin ? (
+                  <ManagementCard>
+                    {proveedorLoading ? (
+                      <LoadingState>
+                        Cargando datos del proveedor...
+                      </LoadingState>
+                    ) : (
+                      <form onSubmit={handleProveedorSave}>
+                        <ManagementGrid>
+                          <ManagementField>
+                            Nombre comercial
+                            <FieldInput
+                              type="text"
+                              value={proveedorForm.nombre}
+                              onChange={(e) =>
+                                handleProveedorFieldChange(
+                                  "nombre",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Nombre de la empresa"
+                              disabled={proveedorSaving}
+                              required
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            Razón social
+                            <FieldInput
+                              type="text"
+                              value={proveedorForm.razonSocial}
+                              onChange={(e) =>
+                                handleProveedorFieldChange(
+                                  "razonSocial",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Nombre legal registrado"
+                              disabled={proveedorSaving}
+                              required
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            CUIT
+                            <FieldInput
+                              type="text"
+                              value={proveedorForm.cuit}
+                              onChange={(e) =>
+                                handleProveedorFieldChange(
+                                  "cuit",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Sin guiones"
+                              disabled
+                            />
+                            <InlineHelper>
+                              El CUIT se muestra solo para referencia.
+                            </InlineHelper>
+                          </ManagementField>
+
+                          <ManagementField>
+                            Rubro / Especialidad
+                            <FieldSelect
+                              value={proveedorForm.rubroID ?? ""}
+                              onChange={(e) =>
+                                handleProveedorFieldChange(
+                                  "rubroID",
+                                  e.target.value
+                                )
+                              }
+                              disabled={proveedorSaving}
+                            >
+                              <option value="">Seleccioná el rubro</option>
+                              {rubros.map((rubro) => {
+                                const rubroId =
+                                  rubro.RubroID || rubro.rubroID || rubro.id;
+                                const rubroNombre =
+                                  rubro.Nombre || rubro.nombre;
+                                return (
+                                  <option
+                                    key={rubroId || rubroNombre}
+                                    value={rubroId ?? ""}
+                                  >
+                                    {rubroNombre}
+                                  </option>
+                                );
+                              })}
+                            </FieldSelect>
+                          </ManagementField>
+
+                          <ManagementField>
+                            Email de contacto
+                            <FieldInput
+                              type="email"
+                              value={proveedorForm.emailContacto}
+                              onChange={(e) =>
+                                handleProveedorFieldChange(
+                                  "emailContacto",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="contacto@empresa.com"
+                              disabled={proveedorSaving}
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            Teléfono
+                            <FieldInput
+                              type="text"
+                              value={proveedorForm.telefono}
+                              onChange={(e) =>
+                                handleProveedorFieldChange(
+                                  "telefono",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Código de país + número"
+                              disabled={proveedorSaving}
+                            />
+                          </ManagementField>
+                        </ManagementGrid>
+
+                        {proveedorFeedback.error && (
+                          <ErrorMessage>{proveedorFeedback.error}</ErrorMessage>
+                        )}
+                        {proveedorFeedback.success && (
+                          <SuccessMessage>
+                            {proveedorFeedback.success}
+                          </SuccessMessage>
+                        )}
+
+                        <FormActions>
+                          <SecondaryButton
+                            type="button"
+                            onClick={handleResetProveedorForm}
+                            disabled={!isProveedorFormDirty || proveedorSaving}
+                          >
+                            Descartar cambios
+                          </SecondaryButton>
+                          <PrimaryButton
+                            type="submit"
+                            disabled={proveedorSaving}
+                          >
+                            {proveedorSaving
+                              ? "Guardando..."
+                              : "Guardar cambios"}
+                          </PrimaryButton>
+                        </FormActions>
+                      </form>
+                    )}
+                  </ManagementCard>
                 ) : (
                   <InfoGrid>
                     <InfoItem>
@@ -1227,12 +1629,13 @@ const Profile = () => {
                       <div className="label">CUIT</div>
                       <div className="value">{companyInfo.cuit}</div>
                     </InfoItem>
-                    {companyInfo.specialty && (
-                      <InfoItem>
-                        <div className="label">Especialidad</div>
-                        <div className="value">{companyInfo.specialty}</div>
-                      </InfoItem>
-                    )}
+                    {companyInfo.kind === "proveedor" &&
+                      companyInfo.rubroNombre && (
+                        <InfoItem>
+                          <div className="label">Especialidad</div>
+                          <div className="value">{companyInfo.rubroNombre}</div>
+                        </InfoItem>
+                      )}
                     {companyInfo.email && (
                       <InfoItem>
                         <div className="label">Email de contacto</div>

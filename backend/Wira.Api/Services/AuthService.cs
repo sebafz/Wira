@@ -64,6 +64,28 @@ namespace Wira.Api.Services
                     };
                 }
 
+                if (AprobacionEstados.Normalizar(user.EstadoAprobacion) == AprobacionEstados.Pendiente)
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Tu cuenta está pendiente de aprobación por un administrador."
+                    };
+                }
+
+                if (AprobacionEstados.Normalizar(user.EstadoAprobacion) == AprobacionEstados.Rechazado)
+                {
+                    var motivo = string.IsNullOrWhiteSpace(user.MotivoRechazo)
+                        ? string.Empty
+                        : $" Motivo: {user.MotivoRechazo}";
+
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = $"Tu cuenta fue rechazada.{motivo}"
+                    };
+                }
+
                 if (!user.ValidadoEmail)
                 {
                     return new AuthResponse
@@ -109,6 +131,8 @@ namespace Wira.Api.Services
                     DNI = user.DNI,
                     Telefono = user.Telefono,
                     FechaBaja = user.FechaBaja,
+                    EstadoAprobacion = user.EstadoAprobacion,
+                    MotivoRechazo = user.MotivoRechazo,
                     ValidadoEmail = user.ValidadoEmail,
                     Roles = user.UsuariosRoles.Select(ur => ur.Rol.Nombre).ToList(),
                     Minera = mineraInfo,
@@ -231,6 +255,10 @@ namespace Wira.Api.Services
                     ValidadoEmail = false,
                     FechaRegistro = DateTime.Now,
                     FechaBaja = null,
+                    EstadoAprobacion = AprobacionEstados.Pendiente,
+                    FechaAprobacion = null,
+                    AprobadoPorUsuarioID = null,
+                    MotivoRechazo = null,
                     EmpresaID = tipoCuentaNormalizado == EmpresaTipos.Minera
                         ? request.MineraID
                         : tipoCuentaNormalizado == EmpresaTipos.Proveedor
@@ -240,37 +268,6 @@ namespace Wira.Api.Services
 
                 _context.Usuarios.Add(user);
                 await _context.SaveChangesAsync();
-
-                // Asignar rol predeterminado según el tipo de cuenta
-                string? rolNombre = tipoCuentaNormalizado switch
-                {
-                    var tipo when tipo == EmpresaTipos.Minera => RoleNames.MineraUsuario,
-                    var tipo when tipo == EmpresaTipos.Proveedor => RoleNames.ProveedorUsuario,
-                    _ => null
-                };
-
-                if (rolNombre == null)
-                {
-                    _logger.LogWarning("No se pudo determinar un rol para el tipo de cuenta {TipoCuenta}", tipoCuentaNormalizado);
-                }
-                else
-                {
-                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == rolNombre);
-                    if (rol == null)
-                    {
-                        _logger.LogWarning("El rol {RolNombre} no está configurado en la base de datos", rolNombre);
-                    }
-                    else
-                    {
-                        var usuarioRol = new UsuarioRol
-                        {
-                            UsuarioID = user.UsuarioID,
-                            RolID = rol.RolID
-                        };
-                        _context.UsuariosRoles.Add(usuarioRol);
-                        await _context.SaveChangesAsync();
-                    }
-                }
 
                 // Generar token de verificación y guardarlo
                 var verificationToken = GenerateEmailVerificationToken();

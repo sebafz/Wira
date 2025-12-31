@@ -96,6 +96,10 @@ const Table = styled.table`
     border-bottom: 1px solid #edf2f7;
   }
 
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
   th {
     font-size: 0.85rem;
     letter-spacing: 0.05em;

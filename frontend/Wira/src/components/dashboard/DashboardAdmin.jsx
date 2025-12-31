@@ -123,6 +123,13 @@ const DashboardAdmin = () => {
       icon: "🛠️",
       action: () => navigate("/admin/usuarios"),
     },
+    {
+      title: "Aprobaciones de cuentas",
+      description:
+        "Revisá y aprobá las cuentas que ya validaron su email y esperan tu visto bueno.",
+      icon: "✅",
+      action: () => navigate("/admin/aprobaciones"),
+    },
   ];
 
   const getDisplayName = () => {

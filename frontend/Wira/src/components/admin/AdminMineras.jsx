@@ -3,6 +3,7 @@ import styled from "styled-components";
 import Navbar from "../shared/Navbar";
 import { apiService } from "../../services/apiService";
 import { toast } from "react-toastify";
+import { buttonBaseStyles } from "../shared/buttonStyles";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -57,19 +58,16 @@ const Select = styled.select`
 `;
 
 const Button = styled.button`
-  border: none;
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
   background: ${(props) =>
-    props.variant === "secondary" ? "#e2e8f0" : "#0f172a"};
-  color: ${(props) => (props.variant === "secondary" ? "#0f172a" : "white")};
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
+    props.variant === "secondary" ? "#6c757d" : "#fc6b0a"};
+  color: white;
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &:hover:not(:disabled) {
+    background: ${(props) =>
+      props.variant === "secondary" ? "#5a6268" : "#e55a09"};
   }
 `;
 
@@ -77,7 +75,7 @@ const Card = styled.section`
   background: white;
   border-radius: 12px;
   border: none;
-  padding: 0;
+  padding: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 `;
 
@@ -86,7 +84,7 @@ const TableWrapper = styled.div`
 `;
 
 const TableHeader = styled.div`
-  padding: 24px 24px 0 24px;
+  margin-bottom: 18px;
 `;
 
 const TableTitle = styled.h2`
@@ -104,13 +102,16 @@ const TableSubtitle = styled.p`
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
 
   th,
   td {
-    padding: 16px;
+    padding: 14px;
     text-align: left;
     border-bottom: 1px solid #edf2f7;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
   }
 
   th {
