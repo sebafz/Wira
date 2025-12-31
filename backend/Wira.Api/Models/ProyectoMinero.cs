@@ -21,6 +21,8 @@ namespace Wira.Api.Models
 
         public string? Descripcion { get; set; }
 
+        public DateTime? FechaInicio { get; set; }
+
         public bool Activo { get; set; } = true;
 
         // Navigation properties

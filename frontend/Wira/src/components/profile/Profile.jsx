@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthContext";
 import { apiService } from "../../services/apiService";
 import Navbar from "../shared/Navbar";
+import { buttonBaseStyles } from "../shared/buttonStyles";
 
 const ProfileContainer = styled.div`
   min-height: 100vh;
@@ -100,91 +101,6 @@ const InfoItem = styled.div`
   }
 `;
 
-const EditableField = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const EditInput = styled.input`
-  font-size: 1.1rem;
-  color: #333;
-  font-weight: 500;
-  border: 2px solid #fc6b0a;
-  border-radius: 6px;
-  padding: 8px 12px;
-  background: white;
-  width: 100%;
-
-  &:focus {
-    outline: none;
-    border-color: #ff8f42;
-    box-shadow: 0 0 0 3px rgba(252, 107, 10, 0.1);
-  }
-`;
-
-const EditButton = styled.button`
-  background: none;
-  border: none;
-  color: #fc6b0a;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(252, 107, 10, 0.1);
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
-const SaveButton = styled.button`
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: #218838;
-  }
-
-  &:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-  }
-`;
-
-const CancelButton = styled.button`
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #5a6268;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
 const ErrorMessage = styled.div`
   color: #dc3545;
   font-size: 0.9rem;
@@ -202,19 +118,28 @@ const Badge = styled.span`
   background: ${(props) => {
     switch (props.type) {
       case "verified":
-        return "#28a745";
+        return "#d1fae5";
       case "unverified":
-        return "#ffc107";
+        return "#fef3c7";
       default:
-        return "#6c757d";
+        return "#e2e8f0";
     }
   }};
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  margin-left: 10px;
+  color: ${(props) => {
+    switch (props.type) {
+      case "verified":
+        return "#15803d";
+      case "unverified":
+        return "#92400e";
+      default:
+        return "#475569";
+    }
+  }};
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-left: 6px;
 `;
 
 const BackButton = styled.button`
@@ -239,21 +164,26 @@ const BackButton = styled.button`
 `;
 
 const ProjectsList = styled.div`
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 15px;
 `;
 
 const ProjectCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e1e5e9;
+  margin-bottom: 5px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e1e5e9;
   border-radius: 8px;
   padding: 20px;
+  background: #f8f9fa;
+  box-shadow: none;
 `;
 
 const ProjectHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
   margin-bottom: 10px;
 `;
 
@@ -264,26 +194,10 @@ const ProjectName = styled.h3`
   font-weight: 600;
 `;
 
-const ProjectStatus = styled.span`
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+const ProjectStatusText = styled.span`
+  font-size: 0.85rem;
   font-weight: 500;
-  background: ${(props) => {
-    switch (props.status) {
-      case "ACTIVO":
-        return "#28a745";
-      case "EN_PLANIFICACION":
-        return "#ffc107";
-      case "PAUSADO":
-        return "#fd7e14";
-      case "COMPLETADO":
-        return "#6c757d";
-      default:
-        return "#6c757d";
-    }
-  }};
-  color: white;
+  color: ${(props) => (props.archived ? "#b91c1c" : "#475569")};
 `;
 
 const ProjectInfo = styled.div`
@@ -329,120 +243,620 @@ const LoadingState = styled.div`
   color: #666;
 `;
 
+const ManagementCard = styled.div`
+  background: #fff;
+  border: 1px solid #e1e5e9;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+`;
+
+const ManagementGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+`;
+
+const ManagementField = styled.label`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #475569;
+`;
+
+const FieldLabelRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+`;
+
+const FieldInput = styled.input`
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #fff;
+
+  &:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+  }
+`;
+
+const FieldTextarea = styled.textarea`
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  resize: vertical;
+  min-height: 90px;
+`;
+
+const FormActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+`;
+
+const PrimaryButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  background: #fc6b0a;
+  color: white;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    background: #e55a09;
+  }
+`;
+
+const SecondaryButton = styled.button`
+  ${buttonBaseStyles};
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  background: #6c757d;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #5a6268;
+  }
+`;
+
+const DangerButton = styled.button`
+  border: none;
+  background: #dc2626;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
+`;
+
+const ProjectsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+`;
+
+const ProjectActions = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 16px;
+`;
+
+const ActionButton = styled.button`
+  border: none;
+  background: ${(props) =>
+    props.variant === "ghost" ? "transparent" : "#e2e8f0"};
+  color: ${(props) => (props.danger ? "#dc2626" : "#0f172a")};
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: ${(props) =>
+    props.variant === "ghost" ? "1px solid #e2e8f0" : "none"};
+
+  &:hover {
+    background: ${(props) =>
+      props.variant === "ghost" ? "#f8fafc" : "#cbd5f5"};
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 3000;
+`;
+
+const ModalCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 28px;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.25);
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0 0 10px;
+  color: #0f172a;
+`;
+
+const ModalBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+`;
+
+const InlineHelper = styled.p`
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+`;
+
+const MINERA_ADMIN_ROLE = "MINERA_ADMINISTRADOR";
+
+const ROLE_DESCRIPTIONS = {
+  ADMIN_SISTEMA: "Administrador del sistema",
+  MINERA_ADMINISTRADOR: "Administrador de minera",
+  MINERA_USUARIO: "Usuario de minera",
+  PROVEEDOR_ADMINISTRADOR: "Administrador de proveedor",
+  PROVEEDOR_USUARIO: "Usuario de proveedor",
+};
+
+const buildMineraFormState = (minera = null) => ({
+  nombre: minera?.Nombre || minera?.nombre || "",
+  razonSocial: minera?.RazonSocial || minera?.razonSocial || "",
+  cuit: minera?.CUIT || minera?.cuit || "",
+  emailContacto: minera?.EmailContacto || minera?.emailContacto || "",
+  telefono: minera?.Telefono || minera?.telefono || "",
+  activo:
+    typeof minera?.Activo === "boolean"
+      ? minera.Activo
+      : typeof minera?.activo === "boolean"
+      ? minera.activo
+      : true,
+});
+
+const buildProjectFormState = (proyecto = null) => ({
+  proyectoMineroID:
+    proyecto?.ProyectoMineroID || proyecto?.proyectoMineroID || null,
+  nombre: proyecto?.Nombre || proyecto?.nombre || "",
+  ubicacion: proyecto?.Ubicacion || proyecto?.ubicacion || "",
+  descripcion: proyecto?.Descripcion || proyecto?.descripcion || "",
+  fechaInicio: proyecto?.FechaInicio || proyecto?.fechaInicio || "",
+});
+
+const buildPersonalFormState = (currentUser = null) => ({
+  nombre: currentUser?.Nombre || currentUser?.nombre || "",
+  apellido: currentUser?.Apellido || currentUser?.apellido || "",
+  telefono: currentUser?.Telefono || currentUser?.telefono || "",
+});
+
+const getUserMineraId = (currentUser) => {
+  const minera = currentUser?.minera || currentUser?.Minera;
+  if (!minera) return null;
+  return minera.MineraID || minera.mineraID || minera.EmpresaID || null;
+};
+
 const Profile = () => {
   const { user, updateUser } = useAuth();
+  const roles = user?.roles || [];
+  const isMineraAdmin = roles.includes(MINERA_ADMIN_ROLE);
+  const userMineraId = getUserMineraId(user);
+  const canManageProjects = isMineraAdmin && !!userMineraId;
 
-  // Estado para la edición del nombre
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState("");
-  const [saveLoading, setSaveLoading] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [saveSuccess, setSaveSuccess] = useState("");
+  // Estado para la edición de datos personales
+  const [personalForm, setPersonalForm] = useState(() =>
+    buildPersonalFormState(user)
+  );
+  const [personalSaving, setPersonalSaving] = useState(false);
+  const [personalFeedback, setPersonalFeedback] = useState({
+    error: "",
+    success: "",
+  });
+  const isPersonalFormDirty = useMemo(() => {
+    const baseline = buildPersonalFormState(user);
+    return (
+      baseline.nombre !== personalForm.nombre ||
+      baseline.apellido !== personalForm.apellido ||
+      (baseline.telefono || "") !== (personalForm.telefono || "")
+    );
+  }, [personalForm, user]);
 
   // Estado para proyectos mineros
   const [proyectosMineros, setProyectosMineros] = useState([]);
   const [loadingProyectos, setLoadingProyectos] = useState(false);
   const [proyectosError, setProyectosError] = useState("");
 
-  // Inicializar el nombre editado cuando se inicia la edición
-  const handleStartEdit = () => {
-    setEditedName(user?.Nombre || user?.nombre || "");
-    setIsEditingName(true);
-    setSaveError("");
-    setSaveSuccess("");
-  };
+  // Estado para la minera (solo administradores)
+  const [mineraDetails, setMineraDetails] = useState(null);
+  const [mineraForm, setMineraForm] = useState(() => buildMineraFormState());
+  const [mineraLoading, setMineraLoading] = useState(false);
+  const [mineraSaving, setMineraSaving] = useState(false);
+  const [mineraFeedback, setMineraFeedback] = useState({
+    error: "",
+    success: "",
+  });
+  const isMineraFormDirty = useMemo(() => {
+    const baseline = buildMineraFormState(mineraDetails);
+    return (
+      baseline.nombre !== mineraForm.nombre ||
+      baseline.razonSocial !== mineraForm.razonSocial ||
+      (baseline.cuit || "") !== (mineraForm.cuit || "") ||
+      (baseline.emailContacto || "") !== (mineraForm.emailContacto || "") ||
+      (baseline.telefono || "") !== (mineraForm.telefono || "") ||
+      baseline.activo !== mineraForm.activo
+    );
+  }, [mineraDetails, mineraForm]);
 
-  // Cancelar edición
-  const handleCancelEdit = () => {
-    setIsEditingName(false);
-    setEditedName("");
-    setSaveError("");
-    setSaveSuccess("");
-  };
+  // Estado para el modal de proyectos
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [projectFormMode, setProjectFormMode] = useState("create");
+  const [projectForm, setProjectForm] = useState(() => buildProjectFormState());
+  const [projectError, setProjectError] = useState("");
+  const [projectSubmitting, setProjectSubmitting] = useState(false);
 
-  // Guardar cambios
-  const handleSaveName = async () => {
-    if (!editedName.trim()) {
-      setSaveError("El nombre no puede estar vacío");
-      return;
-    }
-
-    if (editedName.trim() === (user?.Nombre || user?.nombre)) {
-      // No hay cambios
-      handleCancelEdit();
-      return;
-    }
-
-    setSaveLoading(true);
-    setSaveError("");
-
-    try {
-      // Llamada al API para actualizar el perfil
-      const response = await apiService.updateProfile({
-        Nombre: editedName.trim(),
-      });
-
-      if (response.data.success) {
-        // Actualizar el contexto de usuario
-        await updateUser({
-          ...user,
-          Nombre: editedName.trim(),
-          nombre: editedName.trim(), // Mantener compatibilidad
-        });
-
-        setSaveSuccess("Nombre actualizado correctamente");
-        setIsEditingName(false);
-
-        // Limpiar mensaje de éxito después de 3 segundos
-        setTimeout(() => setSaveSuccess(""), 3000);
-      } else {
-        setSaveError(response.data.message || "Error al actualizar el nombre");
-      }
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || "Error al actualizar el nombre";
-      setSaveError(errorMessage);
-    } finally {
-      setSaveLoading(false);
-    }
-  };
-
-  // Cargar proyectos mineros cuando el componente se monta
   useEffect(() => {
-    const fetchProyectosMineros = async () => {
-      if (!user?.minera?.mineraID) {
-        return; // Solo cargar proyectos si el usuario es de una minera
-      }
+    setPersonalForm(buildPersonalFormState(user));
+  }, [user]);
 
-      try {
-        setLoadingProyectos(true);
-        setProyectosError("");
+  const handleResetPersonalForm = () => {
+    setPersonalForm(buildPersonalFormState(user));
+    setPersonalFeedback({ error: "", success: "" });
+  };
 
-        const response = await fetch(
-          `http://localhost:5242/api/ProyectosMineros/minera/${user.minera.mineraID}`
-        );
+  const handlePersonalFieldChange = (field, value) => {
+    setPersonalForm((prev) => ({ ...prev, [field]: value }));
+    setPersonalFeedback({ error: "", success: "" });
+  };
 
-        if (response.ok) {
-          const data = await response.json();
-          setProyectosMineros(data);
-        } else {
-          setProyectosError("Error al cargar proyectos mineros");
-          setProyectosMineros([]);
-        }
-      } catch (error) {
-        console.error(
-          "Error al conectar con la API de proyectos mineros:",
-          error
-        );
-        setProyectosError("No se pudo conectar con el servidor");
-        setProyectosMineros([]);
-      } finally {
-        setLoadingProyectos(false);
-      }
+  const handleSavePersonal = async (event) => {
+    event.preventDefault();
+    if (personalSaving) {
+      return;
+    }
+
+    const nombre = personalForm.nombre.trim();
+    const apellido = personalForm.apellido.trim();
+    const telefonoValue = (personalForm.telefono || "").trim();
+
+    if (!nombre) {
+      setPersonalFeedback({
+        error: "El nombre es obligatorio.",
+        success: "",
+      });
+      return;
+    }
+
+    const payload = {
+      Nombre: nombre,
+      Apellido: apellido || null,
+      Telefono: telefonoValue || null,
     };
 
+    setPersonalSaving(true);
+    setPersonalFeedback({ error: "", success: "" });
+
+    try {
+      await apiService.updateProfile(payload);
+
+      await updateUser({
+        ...user,
+        Nombre: nombre,
+        nombre: nombre,
+        Apellido: apellido || null,
+        apellido: apellido || null,
+        Telefono: telefonoValue || null,
+        telefono: telefonoValue || null,
+      });
+
+      setPersonalFeedback({
+        error: "",
+        success: "Datos personales actualizados.",
+      });
+      setTimeout(() => setPersonalFeedback({ error: "", success: "" }), 3500);
+    } catch (error) {
+      console.error("Error al actualizar los datos personales", error);
+      const message =
+        error.response?.data?.message || "No se pudieron guardar los cambios.";
+      setPersonalFeedback({ error: message, success: "" });
+    } finally {
+      setPersonalSaving(false);
+    }
+  };
+
+  const handleMineraFieldChange = (field, value) => {
+    setMineraForm((prev) => ({ ...prev, [field]: value }));
+    setMineraFeedback({ error: "", success: "" });
+  };
+
+  const handleResetMineraForm = () => {
+    setMineraForm(buildMineraFormState(mineraDetails));
+    setMineraFeedback({ error: "", success: "" });
+  };
+
+  const handleMineraSave = async (event) => {
+    event.preventDefault();
+    if (mineraSaving || !isMineraAdmin || !userMineraId) {
+      return;
+    }
+
+    const nombre = mineraForm.nombre.trim();
+    const razonSocial = mineraForm.razonSocial.trim();
+
+    if (!nombre || !razonSocial) {
+      setMineraFeedback({
+        error: "Nombre y razón social son obligatorios.",
+        success: "",
+      });
+      return;
+    }
+
+    const payload = {
+      nombre,
+      razonSocial,
+      cuit: mineraForm.cuit,
+      emailContacto: (mineraForm.emailContacto || "").trim() || null,
+      telefono: (mineraForm.telefono || "").trim() || null,
+      activo: mineraForm.activo,
+    };
+
+    setMineraSaving(true);
+    setMineraFeedback({ error: "", success: "" });
+
+    try {
+      const response = await apiService.updateMinera(userMineraId, payload);
+      const updatedMinera = response?.data?.minera || null;
+
+      if (updatedMinera) {
+        setMineraDetails(updatedMinera);
+        setMineraForm(buildMineraFormState(updatedMinera));
+
+        const mergedMinera = {
+          ...(user?.minera || {}),
+          ...updatedMinera,
+          nombre:
+            updatedMinera.Nombre || updatedMinera.nombre || mineraForm.nombre,
+          Nombre:
+            updatedMinera.Nombre || updatedMinera.nombre || mineraForm.nombre,
+          razonSocial:
+            updatedMinera.RazonSocial ||
+            updatedMinera.razonSocial ||
+            mineraForm.razonSocial,
+          RazonSocial:
+            updatedMinera.RazonSocial ||
+            updatedMinera.razonSocial ||
+            mineraForm.razonSocial,
+          EmailContacto:
+            updatedMinera.EmailContacto ??
+            updatedMinera.emailContacto ??
+            mineraForm.emailContacto,
+          emailContacto:
+            updatedMinera.EmailContacto ??
+            updatedMinera.emailContacto ??
+            mineraForm.emailContacto,
+          Telefono:
+            updatedMinera.Telefono ??
+            updatedMinera.telefono ??
+            mineraForm.telefono,
+          telefono:
+            updatedMinera.Telefono ??
+            updatedMinera.telefono ??
+            mineraForm.telefono,
+          CUIT: updatedMinera.CUIT || updatedMinera.cuit || mineraForm.cuit,
+          cuit: updatedMinera.CUIT || updatedMinera.cuit || mineraForm.cuit,
+        };
+
+        await updateUser({ ...user, minera: mergedMinera });
+      }
+
+      setMineraFeedback({
+        error: "",
+        success: "Datos de la minera actualizados.",
+      });
+      setTimeout(() => setMineraFeedback({ error: "", success: "" }), 3500);
+    } catch (error) {
+      console.error("Error al actualizar la minera", error);
+      const message =
+        error.response?.data?.message ||
+        "No se pudieron guardar los cambios en la minera.";
+      setMineraFeedback({ error: message, success: "" });
+    } finally {
+      setMineraSaving(false);
+    }
+  };
+
+  const openProjectModal = (mode = "create", proyecto = null) => {
+    setProjectFormMode(mode);
+    setProjectForm(buildProjectFormState(proyecto));
+    setProjectError("");
+    setProjectModalOpen(true);
+  };
+
+  const closeProjectModal = () => {
+    setProjectModalOpen(false);
+    setProjectForm(buildProjectFormState());
+    setProjectError("");
+    setProjectSubmitting(false);
+  };
+
+  const handleProjectFieldChange = (field, value) => {
+    setProjectForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleProjectSubmit = async (event) => {
+    event.preventDefault();
+    if (projectSubmitting) {
+      return;
+    }
+
+    if (!userMineraId) {
+      setProjectError("No se encontró la minera asociada al usuario.");
+      return;
+    }
+
+    const nombre = projectForm.nombre.trim();
+    if (!nombre) {
+      setProjectError("El nombre del proyecto es obligatorio.");
+      return;
+    }
+
+    const fechaInicioValue = projectForm.fechaInicio
+      ? new Date(projectForm.fechaInicio).toISOString()
+      : null;
+
+    const payload = {
+      nombre,
+      ubicacion: (projectForm.ubicacion || "").trim() || null,
+      descripcion: (projectForm.descripcion || "").trim() || null,
+      fechaInicio: fechaInicioValue,
+    };
+
+    setProjectSubmitting(true);
+    setProjectError("");
+
+    try {
+      if (projectFormMode === "create") {
+        await apiService.createProyectoMinero({
+          ...payload,
+          mineraID: userMineraId,
+        });
+      } else {
+        await apiService.updateProyectoMinero(
+          projectForm.proyectoMineroID,
+          payload
+        );
+      }
+
+      await fetchProyectosMineros();
+      closeProjectModal();
+    } catch (error) {
+      console.error("Error al guardar el proyecto minero", error);
+      const message =
+        error.response?.data?.message || "No se pudo guardar el proyecto.";
+      setProjectError(message);
+    } finally {
+      setProjectSubmitting(false);
+    }
+  };
+
+  const handleDeleteProject = async (proyecto) => {
+    const projectId =
+      proyecto?.ProyectoMineroID || proyecto?.proyectoMineroID || null;
+    if (!projectId) return;
+
+    const confirmed = window.confirm(
+      `¿Desea eliminar el proyecto "${
+        proyecto?.Nombre || proyecto?.nombre || "Sin nombre"
+      }"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await apiService.deleteProyectoMinero(projectId);
+      await fetchProyectosMineros();
+    } catch (error) {
+      console.error("Error al eliminar el proyecto minero", error);
+      const message =
+        error.response?.data?.message || "No se pudo eliminar el proyecto.";
+      setProyectosError(message);
+    }
+  };
+
+  const fetchProyectosMineros = useCallback(async () => {
+    if (!userMineraId) {
+      setProyectosMineros([]);
+      return;
+    }
+
+    try {
+      setLoadingProyectos(true);
+      setProyectosError("");
+      const response = await apiService.getProyectosMinerosByMinera(
+        userMineraId
+      );
+      setProyectosMineros(response.data || []);
+    } catch (error) {
+      console.error("Error al obtener los proyectos mineros", error);
+      const message =
+        error.response?.data?.message || "Error al cargar proyectos mineros";
+      setProyectosError(message);
+      setProyectosMineros([]);
+    } finally {
+      setLoadingProyectos(false);
+    }
+  }, [userMineraId]);
+
+  useEffect(() => {
     fetchProyectosMineros();
-  }, [user?.minera?.mineraID]);
+  }, [fetchProyectosMineros]);
+
+  const fetchMineraDetails = useCallback(async () => {
+    if (!isMineraAdmin || !userMineraId) {
+      setMineraDetails(null);
+      setMineraForm(buildMineraFormState());
+      return;
+    }
+
+    try {
+      setMineraLoading(true);
+      setMineraFeedback({ error: "", success: "" });
+      const response = await apiService.getMineraById(userMineraId);
+      const minera = response.data?.minera || response.data;
+      setMineraDetails(minera);
+      setMineraForm(buildMineraFormState(minera));
+    } catch (error) {
+      console.error("Error al obtener la información de la minera", error);
+      const message =
+        error.response?.data?.message ||
+        "No se pudo obtener la información de la minera.";
+      setMineraFeedback({ error: message, success: "" });
+    } finally {
+      setMineraLoading(false);
+    }
+  }, [isMineraAdmin, userMineraId]);
+
+  useEffect(() => {
+    fetchMineraDetails();
+  }, [fetchMineraDetails]);
 
   const getUserInitials = () => {
     const nombre = user?.Nombre || user?.nombre;
@@ -455,29 +869,61 @@ const Profile = () => {
       .substring(0, 2);
   };
 
-  const getUserRole = () => {
-    if (!user?.roles || user.roles.length === 0) return "Usuario";
-    return user.roles.join(", ");
+  const getUserDescription = () => {
+    const explicitDescription =
+      user?.Descripcion ||
+      user?.descripcion ||
+      user?.DescripcionPerfil ||
+      user?.descripcionPerfil ||
+      "";
+
+    if (explicitDescription.trim().length > 0) {
+      return explicitDescription;
+    }
+
+    const [primaryRole] = roles;
+    if (primaryRole) {
+      return ROLE_DESCRIPTIONS[primaryRole] || primaryRole;
+    }
+
+    return "Sin descripción";
   };
 
-  const getCompanyInfo = () => {
-    if (user?.minera) {
+  const companyInfo = useMemo(() => {
+    const mineraSource =
+      (isMineraAdmin && mineraDetails) || user?.minera || null;
+
+    if (mineraSource) {
       return {
         type: "Información de la minera",
-        name: user.minera.nombre,
-        cuit: user.minera.cuit,
+        name: mineraSource.Nombre || mineraSource.nombre || "Sin nombre",
+        razonSocial:
+          mineraSource.RazonSocial || mineraSource.razonSocial || "No definida",
+        cuit: mineraSource.CUIT || mineraSource.cuit || "N/D",
+        email: mineraSource.EmailContacto || mineraSource.emailContacto || "",
+        telefono: mineraSource.Telefono || mineraSource.telefono || "",
       };
     }
+
     if (user?.proveedor) {
       return {
         type: "Información del proveedor",
-        name: user.proveedor.nombre,
-        cuit: user.proveedor.cuit,
-        specialty: user.proveedor.especialidad,
+        name: user.proveedor.Nombre || user.proveedor.nombre || "Sin nombre",
+        razonSocial:
+          user.proveedor.RazonSocial ||
+          user.proveedor.razonSocial ||
+          "No definida",
+        cuit: user.proveedor.CUIT || user.proveedor.cuit || "N/D",
+        specialty:
+          user.proveedor.Especialidad || user.proveedor.especialidad || "",
+        email:
+          user.proveedor.EmailContacto || user.proveedor.emailContacto || "",
+        telefono: user.proveedor.Telefono || user.proveedor.telefono || "",
       };
     }
+
     return null;
-  };
+  }, [isMineraAdmin, mineraDetails, user]);
 
   const formatProjectStatus = (status) => {
     const statusMap = {
@@ -487,6 +933,19 @@ const Profile = () => {
       COMPLETADO: "Completado",
     };
     return statusMap[status] || status;
+  };
+
+  const isProjectActive = (proyecto) => {
+    const explicit =
+      proyecto?.Activo ?? proyecto?.activo ?? proyecto?.isActive ?? null;
+    if (typeof explicit === "boolean") return explicit;
+
+    const estado = (proyecto?.Estado || proyecto?.estado || "")
+      .toString()
+      .toUpperCase();
+
+    if (!estado) return true;
+    return estado !== "INACTIVO" && estado !== "BAJA" && estado !== "INACTIVO";
   };
 
   const formatDate = (dateString) => {
@@ -502,7 +961,14 @@ const Profile = () => {
     }
   };
 
-  const companyInfo = getCompanyInfo();
+  const sortedProyectos = useMemo(() => {
+    return [...proyectosMineros].sort((a, b) => {
+      const aInactive = isProjectActive(a) ? 0 : 1;
+      const bInactive = isProjectActive(b) ? 0 : 1;
+      if (aInactive === bInactive) return 0;
+      return aInactive - bInactive;
+    });
+  }, [proyectosMineros]);
 
   const handleGoBack = () => {
     window.history.back();
@@ -521,103 +987,285 @@ const Profile = () => {
             <ProfileName>
               {user?.Nombre || user?.nombre || "Usuario"}
             </ProfileName>
-            <ProfileRole>{getUserRole()}</ProfileRole>
+            <ProfileRole>{getUserDescription()}</ProfileRole>
           </ProfileHeader>
 
           <ProfileBody>
             <Section>
               <SectionTitle>Información personal</SectionTitle>
-              <InfoGrid>
-                <InfoItem>
-                  <div className="label">
-                    Nombre completo
-                    {!isEditingName && (
-                      <EditButton
-                        onClick={handleStartEdit}
-                        title="Editar nombre"
-                      >
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                        </svg>
-                      </EditButton>
-                    )}
-                  </div>
-                  {isEditingName ? (
-                    <div>
-                      <EditableField>
-                        <EditInput
-                          type="text"
-                          value={editedName}
-                          onChange={(e) => setEditedName(e.target.value)}
-                          placeholder="Ingrese su nombre completo"
-                          disabled={saveLoading}
-                        />
-                        <SaveButton
-                          onClick={handleSaveName}
-                          disabled={saveLoading}
+              <ManagementCard>
+                <form onSubmit={handleSavePersonal}>
+                  <ManagementGrid>
+                    <ManagementField>
+                      Nombre
+                      <FieldInput
+                        type="text"
+                        value={personalForm.nombre}
+                        onChange={(event) =>
+                          handlePersonalFieldChange(
+                            "nombre",
+                            event.target.value
+                          )
+                        }
+                        placeholder="Nombre"
+                        disabled={personalSaving}
+                        required
+                      />
+                    </ManagementField>
+
+                    <ManagementField>
+                      Apellido
+                      <FieldInput
+                        type="text"
+                        value={personalForm.apellido}
+                        onChange={(event) =>
+                          handlePersonalFieldChange(
+                            "apellido",
+                            event.target.value
+                          )
+                        }
+                        placeholder="Apellido"
+                        disabled={personalSaving}
+                      />
+                    </ManagementField>
+
+                    <ManagementField>
+                      <FieldLabelRow>
+                        <span>Email</span>
+                        <Badge
+                          type={user?.validadoEmail ? "verified" : "unverified"}
                         >
-                          {saveLoading ? "..." : "✓"}
-                        </SaveButton>
-                        <CancelButton
-                          onClick={handleCancelEdit}
-                          disabled={saveLoading}
-                        >
-                          ✕
-                        </CancelButton>
-                      </EditableField>
-                      {saveError && <ErrorMessage>{saveError}</ErrorMessage>}
-                      {saveSuccess && (
-                        <SuccessMessage>{saveSuccess}</SuccessMessage>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="value">
-                      {user?.Nombre || user?.nombre || "No disponible"}
-                    </div>
+                          {user?.validadoEmail ? "Verificado" : "No verificado"}
+                        </Badge>
+                      </FieldLabelRow>
+                      <FieldInput
+                        type="email"
+                        value={user?.email || ""}
+                        disabled
+                      />
+                    </ManagementField>
+
+                    <ManagementField>
+                      DNI (solo lectura)
+                      <FieldInput
+                        type="text"
+                        value={user?.DNI || user?.dni || "No disponible"}
+                        disabled
+                      />
+                    </ManagementField>
+
+                    <ManagementField>
+                      Teléfono
+                      <FieldInput
+                        type="text"
+                        value={personalForm.telefono}
+                        onChange={(event) =>
+                          handlePersonalFieldChange(
+                            "telefono",
+                            event.target.value
+                          )
+                        }
+                        placeholder="Número de contacto"
+                        disabled={personalSaving}
+                      />
+                    </ManagementField>
+                  </ManagementGrid>
+
+                  {personalFeedback.error && (
+                    <ErrorMessage>{personalFeedback.error}</ErrorMessage>
                   )}
-                </InfoItem>
-                <InfoItem>
-                  <div className="label">Email</div>
-                  <div className="value">
-                    {user?.email || "No disponible"}
-                    <Badge
-                      type={user?.validadoEmail ? "verified" : "unverified"}
+                  {personalFeedback.success && (
+                    <SuccessMessage>{personalFeedback.success}</SuccessMessage>
+                  )}
+
+                  <FormActions>
+                    <SecondaryButton
+                      type="button"
+                      onClick={handleResetPersonalForm}
+                      disabled={!isPersonalFormDirty || personalSaving}
                     >
-                      {user?.validadoEmail ? "Verificado" : "No verificado"}
-                    </Badge>
-                  </div>
-                </InfoItem>
-              </InfoGrid>
+                      Descartar cambios
+                    </SecondaryButton>
+                    <PrimaryButton type="submit" disabled={personalSaving}>
+                      {personalSaving ? "Guardando..." : "Guardar cambios"}
+                    </PrimaryButton>
+                  </FormActions>
+                </form>
+              </ManagementCard>
             </Section>
 
             {companyInfo && (
               <Section>
                 <SectionTitle>{companyInfo.type}</SectionTitle>
-                <InfoGrid>
-                  <InfoItem>
-                    <div className="label">Nombre de la empresa</div>
-                    <div className="value">{companyInfo.name}</div>
-                  </InfoItem>
-                  <InfoItem>
-                    <div className="label">CUIT</div>
-                    <div className="value">{companyInfo.cuit}</div>
-                  </InfoItem>
-                  {companyInfo.specialty && (
+
+                {isMineraAdmin ? (
+                  <ManagementCard>
+                    {mineraLoading ? (
+                      <LoadingState>
+                        Cargando datos de la minera...
+                      </LoadingState>
+                    ) : (
+                      <form onSubmit={handleMineraSave}>
+                        <ManagementGrid>
+                          <ManagementField>
+                            Nombre comercial
+                            <FieldInput
+                              type="text"
+                              value={mineraForm.nombre}
+                              onChange={(e) =>
+                                handleMineraFieldChange(
+                                  "nombre",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Nombre de la minera"
+                              disabled={mineraSaving}
+                              required
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            Razón social
+                            <FieldInput
+                              type="text"
+                              value={mineraForm.razonSocial}
+                              onChange={(e) =>
+                                handleMineraFieldChange(
+                                  "razonSocial",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Nombre legal registrado"
+                              disabled={mineraSaving}
+                              required
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            CUIT
+                            <FieldInput
+                              type="text"
+                              value={mineraForm.cuit}
+                              onChange={(e) =>
+                                handleMineraFieldChange("cuit", e.target.value)
+                              }
+                              placeholder="Sin guiones"
+                              disabled={mineraSaving}
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            Email de contacto
+                            <FieldInput
+                              type="email"
+                              value={mineraForm.emailContacto}
+                              onChange={(e) =>
+                                handleMineraFieldChange(
+                                  "emailContacto",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="contacto@minera.com"
+                              disabled={mineraSaving}
+                            />
+                          </ManagementField>
+
+                          <ManagementField>
+                            Teléfono
+                            <FieldInput
+                              type="text"
+                              value={mineraForm.telefono}
+                              onChange={(e) =>
+                                handleMineraFieldChange(
+                                  "telefono",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Código de país + número"
+                              disabled={mineraSaving}
+                            />
+                          </ManagementField>
+                        </ManagementGrid>
+
+                        {mineraFeedback.error && (
+                          <ErrorMessage>{mineraFeedback.error}</ErrorMessage>
+                        )}
+                        {mineraFeedback.success && (
+                          <SuccessMessage>
+                            {mineraFeedback.success}
+                          </SuccessMessage>
+                        )}
+
+                        <FormActions>
+                          <SecondaryButton
+                            type="button"
+                            onClick={handleResetMineraForm}
+                            disabled={!isMineraFormDirty || mineraSaving}
+                          >
+                            Descartar cambios
+                          </SecondaryButton>
+                          <PrimaryButton type="submit" disabled={mineraSaving}>
+                            {mineraSaving ? "Guardando..." : "Guardar cambios"}
+                          </PrimaryButton>
+                        </FormActions>
+                      </form>
+                    )}
+                  </ManagementCard>
+                ) : (
+                  <InfoGrid>
                     <InfoItem>
-                      <div className="label">Especialidad</div>
-                      <div className="value">{companyInfo.specialty}</div>
+                      <div className="label">Nombre de la empresa</div>
+                      <div className="value">{companyInfo.name}</div>
                     </InfoItem>
-                  )}
-                </InfoGrid>
+                    {companyInfo.razonSocial && (
+                      <InfoItem>
+                        <div className="label">Razón social</div>
+                        <div className="value">{companyInfo.razonSocial}</div>
+                      </InfoItem>
+                    )}
+                    <InfoItem>
+                      <div className="label">CUIT</div>
+                      <div className="value">{companyInfo.cuit}</div>
+                    </InfoItem>
+                    {companyInfo.specialty && (
+                      <InfoItem>
+                        <div className="label">Especialidad</div>
+                        <div className="value">{companyInfo.specialty}</div>
+                      </InfoItem>
+                    )}
+                    {companyInfo.email && (
+                      <InfoItem>
+                        <div className="label">Email de contacto</div>
+                        <div className="value">{companyInfo.email}</div>
+                      </InfoItem>
+                    )}
+                    {companyInfo.telefono && (
+                      <InfoItem>
+                        <div className="label">Teléfono</div>
+                        <div className="value">{companyInfo.telefono}</div>
+                      </InfoItem>
+                    )}
+                  </InfoGrid>
+                )}
               </Section>
             )}
 
             {/* Sección de proyectos mineros - solo para usuarios de minera */}
             {user?.minera && (
               <Section>
-                <SectionTitle>
-                  Proyectos mineros ({proyectosMineros.length})
-                </SectionTitle>
+                <ProjectsHeader>
+                  <SectionTitle>
+                    Proyectos mineros ({proyectosMineros.length})
+                  </SectionTitle>
+                  {canManageProjects && (
+                    <PrimaryButton
+                      type="button"
+                      onClick={() => openProjectModal("create")}
+                    >
+                      Nuevo proyecto
+                    </PrimaryButton>
+                  )}
+                </ProjectsHeader>
 
                 {loadingProyectos ? (
                   <LoadingState>Cargando proyectos...</LoadingState>
@@ -627,60 +1275,124 @@ const Profile = () => {
                   <EmptyState>
                     No hay proyectos mineros registrados.
                     <br />
-                    Los proyectos se pueden gestionar desde el panel principal.
+                    {canManageProjects
+                      ? "Crea tu primer proyecto para comenzar a publicar licitaciones."
+                      : "Los proyectos se pueden gestionar desde el panel principal."}
                   </EmptyState>
                 ) : (
                   <ProjectsList>
-                    {proyectosMineros.map((proyecto) => (
-                      <ProjectCard key={proyecto.proyectoMineroID}>
-                        <ProjectHeader>
-                          <ProjectName>{proyecto.nombre}</ProjectName>
-                          <ProjectStatus status={proyecto.estado}>
-                            {formatProjectStatus(proyecto.estado)}
-                          </ProjectStatus>
-                        </ProjectHeader>
+                    {sortedProyectos.map((proyecto) => {
+                      const projectId =
+                        proyecto.proyectoMineroID ||
+                        proyecto.ProyectoMineroID ||
+                        proyecto.id;
+                      const projectName =
+                        proyecto.nombre || proyecto.Nombre || "Sin nombre";
+                      const projectEstado =
+                        proyecto.estado || proyecto.Estado || "";
+                      const projectIsActive = isProjectActive(proyecto);
+                      const projectDisplayStatus = projectIsActive
+                        ? projectEstado
+                          ? formatProjectStatus(projectEstado)
+                          : "Activo"
+                        : "Archivado";
+                      const projectDescripcion =
+                        proyecto.descripcion || proyecto.Descripcion || "";
+                      const projectUbicacion =
+                        proyecto.ubicacion || proyecto.Ubicacion || "";
+                      const projectFechaInicio =
+                        proyecto.fechaInicio || proyecto.FechaInicio || null;
+                      const projectFechaFin =
+                        proyecto.fechaFinalizacionEstimada ||
+                        proyecto.FechaFinalizacionEstimada ||
+                        null;
+                      const rawPresupuesto =
+                        proyecto.presupuesto ?? proyecto.Presupuesto ?? null;
+                      const projectPresupuesto =
+                        typeof rawPresupuesto === "number"
+                          ? rawPresupuesto
+                          : rawPresupuesto
+                          ? Number(rawPresupuesto)
+                          : null;
 
-                        {proyecto.descripcion && (
-                          <ProjectDescription>
-                            {proyecto.descripcion}
-                          </ProjectDescription>
-                        )}
+                      return (
+                        <ProjectCard key={projectId || projectName}>
+                          <ProjectHeader>
+                            <ProjectName>{projectName}</ProjectName>
+                            {projectDisplayStatus && (
+                              <ProjectStatusText archived={!projectIsActive}>
+                                Estado: {projectDisplayStatus}
+                              </ProjectStatusText>
+                            )}
+                          </ProjectHeader>
 
-                        <ProjectInfo>
-                          {proyecto.ubicacion && (
-                            <ProjectDetail>
-                              <div className="label">Ubicación</div>
-                              <div className="value">{proyecto.ubicacion}</div>
-                            </ProjectDetail>
+                          {projectDescripcion && (
+                            <ProjectDescription>
+                              {projectDescripcion}
+                            </ProjectDescription>
                           )}
 
-                          <ProjectDetail>
-                            <div className="label">Fecha de inicio</div>
-                            <div className="value">
-                              {formatDate(proyecto.fechaInicio)}
-                            </div>
-                          </ProjectDetail>
+                          <ProjectInfo>
+                            {projectUbicacion && (
+                              <ProjectDetail>
+                                <div className="label">Ubicación</div>
+                                <div className="value">{projectUbicacion}</div>
+                              </ProjectDetail>
+                            )}
 
-                          {proyecto.fechaFinalizacionEstimada && (
                             <ProjectDetail>
-                              <div className="label">Finalización estimada</div>
+                              <div className="label">Fecha de inicio</div>
                               <div className="value">
-                                {formatDate(proyecto.fechaFinalizacionEstimada)}
+                                {formatDate(projectFechaInicio)}
                               </div>
                             </ProjectDetail>
-                          )}
 
-                          {proyecto.presupuesto && (
-                            <ProjectDetail>
-                              <div className="label">Presupuesto</div>
-                              <div className="value">
-                                ${proyecto.presupuesto.toLocaleString("es-AR")}
-                              </div>
-                            </ProjectDetail>
+                            {projectFechaFin && (
+                              <ProjectDetail>
+                                <div className="label">
+                                  Finalización estimada
+                                </div>
+                                <div className="value">
+                                  {formatDate(projectFechaFin)}
+                                </div>
+                              </ProjectDetail>
+                            )}
+
+                            {projectPresupuesto !== null &&
+                              !Number.isNaN(projectPresupuesto) && (
+                                <ProjectDetail>
+                                  <div className="label">Presupuesto</div>
+                                  <div className="value">
+                                    $
+                                    {projectPresupuesto.toLocaleString("es-AR")}
+                                  </div>
+                                </ProjectDetail>
+                              )}
+                          </ProjectInfo>
+
+                          {canManageProjects && (
+                            <ProjectActions>
+                              <ActionButton
+                                type="button"
+                                onClick={() =>
+                                  openProjectModal("edit", proyecto)
+                                }
+                              >
+                                Editar
+                              </ActionButton>
+                              <ActionButton
+                                type="button"
+                                info
+                                variant="ghost"
+                                onClick={() => handleDeleteProject(proyecto)}
+                              >
+                                Archivar
+                              </ActionButton>
+                            </ProjectActions>
                           )}
-                        </ProjectInfo>
-                      </ProjectCard>
-                    ))}
+                        </ProjectCard>
+                      );
+                    })}
                   </ProjectsList>
                 )}
               </Section>
@@ -688,6 +1400,92 @@ const Profile = () => {
           </ProfileBody>
         </ProfileCard>
       </MainContent>
+
+      {projectModalOpen && (
+        <ModalOverlay>
+          <ModalCard>
+            <ModalTitle>
+              {projectFormMode === "create"
+                ? "Nuevo proyecto minero"
+                : "Editar proyecto minero"}
+            </ModalTitle>
+
+            <form onSubmit={handleProjectSubmit}>
+              <ModalBody>
+                <ManagementField>
+                  Nombre del proyecto *
+                  <FieldInput
+                    type="text"
+                    value={projectForm.nombre}
+                    onChange={(e) =>
+                      handleProjectFieldChange("nombre", e.target.value)
+                    }
+                    placeholder="Ej: Proyecto Andino"
+                    required
+                    disabled={projectSubmitting}
+                  />
+                </ManagementField>
+
+                <ManagementField>
+                  Ubicación
+                  <FieldInput
+                    type="text"
+                    value={projectForm.ubicacion}
+                    onChange={(e) =>
+                      handleProjectFieldChange("ubicacion", e.target.value)
+                    }
+                    placeholder="Proyecto, provincia"
+                    disabled={projectSubmitting}
+                  />
+                </ManagementField>
+
+                <ManagementField>
+                  Descripción
+                  <FieldTextarea
+                    value={projectForm.descripcion}
+                    onChange={(e) =>
+                      handleProjectFieldChange("descripcion", e.target.value)
+                    }
+                    placeholder="Resumen breve del proyecto"
+                    disabled={projectSubmitting}
+                  />
+                </ManagementField>
+
+                <ManagementField>
+                  Fecha de inicio
+                  <FieldInput
+                    type="date"
+                    value={projectForm.fechaInicio || ""}
+                    onChange={(e) =>
+                      handleProjectFieldChange("fechaInicio", e.target.value)
+                    }
+                    disabled={projectSubmitting}
+                  />
+                </ManagementField>
+              </ModalBody>
+
+              {projectError && <ErrorMessage>{projectError}</ErrorMessage>}
+
+              <ModalActions>
+                <SecondaryButton
+                  type="button"
+                  onClick={closeProjectModal}
+                  disabled={projectSubmitting}
+                >
+                  Cancelar
+                </SecondaryButton>
+                <PrimaryButton type="submit" disabled={projectSubmitting}>
+                  {projectSubmitting
+                    ? "Guardando..."
+                    : projectFormMode === "create"
+                    ? "Crear proyecto"
+                    : "Guardar cambios"}
+                </PrimaryButton>
+              </ModalActions>
+            </form>
+          </ModalCard>
+        </ModalOverlay>
+      )}
     </ProfileContainer>
   );
 };

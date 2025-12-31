@@ -583,7 +583,7 @@ const AdminMineras = () => {
               {formError && <InlineError>{formError}</InlineError>}
               <FormRow>
                 <FormGroup>
-                  <FormLabel>Nombre comercial</FormLabel>
+                  <FormLabel>Nombre comercial *</FormLabel>
                   <TextInput
                     name="mining-name"
                     autoComplete="off"
@@ -596,7 +596,7 @@ const AdminMineras = () => {
                   />
                 </FormGroup>
                 <FormGroup>
-                  <FormLabel>Razón social</FormLabel>
+                  <FormLabel>Razón social *</FormLabel>
                   <TextInput
                     name="mining-biz-name"
                     autoComplete="off"
@@ -611,7 +611,7 @@ const AdminMineras = () => {
               </FormRow>
               <FormRow>
                 <FormGroup>
-                  <FormLabel>CUIT</FormLabel>
+                  <FormLabel>CUIT *</FormLabel>
                   <TextInput
                     name="mining-cuit"
                     inputMode="numeric"

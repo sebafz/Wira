@@ -939,7 +939,7 @@ const AdminUsuarios = () => {
               {formError && <InlineError>{formError}</InlineError>}
               <FormRow>
                 <FormGroup>
-                  <FormLabel>Nombre</FormLabel>
+                  <FormLabel>Nombre *</FormLabel>
                   <TextInput
                     name="admin-user-first-name"
                     autoComplete="off"
@@ -952,7 +952,7 @@ const AdminUsuarios = () => {
                   />
                 </FormGroup>
                 <FormGroup>
-                  <FormLabel>Apellido</FormLabel>
+                  <FormLabel>Apellido *</FormLabel>
                   <TextInput
                     name="admin-user-last-name"
                     autoComplete="off"
@@ -981,7 +981,7 @@ const AdminUsuarios = () => {
                   />
                 </FormGroup>
                 <FormGroup>
-                  <FormLabel>DNI</FormLabel>
+                  <FormLabel>DNI *</FormLabel>
                   <TextInput
                     name="admin-user-dni"
                     inputMode="numeric"
@@ -1043,11 +1043,13 @@ const AdminUsuarios = () => {
                   <TextInput
                     name="admin-user-phone"
                     autoComplete="off"
+                    inputMode="tel"
+                    pattern="[0-9+ ]*"
                     value={formState.telefono}
                     onChange={(event) =>
                       handleFormChange("telefono", event.target.value)
                     }
-                    placeholder="Opcional"
+                    placeholder="+54 387 0 000000"
                   />
                 </FormGroup>
                 <FormGroup>
@@ -1063,7 +1065,7 @@ const AdminUsuarios = () => {
                     onChange={(event) =>
                       handleFormChange("password", event.target.value)
                     }
-                    placeholder="••••••"
+                    placeholder=""
                   />
                 </FormGroup>
                 <FormGroup>
@@ -1077,7 +1079,7 @@ const AdminUsuarios = () => {
                     onChange={(event) =>
                       handleFormChange("confirmPassword", event.target.value)
                     }
-                    placeholder="••••••"
+                    placeholder=""
                   />
                 </FormGroup>
               </FormRow>

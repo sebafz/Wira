@@ -61,11 +61,20 @@ export const apiService = {
 
   // Data endpoints
   getMineras: (params = {}) => apiClient.get("/mineras", { params }),
+  getMineraById: (mineraId) => apiClient.get(`/mineras/${mineraId}`),
   createMinera: (minera) => apiClient.post("/mineras", minera),
   updateMinera: (mineraId, minera) =>
     apiClient.put(`/mineras/${mineraId}`, minera),
   updateMineraStatus: (mineraId, activo) =>
     apiClient.patch(`/mineras/${mineraId}/status`, { activo }),
+  getProyectosMinerosByMinera: (mineraId) =>
+    apiClient.get(`/proyectosmineros/minera/${mineraId}`),
+  createProyectoMinero: (payload) =>
+    apiClient.post("/proyectosmineros", payload),
+  updateProyectoMinero: (proyectoId, payload) =>
+    apiClient.put(`/proyectosmineros/${proyectoId}`, payload),
+  deleteProyectoMinero: (proyectoId) =>
+    apiClient.delete(`/proyectosmineros/${proyectoId}`),
   getProveedores: () => apiClient.get("/proveedores"),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
