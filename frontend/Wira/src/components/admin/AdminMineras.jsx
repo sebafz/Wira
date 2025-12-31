@@ -37,7 +37,6 @@ const Controls = styled.div`
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
-  align-items: center;
 `;
 
 const SearchInput = styled.input`
@@ -49,10 +48,19 @@ const SearchInput = styled.input`
   font-size: 0.95rem;
 `;
 
-const RefreshButton = styled.button`
+const Select = styled.select`
+  min-width: 170px;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+`;
+
+const Button = styled.button`
   border: none;
-  background: #0f172a;
-  color: white;
+  background: ${(props) =>
+    props.variant === "secondary" ? "#e2e8f0" : "#0f172a"};
+  color: ${(props) => (props.variant === "secondary" ? "#0f172a" : "white")};
   padding: 10px 18px;
   border-radius: 6px;
   font-weight: 600;
@@ -69,7 +77,7 @@ const Card = styled.section`
   background: white;
   border-radius: 12px;
   border: none;
-  padding: 24px;
+  padding: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 `;
 
@@ -78,7 +86,7 @@ const TableWrapper = styled.div`
 `;
 
 const TableHeader = styled.div`
-  margin-bottom: 18px;
+  padding: 24px 24px 0 24px;
 `;
 
 const TableTitle = styled.h2`
@@ -88,7 +96,7 @@ const TableTitle = styled.h2`
 `;
 
 const TableSubtitle = styled.p`
-  margin: 0;
+  margin: 0 0 16px;
   color: #475569;
   font-size: 0.9rem;
 `;
@@ -96,10 +104,11 @@ const TableSubtitle = styled.p`
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 860px;
 
   th,
   td {
-    padding: 14px;
+    padding: 16px;
     text-align: left;
     border-bottom: 1px solid #edf2f7;
   }
@@ -129,6 +138,92 @@ const ErrorBanner = styled.div`
   margin-bottom: 16px;
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 2000;
+`;
+
+const ModalCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 620px;
+  padding: 32px;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+`;
+
+const ModalTitle = styled.h2`
+  margin: 0 0 10px;
+  color: #0f172a;
+`;
+
+const ModalDescription = styled.p`
+  margin: 0 0 20px;
+  color: #475569;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+`;
+
+const FormRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+`;
+
+const FormGroup = styled.label`
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const FormLabel = styled.span`
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+`;
+
+const TextInput = styled.input`
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+`;
+
+const InlineError = styled.div`
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+`;
+
+const NoteText = styled.p`
+  margin: -10px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+`;
+
 const formatDate = (value) => {
   if (!value) return "-";
   try {
@@ -142,22 +237,58 @@ const formatDate = (value) => {
   }
 };
 
+const formatCuitInput = (value = "") => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 10) {
+    return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  }
+  return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}`;
+};
+
+const buildEmptyFormState = () => ({
+  mineraId: null,
+  nombre: "",
+  razonSocial: "",
+  cuit: "",
+  emailContacto: "",
+  telefono: "",
+  activo: true,
+});
+
+const getMineraId = (minera) =>
+  minera?.MineraID || minera?.mineraID || minera?.EmpresaID || null;
+
+const isMineraActive = (minera) => {
+  if (typeof minera?.Activo === "boolean") return minera.Activo;
+  if (typeof minera?.activo === "boolean") return minera.activo;
+  return true;
+};
+
 const AdminMineras = () => {
   const [mineras, setMineras] = useState([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [togglingId, setTogglingId] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState("create");
+  const [formState, setFormState] = useState(() => buildEmptyFormState());
+  const [lockedCuit, setLockedCuit] = useState("");
+  const [formError, setFormError] = useState("");
+  const [submittingForm, setSubmittingForm] = useState(false);
 
   const loadMineras = async () => {
     try {
       setLoading(true);
       setError("");
-      const response = await apiService.getMineras();
+      const response = await apiService.getMineras({ includeInactive: true });
       setMineras(response.data || []);
     } catch (apiError) {
       console.error("Error loading mineras", apiError);
-      setError("No pudimos cargar las mineras activas.");
-      toast.error("Error al obtener las mineras activas");
+      setError("No pudimos cargar las mineras.");
+      toast.error("Error al obtener las mineras");
     } finally {
       setLoading(false);
     }
@@ -169,42 +300,171 @@ const AdminMineras = () => {
 
   const filteredMineras = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return mineras;
 
     return mineras.filter((minera) => {
       const nombre = minera.Nombre || minera.nombre || "";
       const razon = minera.RazonSocial || minera.razonSocial || "";
       const cuit = minera.CUIT || minera.cuit || "";
-      return (
-        nombre.toLowerCase().includes(term) ||
-        razon.toLowerCase().includes(term) ||
-        cuit.toLowerCase().includes(term)
-      );
-    });
-  }, [mineras, search]);
+      const email = minera.EmailContacto || minera.emailContacto || "";
 
-  const minerasConContacto = useMemo(() => {
-    return filteredMineras.filter((minera) => {
-      const hasEmail = minera.EmailContacto || minera.emailContacto;
-      const hasPhone = minera.Telefono || minera.telefono;
-      return Boolean(hasEmail || hasPhone);
-    }).length;
+      const matchesTerm = term
+        ? [nombre, razon, cuit, email].some(
+            (value) =>
+              typeof value === "string" && value.toLowerCase().includes(term)
+          )
+        : true;
+
+      const matchesStatus =
+        statusFilter === "todos" ||
+        (statusFilter === "activos" && isMineraActive(minera)) ||
+        (statusFilter === "inactivos" && !isMineraActive(minera));
+
+      return matchesTerm && matchesStatus;
+    });
+  }, [mineras, search, statusFilter]);
+
+  const minerasActivas = useMemo(() => {
+    return filteredMineras.filter((minera) => isMineraActive(minera)).length;
   }, [filteredMineras]);
 
-  const minerasSinContacto = Math.max(
-    0,
-    filteredMineras.length - minerasConContacto
-  );
+  const minerasInactivas = Math.max(0, filteredMineras.length - minerasActivas);
+
+  const openCreateForm = () => {
+    setFormMode("create");
+    setFormState(buildEmptyFormState());
+    setLockedCuit("");
+    setFormError("");
+    setFormOpen(true);
+  };
+
+  const openEditForm = (minera) => {
+    setFormMode("edit");
+    setFormState({
+      mineraId: getMineraId(minera),
+      nombre: minera.Nombre || minera.nombre || "",
+      razonSocial: minera.RazonSocial || minera.razonSocial || "",
+      cuit: minera.CUIT || minera.cuit || "",
+      emailContacto: minera.EmailContacto || minera.emailContacto || "",
+      telefono: minera.Telefono || minera.telefono || "",
+      activo: isMineraActive(minera),
+    });
+    setLockedCuit(minera.CUIT || minera.cuit || "");
+    setFormError("");
+    setFormOpen(true);
+  };
+
+  const handleRowClick = (minera) => {
+    openEditForm(minera);
+  };
+
+  const handleFormChange = (field, value) => {
+    if (field === "cuit") {
+      setFormState((prev) => ({ ...prev, cuit: formatCuitInput(value) }));
+      return;
+    }
+
+    setFormState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setFormError("");
+    setFormState(buildEmptyFormState());
+    setLockedCuit("");
+  };
+
+  const normalizeOptional = (value) => {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+    if (submittingForm) return;
+
+    const nombre = formState.nombre.trim();
+    const razonSocial = formState.razonSocial.trim();
+    const cuit = (formMode === "edit" ? lockedCuit : formState.cuit).trim();
+    const emailContacto = formState.emailContacto.trim();
+    const telefono = formState.telefono.trim();
+
+    if (!nombre || !razonSocial || !cuit) {
+      setFormError("Nombre, razón social y CUIT son obligatorios.");
+      return;
+    }
+
+    if (cuit.length !== 13) {
+      setFormError("El CUIT debe seguir el formato 00-00000000-0.");
+      return;
+    }
+
+    if (formMode === "edit" && !formState.mineraId) {
+      setFormError("No encontramos el identificador de la minera.");
+      return;
+    }
+
+    const payload = {
+      nombre,
+      razonSocial,
+      cuit,
+      emailContacto: normalizeOptional(emailContacto),
+      telefono: normalizeOptional(telefono),
+      activo: formState.activo,
+    };
+
+    setSubmittingForm(true);
+
+    try {
+      const response =
+        formMode === "create"
+          ? await apiService.createMinera(payload)
+          : await apiService.updateMinera(formState.mineraId, payload);
+
+      const returnedMinera = response?.data?.minera || null;
+
+      if (returnedMinera) {
+        setMineras((prev) => {
+          const updatedId = getMineraId(returnedMinera);
+          const exists = prev.some((item) => getMineraId(item) === updatedId);
+          if (exists) {
+            return prev.map((item) =>
+              getMineraId(item) === updatedId ? returnedMinera : item
+            );
+          }
+          return [...prev, returnedMinera];
+        });
+      } else {
+        await loadMineras();
+      }
+
+      toast.success(
+        formMode === "create"
+          ? "Minera creada correctamente"
+          : "Minera actualizada correctamente"
+      );
+      closeForm();
+    } catch (apiError) {
+      console.error("Error saving minera", apiError);
+      const message =
+        apiError.response?.data?.message ||
+        "No se pudieron guardar los cambios";
+      setFormError(message);
+      toast.error(message);
+    } finally {
+      setSubmittingForm(false);
+    }
+  };
 
   return (
     <PageContainer>
       <Navbar />
       <Content>
         <PageHeader>
-          <Title>Mineras activas</Title>
+          <Title>Gestión de mineras</Title>
           <Subtitle>
-            Visualice el padrón de compañías habilitadas para operar dentro de
-            la plataforma.
+            Administre el padrón de compañías habilitadas dentro de la
+            plataforma.
           </Subtitle>
         </PageHeader>
 
@@ -212,11 +472,17 @@ const AdminMineras = () => {
           <SearchInput
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por nombre, razón social o CUIT"
+            placeholder="Buscar por nombre, razón social, CUIT o email"
           />
-          <RefreshButton onClick={loadMineras} disabled={loading}>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </RefreshButton>
+          <Select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="activos">Solo activas</option>
+            <option value="inactivos">Solo inactivas</option>
+          </Select>
+          <Button onClick={openCreateForm}>Agregar minera</Button>
         </Controls>
 
         {error && <ErrorBanner>{error}</ErrorBanner>}
@@ -225,7 +491,7 @@ const AdminMineras = () => {
           <TableHeader>
             <TableTitle>Mineras</TableTitle>
             <TableSubtitle>
-              {`${filteredMineras.length} mineras activas`}
+              {`${filteredMineras.length} registros visibles (${minerasActivas} activas, ${minerasInactivas} inactivas)`}
             </TableSubtitle>
           </TableHeader>
           <TableWrapper>
@@ -238,12 +504,13 @@ const AdminMineras = () => {
                   <th>Email</th>
                   <th>Teléfono</th>
                   <th>Alta</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMineras.length === 0 ? (
                   <tr>
-                    <td colSpan={6}>
+                    <td colSpan={8}>
                       <EmptyState>
                         {loading
                           ? "Cargando mineras..."
@@ -252,26 +519,159 @@ const AdminMineras = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredMineras.map((minera) => (
-                    <tr key={minera.MineraID || minera.mineraID}>
-                      <td>{minera.Nombre || minera.nombre}</td>
-                      <td>{minera.RazonSocial || minera.razonSocial}</td>
-                      <td>{minera.CUIT || minera.cuit}</td>
-                      <td>
-                        {minera.EmailContacto || minera.emailContacto || "-"}
-                      </td>
-                      <td>{minera.Telefono || minera.telefono || "-"}</td>
-                      <td>
-                        {formatDate(minera.FechaAlta || minera.fechaAlta)}
-                      </td>
-                    </tr>
-                  ))
+                  filteredMineras.map((minera) => {
+                    const mineraId = getMineraId(minera);
+                    return (
+                      <tr
+                        key={mineraId}
+                        onClick={() => handleRowClick(minera)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{minera.Nombre || minera.nombre || "-"}</td>
+                        <td>
+                          {minera.RazonSocial || minera.razonSocial || "-"}
+                        </td>
+                        <td>{minera.CUIT || minera.cuit || "-"}</td>
+                        <td>
+                          {minera.EmailContacto || minera.emailContacto || "-"}
+                        </td>
+                        <td>{minera.Telefono || minera.telefono || "-"}</td>
+                        <td>
+                          {formatDate(minera.FechaAlta || minera.fechaAlta)}
+                        </td>
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Button
+                              variant="secondary"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openEditForm(minera);
+                              }}
+                            >
+                              Editar
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </Table>
           </TableWrapper>
         </Card>
       </Content>
+
+      {formOpen && (
+        <ModalOverlay>
+          <ModalCard>
+            <ModalTitle>
+              {formMode === "create" ? "Agregar minera" : "Editar minera"}
+            </ModalTitle>
+            <ModalDescription>
+              {formMode === "create"
+                ? "Complete los datos para agregar una nueva compañía."
+                : "Actualice los datos y estado de la minera seleccionada."}
+            </ModalDescription>
+            <Form onSubmit={handleFormSubmit} autoComplete="off" noValidate>
+              {formError && <InlineError>{formError}</InlineError>}
+              <FormRow>
+                <FormGroup>
+                  <FormLabel>Nombre comercial</FormLabel>
+                  <TextInput
+                    name="mining-name"
+                    autoComplete="off"
+                    value={formState.nombre}
+                    onChange={(event) =>
+                      handleFormChange("nombre", event.target.value)
+                    }
+                    placeholder="Nombre"
+                    required
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Razón social</FormLabel>
+                  <TextInput
+                    name="mining-biz-name"
+                    autoComplete="off"
+                    value={formState.razonSocial}
+                    onChange={(event) =>
+                      handleFormChange("razonSocial", event.target.value)
+                    }
+                    placeholder="Razón social"
+                    required
+                  />
+                </FormGroup>
+              </FormRow>
+              <FormRow>
+                <FormGroup>
+                  <FormLabel>CUIT</FormLabel>
+                  <TextInput
+                    name="mining-cuit"
+                    inputMode="numeric"
+                    autoComplete="new-password"
+                    disabled={formMode === "edit"}
+                    value={formState.cuit}
+                    onChange={(event) =>
+                      handleFormChange("cuit", event.target.value)
+                    }
+                    placeholder="00-00000000-0"
+                    required
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Email de contacto</FormLabel>
+                  <TextInput
+                    type="email"
+                    name="mining-email"
+                    autoComplete="off"
+                    value={formState.emailContacto}
+                    onChange={(event) =>
+                      handleFormChange("emailContacto", event.target.value)
+                    }
+                    placeholder="correo@empresa.com"
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Teléfono</FormLabel>
+                  <TextInput
+                    name="mining-phone"
+                    autoComplete="off"
+                    value={formState.telefono}
+                    onChange={(event) =>
+                      handleFormChange("telefono", event.target.value)
+                    }
+                    placeholder="Opcional"
+                  />
+                </FormGroup>
+              </FormRow>
+              <ModalActions>
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={closeForm}
+                  disabled={submittingForm}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={submittingForm}>
+                  {submittingForm
+                    ? "Guardando..."
+                    : formMode === "create"
+                    ? "Crear minera"
+                    : "Guardar cambios"}
+                </Button>
+              </ModalActions>
+            </Form>
+          </ModalCard>
+        </ModalOverlay>
+      )}
     </PageContainer>
   );
 };

@@ -219,6 +219,148 @@ namespace Wira.Api.Controllers
             return Ok(result);
         }
 
+        [HttpPost("users")]
+        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var normalizedEmail = request.Email.Trim();
+            var normalizedEmailLower = normalizedEmail.ToLower();
+            var emailExists = await _context.Usuarios
+                .AnyAsync(u => u.Email.ToLower() == normalizedEmailLower);
+
+            if (emailExists)
+            {
+                return Conflict(new { message = "El email ya está registrado" });
+            }
+
+            var normalizedDni = request.DNI.Trim();
+            var dniExists = await _context.Usuarios
+                .AnyAsync(u => u.DNI == normalizedDni);
+
+            if (dniExists)
+            {
+                return Conflict(new { message = "El DNI ya está registrado" });
+            }
+
+            var normalizedRoles = NormalizeRoles(request.Roles);
+            var rolesResult = await ResolveRolesAsync(normalizedRoles);
+            if (!rolesResult.Success)
+            {
+                return BadRequest(new { message = rolesResult.ErrorMessage });
+            }
+
+            var password = request.Password?.Trim();
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return BadRequest(new { message = "La contraseña es obligatoria" });
+            }
+
+            var usuario = new Usuario
+            {
+                Email = normalizedEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                Nombre = string.IsNullOrWhiteSpace(request.Nombre) ? null : request.Nombre.Trim(),
+                Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim(),
+                DNI = normalizedDni,
+                Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim(),
+                Activo = request.Activo,
+                FechaRegistro = DateTime.UtcNow,
+                FechaBaja = request.Activo ? null : DateTime.UtcNow,
+                ValidadoEmail = true,
+                EmpresaID = request.EmpresaID
+            };
+
+            _context.Usuarios.Add(usuario);
+            await _context.SaveChangesAsync();
+
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
+            await _context.SaveChangesAsync();
+
+            var usuarioCreado = await AdminUsersQuery()
+                .FirstOrDefaultAsync(u => u.UsuarioID == usuario.UsuarioID);
+
+            return Ok(new
+            {
+                success = true,
+                usuario = usuarioCreado == null ? null : MapAdminUserDto(usuarioCreado)
+            });
+        }
+
+        [HttpPut("users/{usuarioId:int}")]
+        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        public async Task<IActionResult> UpdateUser(int usuarioId, [FromBody] UpdateAdminUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var usuario = await AdminUsersQuery()
+                .FirstOrDefaultAsync(u => u.UsuarioID == usuarioId);
+
+            if (usuario == null)
+            {
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            var normalizedEmail = request.Email.Trim();
+            var normalizedEmailLower = normalizedEmail.ToLower();
+            var emailExists = await _context.Usuarios
+                .AnyAsync(u => u.UsuarioID != usuarioId && u.Email.ToLower() == normalizedEmailLower);
+
+            if (emailExists)
+            {
+                return Conflict(new { message = "El email ya está registrado" });
+            }
+
+            var normalizedDni = request.DNI.Trim();
+            var dniExists = await _context.Usuarios
+                .AnyAsync(u => u.UsuarioID != usuarioId && u.DNI == normalizedDni);
+
+            if (dniExists)
+            {
+                return Conflict(new { message = "El DNI ya está registrado" });
+            }
+
+            var normalizedRoles = NormalizeRoles(request.Roles);
+            var rolesResult = await ResolveRolesAsync(normalizedRoles);
+            if (!rolesResult.Success)
+            {
+                return BadRequest(new { message = rolesResult.ErrorMessage });
+            }
+
+            usuario.Email = normalizedEmail;
+            usuario.Nombre = string.IsNullOrWhiteSpace(request.Nombre) ? null : request.Nombre.Trim();
+            usuario.Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim();
+            usuario.DNI = normalizedDni;
+            usuario.Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim();
+            usuario.EmpresaID = request.EmpresaID;
+            usuario.Activo = request.Activo;
+            usuario.FechaBaja = request.Activo ? null : DateTime.UtcNow;
+
+            if (!string.IsNullOrWhiteSpace(request.Password))
+            {
+                usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password.Trim());
+            }
+
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
+            await _context.SaveChangesAsync();
+
+            var usuarioActualizado = await AdminUsersQuery()
+                .FirstOrDefaultAsync(u => u.UsuarioID == usuario.UsuarioID);
+
+            return Ok(new
+            {
+                success = true,
+                usuario = usuarioActualizado == null ? null : MapAdminUserDto(usuarioActualizado)
+            });
+        }
+
         [HttpPatch("users/{usuarioId:int}/status")]
         [Authorize(Roles = RoleNames.AdministradorSistema)]
         public async Task<IActionResult> UpdateUserStatus(int usuarioId, [FromBody] UpdateUserStatusRequest request)
@@ -247,11 +389,7 @@ namespace Wira.Api.Controllers
         [Authorize(Roles = RoleNames.AdministradorSistema)]
         public async Task<IActionResult> UpdateUserRoles(int usuarioId, [FromBody] UpdateUserRolesRequest request)
         {
-            var requestedRoles = request.Roles
-                ?.Where(r => !string.IsNullOrWhiteSpace(r))
-                .Select(r => r.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList() ?? new List<string>();
+            var requestedRoles = NormalizeRoles(request.Roles);
 
             var usuario = await AdminUsersQuery()
                 .FirstOrDefaultAsync(u => u.UsuarioID == usuarioId);
@@ -261,26 +399,13 @@ namespace Wira.Api.Controllers
                 return NotFound(new { message = "Usuario no encontrado" });
             }
 
-            var rolesDisponibles = await _context.Roles
-                .Where(r => requestedRoles.Contains(r.Nombre))
-                .ToListAsync();
-
-            if (rolesDisponibles.Count != requestedRoles.Count)
+            var rolesResult = await ResolveRolesAsync(requestedRoles);
+            if (!rolesResult.Success)
             {
-                return BadRequest(new { message = "Alguno de los roles especificados no existe" });
+                return BadRequest(new { message = rolesResult.ErrorMessage });
             }
 
-            _context.UsuariosRoles.RemoveRange(usuario.UsuariosRoles);
-
-            foreach (var rol in rolesDisponibles)
-            {
-                _context.UsuariosRoles.Add(new UsuarioRol
-                {
-                    UsuarioID = usuario.UsuarioID,
-                    RolID = rol.RolID
-                });
-            }
-
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -369,6 +494,57 @@ namespace Wira.Api.Controllers
             {
                 Console.WriteLine($"Error updating profile: {ex.Message}");
                 return StatusCode(500, new { success = false, message = "Error al actualizar el perfil" });
+            }
+        }
+
+        private static List<string> NormalizeRoles(IEnumerable<string>? roles)
+        {
+            return roles?
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Select(r => r.Trim())
+                .Distinct(System.StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new List<string>();
+        }
+
+        private async Task<(bool Success, string? ErrorMessage, List<Rol> Roles)> ResolveRolesAsync(List<string> normalizedRoles)
+        {
+            if (normalizedRoles.Count == 0)
+            {
+                return (true, null, new List<Rol>());
+            }
+
+            var rolesDisponibles = await _context.Roles
+                .Where(r => normalizedRoles.Contains(r.Nombre))
+                .ToListAsync();
+
+            if (rolesDisponibles.Count != normalizedRoles.Count)
+            {
+                return (false, "Alguno de los roles especificados no existe", new List<Rol>());
+            }
+
+            return (true, null, rolesDisponibles);
+        }
+
+        private async Task ReplaceUserRolesAsync(int usuarioId, List<Rol> roles)
+        {
+            var existingRoles = await _context.UsuariosRoles
+                .Where(ur => ur.UsuarioID == usuarioId)
+                .ToListAsync();
+
+            _context.UsuariosRoles.RemoveRange(existingRoles);
+
+            if (roles.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var rol in roles)
+            {
+                _context.UsuariosRoles.Add(new UsuarioRol
+                {
+                    UsuarioID = usuarioId,
+                    RolID = rol.RolID
+                });
             }
         }
 

@@ -60,17 +60,25 @@ export const apiService = {
   updateProfile: (userData) => apiClient.put("/auth/profile", userData),
 
   // Data endpoints
-  getMineras: () => apiClient.get("/mineras"),
+  getMineras: (params = {}) => apiClient.get("/mineras", { params }),
+  createMinera: (minera) => apiClient.post("/mineras", minera),
+  updateMinera: (mineraId, minera) =>
+    apiClient.put(`/mineras/${mineraId}`, minera),
+  updateMineraStatus: (mineraId, activo) =>
+    apiClient.patch(`/mineras/${mineraId}/status`, { activo }),
   getProveedores: () => apiClient.get("/proveedores"),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
   getUsuarios: () => apiClient.get("/auth/users"),
+  createUsuario: (usuario) => apiClient.post("/auth/users", usuario),
   updateUsuarioStatus: (usuarioId, activo) =>
     apiClient.patch(`/auth/users/${usuarioId}/status`, { activo }),
   updateUsuarioRoles: (usuarioId, roles) =>
     apiClient.put(`/auth/users/${usuarioId}/roles`, { roles }),
+  updateUsuario: (usuarioId, usuario) =>
+    apiClient.put(`/auth/users/${usuarioId}`, usuario),
 
   // Test endpoints
   testConnection: () => apiClient.get("/test/connection"),

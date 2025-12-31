@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import Navbar from "../shared/Navbar";
 import { apiService } from "../../services/apiService";
@@ -183,26 +183,108 @@ const ModalCard = styled.div`
   background: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 520px;
-  padding: 28px;
+  max-width: 640px;
+  padding: 32px;
   box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   color: #0f172a;
 `;
 
-const RoleCheckbox = styled.label`
+const ModalDescription = styled.p`
+  margin: 0 0 20px;
+  color: #475569;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+`;
+
+const FormRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+`;
+
+const FormGroup = styled.label`
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const FormLabel = styled.span`
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+`;
+
+const TextInput = styled.input`
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+`;
+
+const FormSelect = styled.select`
+  border: 1px solid #d7dfe9;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  background: white;
+`;
+
+const SwitchGroup = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #0f172a;
+
+  input {
+    width: 18px;
+    height: 18px;
+  }
+`;
+
+const SectionLabel = styled.p`
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+`;
+
+const NoteText = styled.p`
+  margin: -10px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+`;
+
+const RoleOptions = styled.div`
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const RoleOption = styled.label`
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
+  padding: 6px 0;
 
   input {
-    margin-top: 4px;
+    margin-top: 3px;
   }
 
   span {
@@ -210,11 +292,18 @@ const RoleCheckbox = styled.label`
   }
 `;
 
+const InlineError = styled.div`
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+`;
+
 const ModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
 `;
 
 const ROLE_OPTIONS = [
@@ -275,16 +364,38 @@ const isUserActive = (usuario) => {
   return !(usuario?.FechaBaja || usuario?.fechaBaja);
 };
 
+const buildEmptyFormState = () => ({
+  usuarioId: null,
+  nombre: "",
+  apellido: "",
+  email: "",
+  dni: "",
+  telefono: "",
+  role: "",
+  activo: true,
+  password: "",
+  confirmPassword: "",
+  empresaTipo: "",
+  empresaId: "",
+  empresaNombre: "",
+});
+
 const AdminUsuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [roleSelection, setRoleSelection] = useState("");
-  const [savingRoles, setSavingRoles] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState("create");
+  const [formState, setFormState] = useState(() => buildEmptyFormState());
+  const [formError, setFormError] = useState("");
+  const [submittingForm, setSubmittingForm] = useState(false);
+  const [lockedFields, setLockedFields] = useState({ email: "", dni: "" });
+  const [minerasOptions, setMinerasOptions] = useState([]);
+  const [proveedoresOptions, setProveedoresOptions] = useState([]);
+  const [empresaOptionsLoading, setEmpresaOptionsLoading] = useState(false);
 
   const loadUsuarios = async () => {
     try {
@@ -301,8 +412,77 @@ const AdminUsuarios = () => {
     }
   };
 
+  const loadEmpresas = async () => {
+    try {
+      setEmpresaOptionsLoading(true);
+      const [minerasRes, proveedoresRes] = await Promise.all([
+        apiService.getMineras({ includeInactive: false }),
+        apiService.getProveedores(),
+      ]);
+
+      const normalizedMineras = (minerasRes.data || [])
+        .map((minera) => {
+          const id =
+            minera.MineraID ??
+            minera.mineraID ??
+            minera.EmpresaID ??
+            minera.empresaID ??
+            null;
+
+          if (!id && id !== 0) {
+            return null;
+          }
+
+          return {
+            id: String(id),
+            nombre:
+              minera.Nombre ||
+              minera.RazonSocial ||
+              minera.nombre ||
+              minera.razonSocial ||
+              "Sin nombre",
+          };
+        })
+        .filter(Boolean);
+
+      const normalizedProveedores = (proveedoresRes.data || [])
+        .map((proveedor) => {
+          const id =
+            proveedor.ProveedorID ??
+            proveedor.proveedorID ??
+            proveedor.EmpresaID ??
+            proveedor.empresaID ??
+            null;
+
+          if (!id && id !== 0) {
+            return null;
+          }
+
+          return {
+            id: String(id),
+            nombre:
+              proveedor.Nombre ||
+              proveedor.RazonSocial ||
+              proveedor.nombre ||
+              proveedor.razonSocial ||
+              "Sin nombre",
+          };
+        })
+        .filter(Boolean);
+
+      setMinerasOptions(normalizedMineras);
+      setProveedoresOptions(normalizedProveedores);
+    } catch (apiError) {
+      console.error("Error loading companies", apiError);
+      toast.error("No pudimos cargar la lista de empresas");
+    } finally {
+      setEmpresaOptionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadUsuarios();
+    loadEmpresas();
   }, []);
 
   const filteredUsuarios = useMemo(() => {
@@ -320,8 +500,7 @@ const AdminUsuarios = () => {
             ...roleLabels,
           ].some(
             (value) =>
-              typeof value === "string" &&
-              value.toLowerCase().includes(term)
+              typeof value === "string" && value.toLowerCase().includes(term)
           )
         : true;
 
@@ -343,24 +522,57 @@ const AdminUsuarios = () => {
     filteredUsuarios.length - usuariosActivos
   );
 
+  const empresaOptions = useMemo(() => {
+    const options =
+      formState.empresaTipo === "MINERA"
+        ? minerasOptions
+        : formState.empresaTipo === "PROVEEDOR"
+        ? proveedoresOptions
+        : [];
+
+    if (
+      formState.empresaTipo &&
+      formState.empresaId &&
+      !options.some((option) => option.id === formState.empresaId) &&
+      formState.empresaNombre
+    ) {
+      return [
+        {
+          id: formState.empresaId,
+          nombre: `${formState.empresaNombre} (asignada)`,
+        },
+        ...options,
+      ];
+    }
+
+    return options;
+  }, [
+    formState.empresaTipo,
+    formState.empresaId,
+    formState.empresaNombre,
+    minerasOptions,
+    proveedoresOptions,
+  ]);
+
   const handleToggleStatus = async (usuario) => {
     try {
       setToggling(true);
       const newStatus = !isUserActive(usuario);
-      await apiService.updateUsuarioStatus(getUserId(usuario), newStatus);
-      setUsuarios((prev) =>
-        prev.map((item) =>
-          getUserId(item) === getUserId(usuario)
-            ? {
-                ...item,
-                Activo: newStatus,
-                activo: newStatus,
-                FechaBaja: newStatus ? null : new Date().toISOString(),
-                fechaBaja: newStatus ? null : new Date().toISOString(),
-              }
-            : item
-        )
+      const response = await apiService.updateUsuarioStatus(
+        getUserId(usuario),
+        newStatus
       );
+      const updatedUser = response?.data?.usuario || null;
+
+      if (updatedUser) {
+        setUsuarios((prev) =>
+          prev.map((item) =>
+            getUserId(item) === getUserId(updatedUser) ? updatedUser : item
+          )
+        );
+      } else {
+        await loadUsuarios();
+      }
       toast.success(
         `Usuario ${newStatus ? "habilitado" : "dado de baja"} correctamente`
       );
@@ -372,37 +584,212 @@ const AdminUsuarios = () => {
     }
   };
 
-  const openRoleModal = (usuario) => {
-    setSelectedUser(usuario);
+  const openCreateForm = () => {
+    setFormMode("create");
+    setFormState(buildEmptyFormState());
+    setLockedFields({ email: "", dni: "" });
+    setFormError("");
+    setFormOpen(true);
+  };
+
+  const openEditForm = (usuario) => {
     const [firstRole = ""] = getUserRoles(usuario);
-    setRoleSelection(firstRole);
+    setFormMode("edit");
+    const empresa = usuario.Empresa || usuario.empresa || null;
+    const rawEmpresaTipo = (
+      empresa?.TipoEmpresa ||
+      empresa?.tipoEmpresa ||
+      ""
+    ).toUpperCase();
+    const empresaTipo =
+      rawEmpresaTipo === "MINERA" || rawEmpresaTipo === "PROVEEDOR"
+        ? rawEmpresaTipo
+        : "";
+    const empresaId =
+      empresa?.EmpresaID || empresa?.empresaID || empresa?.MineraID || null;
+
+    setFormState({
+      usuarioId: getUserId(usuario),
+      nombre: usuario.Nombre || usuario.nombre || "",
+      apellido: usuario.Apellido || usuario.apellido || "",
+      email: usuario.Email || usuario.email || "",
+      dni: usuario.DNI || usuario.dni || "",
+      telefono: usuario.Telefono || usuario.telefono || "",
+      role: firstRole,
+      activo: isUserActive(usuario),
+      password: "",
+      confirmPassword: "",
+      empresaTipo,
+      empresaId: empresaTipo && empresaId ? String(empresaId) : "",
+      empresaNombre: empresa?.Nombre || empresa?.nombre || "",
+    });
+    setLockedFields({
+      email: usuario.Email || usuario.email || "",
+      dni: usuario.DNI || usuario.dni || "",
+    });
+    setFormError("");
+    setFormOpen(true);
   };
 
-  const handleRoleSelection = (role) => {
-    setRoleSelection(role);
+  const handleRowClick = (usuario) => {
+    openEditForm(usuario);
   };
 
-  const handleSaveRoles = async () => {
-    if (!selectedUser) return;
+  const handleFormChange = (field, value) => {
+    if (field === "dni") {
+      const numericValue = (value || "").replace(/[^0-9]/g, "");
+      setFormState((prev) => ({ ...prev, dni: numericValue }));
+      return;
+    }
+
+    if (field === "empresaTipo") {
+      setFormState((prev) => ({
+        ...prev,
+        empresaTipo: value,
+        empresaId: "",
+        empresaNombre: "",
+      }));
+      return;
+    }
+
+    if (field === "empresaId") {
+      setFormState((prev) => {
+        const options =
+          prev.empresaTipo === "MINERA"
+            ? minerasOptions
+            : prev.empresaTipo === "PROVEEDOR"
+            ? proveedoresOptions
+            : [];
+        const selected = options.find((option) => option.id === value);
+        return {
+          ...prev,
+          empresaId: value,
+          empresaNombre: selected?.nombre || prev.empresaNombre,
+        };
+      });
+      return;
+    }
+
+    setFormState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setFormError("");
+    setFormState(buildEmptyFormState());
+  };
+
+  const normalizeOptional = (value) => {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+    if (submittingForm) return;
+
+    const nombre = formState.nombre.trim();
+    const email = (
+      formMode === "edit" ? lockedFields.email : formState.email
+    ).trim();
+    const dni = (formMode === "edit" ? lockedFields.dni : formState.dni).trim();
+    const password = formState.password.trim();
+    const confirmPassword = formState.confirmPassword.trim();
+    const passwordProvided = password.length > 0 || confirmPassword.length > 0;
+
+    if (!nombre || !email || !dni) {
+      setFormError("Nombre, email y DNI son obligatorios.");
+      return;
+    }
+
+    if (formMode === "create" && password.length === 0) {
+      setFormError("Debe definir una contraseña temporal.");
+      return;
+    }
+
+    if (passwordProvided) {
+      if (password.length > 0 && password.length < 6) {
+        setFormError("La contraseña debe tener al menos 6 caracteres.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setFormError("Las contraseñas no coinciden.");
+        return;
+      }
+    }
+
+    let empresaIdValue = null;
+    if (formState.empresaTipo) {
+      if (!formState.empresaId) {
+        setFormError("Seleccione una empresa para el usuario.");
+        return;
+      }
+
+      const parsed = parseInt(formState.empresaId, 10);
+      if (Number.isNaN(parsed)) {
+        setFormError("La empresa seleccionada no es válida.");
+        return;
+      }
+      empresaIdValue = parsed;
+    }
+
+    const payload = {
+      nombre,
+      apellido: normalizeOptional(formState.apellido),
+      email,
+      dni,
+      telefono: normalizeOptional(formState.telefono),
+      activo: formState.activo,
+      roles: formState.role ? [formState.role] : [],
+      empresaID: empresaIdValue,
+    };
+
+    if (formMode === "create" || passwordProvided) {
+      payload.password = password;
+    }
+
+    setSubmittingForm(true);
 
     try {
-      setSavingRoles(true);
-      const rolesToSave = roleSelection ? [roleSelection] : [];
-      await apiService.updateUsuarioRoles(getUserId(selectedUser), rolesToSave);
-      setUsuarios((prev) =>
-        prev.map((usuario) =>
-          getUserId(usuario) === getUserId(selectedUser)
-            ? { ...usuario, Roles: rolesToSave, roles: rolesToSave }
-            : usuario
-        )
+      const response =
+        formMode === "create"
+          ? await apiService.createUsuario(payload)
+          : await apiService.updateUsuario(formState.usuarioId, payload);
+
+      const returnedUser = response?.data?.usuario || null;
+
+      if (returnedUser) {
+        setUsuarios((prev) => {
+          const updatedId = getUserId(returnedUser);
+          const exists = prev.some((item) => getUserId(item) === updatedId);
+          if (exists) {
+            return prev.map((item) =>
+              getUserId(item) === updatedId ? returnedUser : item
+            );
+          }
+          return [...prev, returnedUser];
+        });
+      } else {
+        await loadUsuarios();
+      }
+
+      toast.success(
+        formMode === "create"
+          ? "Usuario creado correctamente"
+          : "Usuario actualizado correctamente"
       );
-      toast.success("Roles actualizados correctamente");
-      setSelectedUser(null);
+      closeForm();
     } catch (apiError) {
-      console.error("Error updating roles", apiError);
-      toast.error("No se pudieron actualizar los roles");
+      console.error("Error saving user", apiError);
+      const message =
+        apiError.response?.data?.message ||
+        "No se pudieron guardar los cambios";
+      setFormError(message);
+      toast.error(message);
     } finally {
-      setSavingRoles(false);
+      setSubmittingForm(false);
     }
   };
 
@@ -431,9 +818,7 @@ const AdminUsuarios = () => {
             <option value="activos">Solo activos</option>
             <option value="inactivos">Solo inactivos</option>
           </Select>
-          <Button onClick={loadUsuarios} disabled={loading}>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </Button>
+          <Button onClick={openCreateForm}>Agregar usuario</Button>
         </Controls>
 
         {error && <ErrorBanner>{error}</ErrorBanner>}
@@ -469,7 +854,11 @@ const AdminUsuarios = () => {
                   </tr>
                 ) : (
                   filteredUsuarios.map((usuario) => (
-                    <tr key={getUserId(usuario)}>
+                    <tr
+                      key={getUserId(usuario)}
+                      onClick={() => handleRowClick(usuario)}
+                      style={{ cursor: "pointer" }}
+                    >
                       <td>
                         <div style={{ fontWeight: 600 }}>
                           {`${usuario.Nombre || usuario.nombre || ""} ${
@@ -506,12 +895,18 @@ const AdminUsuarios = () => {
                         >
                           <Button
                             variant="secondary"
-                            onClick={() => openRoleModal(usuario)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openEditForm(usuario);
+                            }}
                           >
-                            Gestionar roles
+                            Editar
                           </Button>
                           <Button
-                            onClick={() => handleToggleStatus(usuario)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleToggleStatus(usuario);
+                            }}
                             disabled={toggling}
                           >
                             {isUserActive(usuario)
@@ -529,36 +924,217 @@ const AdminUsuarios = () => {
         </Card>
       </Content>
 
-      {selectedUser && (
+      {formOpen && (
         <ModalOverlay>
           <ModalCard>
             <ModalTitle>
-              Roles de {selectedUser.Nombre || selectedUser.nombre || "usuario"}
+              {formMode === "create" ? "Agregar usuario" : "Editar usuario"}
             </ModalTitle>
-            {ROLE_OPTIONS.map((role) => (
-              <RoleCheckbox key={role.value}>
-                <input
-                  type="radio"
-                  name="role-selection"
-                  value={role.value}
-                  checked={roleSelection === role.value}
-                  onChange={() => handleRoleSelection(role.value)}
-                />
-                <span>{role.label}</span>
-              </RoleCheckbox>
-            ))}
-            <ModalActions>
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedUser(null)}
-                disabled={savingRoles}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveRoles} disabled={savingRoles}>
-                {savingRoles ? "Guardando..." : "Guardar"}
-              </Button>
-            </ModalActions>
+            <ModalDescription>
+              {formMode === "create"
+                ? "Complete los datos para crear una nueva cuenta."
+                : "Actualice la información y los roles del usuario seleccionado."}
+            </ModalDescription>
+            <Form onSubmit={handleFormSubmit} autoComplete="off" noValidate>
+              {formError && <InlineError>{formError}</InlineError>}
+              <FormRow>
+                <FormGroup>
+                  <FormLabel>Nombre</FormLabel>
+                  <TextInput
+                    name="admin-user-first-name"
+                    autoComplete="off"
+                    value={formState.nombre}
+                    onChange={(event) =>
+                      handleFormChange("nombre", event.target.value)
+                    }
+                    placeholder="Nombre"
+                    required
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Apellido</FormLabel>
+                  <TextInput
+                    name="admin-user-last-name"
+                    autoComplete="off"
+                    value={formState.apellido}
+                    onChange={(event) =>
+                      handleFormChange("apellido", event.target.value)
+                    }
+                    placeholder="Apellido"
+                  />
+                </FormGroup>
+              </FormRow>
+              <FormRow>
+                <FormGroup>
+                  <FormLabel>Email</FormLabel>
+                  <TextInput
+                    type="email"
+                    name="admin-user-email"
+                    autoComplete="new-email"
+                    disabled={formMode === "edit"}
+                    value={formState.email}
+                    onChange={(event) =>
+                      handleFormChange("email", event.target.value)
+                    }
+                    placeholder="correo@empresa.com"
+                    required
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>DNI</FormLabel>
+                  <TextInput
+                    name="admin-user-dni"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    disabled={formMode === "edit"}
+                    value={formState.dni}
+                    onChange={(event) =>
+                      handleFormChange("dni", event.target.value)
+                    }
+                    placeholder="Documento"
+                    required
+                  />
+                </FormGroup>
+              </FormRow>
+              <FormRow>
+                <FormGroup>
+                  <FormLabel>Tipo de empresa</FormLabel>
+                  <FormSelect
+                    name="admin-user-company-type"
+                    value={formState.empresaTipo}
+                    onChange={(event) =>
+                      handleFormChange("empresaTipo", event.target.value)
+                    }
+                  >
+                    <option value="">Sin empresa</option>
+                    <option value="MINERA">Minera</option>
+                    <option value="PROVEEDOR">Proveedor</option>
+                  </FormSelect>
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Empresa asignada</FormLabel>
+                  <FormSelect
+                    name="admin-user-company"
+                    value={formState.empresaId}
+                    onChange={(event) =>
+                      handleFormChange("empresaId", event.target.value)
+                    }
+                    disabled={!formState.empresaTipo || empresaOptionsLoading}
+                  >
+                    <option value="">
+                      {!formState.empresaTipo
+                        ? "Seleccione un tipo"
+                        : empresaOptionsLoading
+                        ? "Cargando opciones..."
+                        : "Seleccione una empresa"}
+                    </option>
+                    {empresaOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.nombre}
+                      </option>
+                    ))}
+                  </FormSelect>
+                </FormGroup>
+              </FormRow>
+              <FormRow>
+                <FormGroup>
+                  <FormLabel>Teléfono</FormLabel>
+                  <TextInput
+                    name="admin-user-phone"
+                    autoComplete="off"
+                    value={formState.telefono}
+                    onChange={(event) =>
+                      handleFormChange("telefono", event.target.value)
+                    }
+                    placeholder="Opcional"
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>
+                    Contraseña {formMode === "edit" ? "(opcional)" : ""}
+                  </FormLabel>
+                  <TextInput
+                    type="password"
+                    name="admin-user-password"
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    value={formState.password}
+                    onChange={(event) =>
+                      handleFormChange("password", event.target.value)
+                    }
+                    placeholder="••••••"
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <FormLabel>Confirmar contraseña</FormLabel>
+                  <TextInput
+                    type="password"
+                    name="admin-user-password-confirm"
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    value={formState.confirmPassword}
+                    onChange={(event) =>
+                      handleFormChange("confirmPassword", event.target.value)
+                    }
+                    placeholder="••••••"
+                  />
+                </FormGroup>
+              </FormRow>
+              {formMode === "edit" && (
+                <NoteText>
+                  Deje los campos de contraseña vacíos para mantener la actual.
+                </NoteText>
+              )}
+              <FormRow>
+                <SwitchGroup>
+                  <input
+                    type="checkbox"
+                    checked={formState.activo}
+                    onChange={(event) =>
+                      handleFormChange("activo", event.target.checked)
+                    }
+                  />
+                  <span>
+                    {formState.activo ? "Usuario activo" : "Usuario inactivo"}
+                  </span>
+                </SwitchGroup>
+              </FormRow>
+              <div>
+                <SectionLabel>Rol principal</SectionLabel>
+                <RoleOptions>
+                  {ROLE_OPTIONS.map((role) => (
+                    <RoleOption key={role.value || "none"}>
+                      <input
+                        type="radio"
+                        name="form-role"
+                        value={role.value}
+                        checked={formState.role === role.value}
+                        onChange={() => handleFormChange("role", role.value)}
+                      />
+                      <span>{role.label}</span>
+                    </RoleOption>
+                  ))}
+                </RoleOptions>
+              </div>
+              <ModalActions>
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={closeForm}
+                  disabled={submittingForm}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={submittingForm}>
+                  {submittingForm
+                    ? "Guardando..."
+                    : formMode === "create"
+                    ? "Crear usuario"
+                    : "Guardar cambios"}
+                </Button>
+              </ModalActions>
+            </Form>
           </ModalCard>
         </ModalOverlay>
       )}
