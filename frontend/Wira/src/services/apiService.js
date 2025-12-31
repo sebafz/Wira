@@ -60,17 +60,48 @@ export const apiService = {
   updateProfile: (userData) => apiClient.put("/auth/profile", userData),
 
   // Data endpoints
-  getMineras: () => apiClient.get("/mineras"),
+  getMineras: (params = {}) => apiClient.get("/mineras", { params }),
+  getMineraById: (mineraId) => apiClient.get(`/mineras/${mineraId}`),
+  createMinera: (minera) => apiClient.post("/mineras", minera),
+  updateMinera: (mineraId, minera) =>
+    apiClient.put(`/mineras/${mineraId}`, minera),
+  updateMineraStatus: (mineraId, activo) =>
+    apiClient.patch(`/mineras/${mineraId}/status`, { activo }),
+  getProyectosMinerosByMinera: (mineraId) =>
+    apiClient.get(`/proyectosmineros/minera/${mineraId}`),
+  createProyectoMinero: (payload) =>
+    apiClient.post("/proyectosmineros", payload),
+  updateProyectoMinero: (proyectoId, payload) =>
+    apiClient.put(`/proyectosmineros/${proyectoId}`, payload),
+  deleteProyectoMinero: (proyectoId) =>
+    apiClient.delete(`/proyectosmineros/${proyectoId}`),
   getProveedores: () => apiClient.get("/proveedores"),
+  getProveedorById: (proveedorId) =>
+    apiClient.get(`/proveedores/${proveedorId}`),
+  updateProveedor: (proveedorId, proveedor) =>
+    apiClient.put(`/proveedores/${proveedorId}`, proveedor),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
   getUsuarios: () => apiClient.get("/auth/users"),
+  createUsuario: (usuario) => apiClient.post("/auth/users", usuario),
   updateUsuarioStatus: (usuarioId, activo) =>
     apiClient.patch(`/auth/users/${usuarioId}/status`, { activo }),
   updateUsuarioRoles: (usuarioId, roles) =>
     apiClient.put(`/auth/users/${usuarioId}/roles`, { roles }),
+  updateUsuario: (usuarioId, usuario) =>
+    apiClient.put(`/auth/users/${usuarioId}`, usuario),
+
+  // Approval endpoints
+  getPendingApprovals: (params = {}) =>
+    apiClient.get("/auth/approvals/pending", { params }),
+  getPendingApprovalsCount: (params = {}) =>
+    apiClient.get("/auth/approvals/pending/count", { params }),
+  approveUser: (usuarioId, roles = []) =>
+    apiClient.post(`/auth/approvals/${usuarioId}/approve`, { roles }),
+  rejectUser: (usuarioId, motivo) =>
+    apiClient.post(`/auth/approvals/${usuarioId}/reject`, { motivo }),
 
   // Test endpoints
   testConnection: () => apiClient.get("/test/connection"),

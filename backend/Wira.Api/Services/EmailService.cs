@@ -37,7 +37,7 @@ namespace Wira.Api.Services
                 message.Body = bodyBuilder.ToMessageBody();
 
                 using var client = new SmtpClient();
-                
+
                 // Para desarrollo, usar configuración SMTP local o de prueba
                 var smtpHost = _configuration["Email:SmtpHost"] ?? "localhost";
                 var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
@@ -45,7 +45,7 @@ namespace Wira.Api.Services
                 var password = _configuration["Email:Password"];
 
                 await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTlsWhenAvailable);
-                
+
                 if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
                 {
                     await client.AuthenticateAsync(username, password);
@@ -91,11 +91,11 @@ namespace Wira.Api.Services
                         <div class='content'>
                             <h2>Hola {userName},</h2>
                             <p>Gracias por registrarte en Wira. Para completar tu registro y activar tu cuenta, ingresa el siguiente código de verificación en la aplicación:</p>
-                            
+
                             <div class='code-box'>
                                 <div class='code'>{verificationCode}</div>
                             </div>
-                            
+
                             <div class='warning'>
                                 <p><strong>⚠️ Importante:</strong></p>
                                 <ul>
@@ -104,7 +104,7 @@ namespace Wira.Api.Services
                                     <li>No compartas este código con nadie</li>
                                 </ul>
                             </div>
-                            
+
                             <p>Si no creaste esta cuenta, puedes ignorar este email de forma segura.</p>
                         </div>
                         <div class='footer'>
@@ -148,14 +148,14 @@ namespace Wira.Api.Services
                         <div class='content'>
                             <h2>Hola {userName},</h2>
                             <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Si fuiste tú quien la solicitó, haz clic en el siguiente botón:</p>
-                            
+
                             <div style='text-align: center;'>
                                 <a href='{resetUrl}' class='button'>Restablecer Contraseña</a>
                             </div>
-                            
+
                             <p>Si el botón no funciona, también puedes copiar y pegar el siguiente enlace en tu navegador:</p>
                             <p style='background: #e9ecef; padding: 10px; border-radius: 4px; word-break: break-all;'>{resetUrl}</p>
-                            
+
                             <div class='warning'>
                                 <p><strong>⚠️ Importante:</strong></p>
                                 <ul>
@@ -168,6 +168,80 @@ namespace Wira.Api.Services
                         <div class='footer'>
                             <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
                             <p>Este es un email automático, por favor no respondas.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
+
+        public async Task SendApprovalEmailAsync(string toEmail, string userName, string empresaNombre)
+        {
+            var subject = "Cuenta aprobada - Wira";
+            var body = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 26px; text-align: center; border-radius: 10px 10px 0 0; }}
+                        .content {{ background: #f8f9fa; padding: 28px; border-radius: 0 0 10px 10px; }}
+                        .footer {{ text-align: center; margin-top: 22px; color: #666; font-size: 13px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>¡Tu cuenta fue aprobada!</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Hola {userName},</p>
+                            <p>Te confirmamos que tu cuenta para <strong>{empresaNombre}</strong> fue aprobada. Ya puedes iniciar sesión y usar Wira.</p>
+                            <p>Gracias por sumarte.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
+
+        public async Task SendRejectionEmailAsync(string toEmail, string userName, string empresaNombre, string? motivo)
+        {
+            var subject = "Cuenta rechazada - Wira";
+            var reasonText = string.IsNullOrWhiteSpace(motivo) ? "" : $"<p>Motivo: {motivo}</p>";
+            var body = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: white; padding: 26px; text-align: center; border-radius: 10px 10px 0 0; }}
+                        .content {{ background: #f8f9fa; padding: 28px; border-radius: 0 0 10px 10px; }}
+                        .footer {{ text-align: center; margin-top: 22px; color: #666; font-size: 13px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>Tu cuenta fue rechazada</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Hola {userName},</p>
+                            <p>La solicitud de cuenta asociada a <strong>{empresaNombre}</strong> fue rechazada.</p>
+                            {reasonText}
+                            <p>Si crees que se trata de un error, por favor contacta al administrador de la empresa.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
                         </div>
                     </div>
                 </body>

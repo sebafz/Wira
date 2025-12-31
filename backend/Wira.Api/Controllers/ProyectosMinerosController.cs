@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Wira.Api.Data;
 using Wira.Api.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Wira.Api.Controllers
 {
@@ -26,7 +27,6 @@ namespace Wira.Api.Controllers
             {
                 var proyectos = await _context.ProyectosMineros
                     .Include(p => p.Minera)
-                    .Where(p => p.Activo)
                     .Select(p => new
                     {
                         p.ProyectoMineroID,
@@ -34,10 +34,12 @@ namespace Wira.Api.Controllers
                         p.Nombre,
                         p.Ubicacion,
                         p.Descripcion,
+                        p.FechaInicio,
                         p.Activo,
                         MineraNombre = p.Minera.Nombre
                     })
-                    .OrderBy(p => p.Nombre)
+                    .OrderByDescending(p => p.Activo)
+                    .ThenBy(p => p.Nombre)
                     .ToListAsync();
 
                 return Ok(proyectos);
@@ -64,6 +66,7 @@ namespace Wira.Api.Controllers
                         p.Nombre,
                         p.Ubicacion,
                         p.Descripcion,
+                        p.FechaInicio,
                         p.Activo,
                         MineraNombre = p.Minera.Nombre
                     })
@@ -90,7 +93,7 @@ namespace Wira.Api.Controllers
             {
                 var proyectos = await _context.ProyectosMineros
                     .Include(p => p.Minera)
-                    .Where(p => p.MineraID == mineraId && p.Activo)
+                    .Where(p => p.MineraID == mineraId)
                     .Select(p => new
                     {
                         p.ProyectoMineroID,
@@ -98,10 +101,12 @@ namespace Wira.Api.Controllers
                         p.Nombre,
                         p.Ubicacion,
                         p.Descripcion,
+                        p.FechaInicio,
                         p.Activo,
                         MineraNombre = p.Minera.Nombre
                     })
-                    .OrderBy(p => p.Nombre)
+                    .OrderByDescending(p => p.Activo)
+                    .ThenBy(p => p.Nombre)
                     .ToListAsync();
 
                 return Ok(proyectos);
@@ -137,6 +142,7 @@ namespace Wira.Api.Controllers
                     Nombre = createDto.Nombre,
                     Ubicacion = createDto.Ubicacion,
                     Descripcion = createDto.Descripcion,
+                    FechaInicio = createDto.FechaInicio,
                     Activo = true
                 };
 
@@ -172,6 +178,7 @@ namespace Wira.Api.Controllers
                 proyecto.Nombre = updateDto.Nombre;
                 proyecto.Ubicacion = updateDto.Ubicacion;
                 proyecto.Descripcion = updateDto.Descripcion;
+                proyecto.FechaInicio = updateDto.FechaInicio;
 
                 await _context.SaveChangesAsync();
 
@@ -226,6 +233,8 @@ namespace Wira.Api.Controllers
         public string? Ubicacion { get; set; }
 
         public string? Descripcion { get; set; }
+
+        public DateTime? FechaInicio { get; set; }
     }
 
     public class UpdateProyectoMineroDto
@@ -238,5 +247,7 @@ namespace Wira.Api.Controllers
         public string? Ubicacion { get; set; }
 
         public string? Descripcion { get; set; }
+
+        public DateTime? FechaInicio { get; set; }
     }
 }

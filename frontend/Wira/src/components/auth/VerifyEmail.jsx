@@ -36,10 +36,6 @@ const Title = styled.h1`
   color: #333;
   font-size: 2rem;
   margin-bottom: 15px;
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 `;
 
 const Message = styled.p`
@@ -126,29 +122,55 @@ const Button = styled.button`
 `;
 
 const SecondaryButton = styled.button`
-  background: none;
-  border: none;
-  color: #667eea;
+  background: white;
+  border: 1px solid #fc6b0a;
+  color: #fc6b0a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  text-decoration: underline;
-  font-size: 0.9rem;
-  margin-top: 15px;
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    color: #5a6fd8;
-    background-color: rgba(102, 126, 234, 0.1);
-    text-decoration: none;
+    background: rgba(252, 107, 10, 0.08);
+    transform: translateY(-1px);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    color: #999;
-    text-decoration: none;
+    transform: none;
   }
+`;
+
+const ResendBox = styled.div`
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const ResendLabel = styled.span`
+  color: #475569;
+  font-size: 0.95rem;
+`;
+
+const ApprovalBox = styled.div`
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin: 12px 0 20px;
+  line-height: 1.5;
+  font-weight: 600;
 `;
 
 const ErrorMessage = styled.div`
@@ -187,12 +209,6 @@ const LoadingSpinner = styled.div`
   }
 `;
 
-const TimerText = styled.div`
-  color: #666;
-  font-size: 0.9rem;
-  margin-top: 15px;
-`;
-
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -204,6 +220,7 @@ const VerifyEmail = () => {
   const [success, setSuccess] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   // Manejo de inputs del código
   const handleCodeChange = (index, value) => {
@@ -246,10 +263,10 @@ const VerifyEmail = () => {
       const response = await apiService.verifyEmail(email, verificationCode);
 
       if (response.data.success) {
-        setSuccess("¡Email verificado exitosamente! Redirigiendo al login...");
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+        setPendingApproval(true);
+        setSuccess(
+          "Email verificado. Tu cuenta está pendiente de aprobación y ya avisamos al administrador."
+        );
       } else {
         setError(response.data.message || "Código inválido");
       }
@@ -316,6 +333,25 @@ const VerifyEmail = () => {
     );
   }
 
+  if (pendingApproval) {
+    return (
+      <VerifyContainer>
+        <VerifyCard>
+          <Icon>⏳</Icon>
+          <Title>Cuenta en revisión</Title>
+          <ApprovalBox>¡Tu email fue verificado correctamente!</ApprovalBox>
+          <Message style={{ marginTop: 0 }}>
+            Tu cuenta está pendiente de aprobación y ya avisamos al
+            administrador. Te notificaremos cuando puedas ingresar.
+          </Message>
+          <Button onClick={() => navigate("/login")}>
+            Volver al inicio de sesión
+          </Button>
+        </VerifyCard>
+      </VerifyContainer>
+    );
+  }
+
   return (
     <VerifyContainer>
       <VerifyCard>
@@ -363,22 +399,23 @@ const VerifyEmail = () => {
           </Button>
         </Form>
 
-        <SecondaryButton
-          onClick={handleResendCode}
-          disabled={resendLoading || timer > 0}
-        >
-          {resendLoading
-            ? "Reenviando..."
-            : timer > 0
-            ? `Reenviar en ${timer}s`
-            : "Reenviar código"}
-        </SecondaryButton>
-
-        {timer > 0 && (
-          <TimerText>
-            Podrás solicitar un nuevo código en {timer} segundos
-          </TimerText>
-        )}
+        <ResendBox>
+          <ResendLabel>
+            {timer > 0
+              ? `Podrás reenviar en ${timer} segundos`
+              : "¿No recibiste el código?"}
+          </ResendLabel>
+          <SecondaryButton
+            onClick={handleResendCode}
+            disabled={resendLoading || timer > 0}
+          >
+            {resendLoading
+              ? "Reenviando..."
+              : timer > 0
+              ? `Reenviar en ${timer}s`
+              : "Reenviar código"}
+          </SecondaryButton>
+        </ResendBox>
 
         <div style={{ marginTop: "20px" }}>
           <Button

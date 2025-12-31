@@ -112,7 +112,8 @@ namespace Wira.Api.Tests.Controllers
             // Assert
             result.Should().BeOfType<OkObjectResult>();
             var okResult = result as OkObjectResult;
-            var minera = okResult!.Value;
+            var response = okResult!.Value;
+            var minera = GetPropertyValue(response!, "minera");
 
             minera.Should().NotBeNull();
 
@@ -147,22 +148,23 @@ namespace Wira.Api.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetMinera_WithInactiveMinera_ReturnsNotFound()
+        public async Task GetMinera_WithInactiveMinera_ReturnsRecord()
         {
             // Arrange
-            int inactiveMineraId = 3;
+            const int inactiveMineraId = 3;
 
             // Act
             var result = await _controller.GetMinera(inactiveMineraId);
 
             // Assert
-            result.Should().BeOfType<NotFoundObjectResult>();
-            var notFoundResult = result as NotFoundObjectResult;
-            var response = notFoundResult!.Value;
+            result.Should().BeOfType<OkObjectResult>();
+            var okResult = result as OkObjectResult;
+            var response = okResult!.Value;
+            var minera = GetPropertyValue(response!, "minera");
 
-            response.Should().NotBeNull();
-            var message = GetPropertyValue(response!, "message")?.ToString();
-            message.Should().Be("Minera no encontrada");
+            minera.Should().NotBeNull();
+            var activo = GetPropertyValue(minera!, "Activo");
+            activo.Should().Be(false);
         }
 
         [Fact]

@@ -28,6 +28,7 @@ import ColorPalette from "./components/shared/ColorPalette";
 import AdminMineras from "./components/admin/AdminMineras";
 import AdminProveedores from "./components/admin/AdminProveedores";
 import AdminUsuarios from "./components/admin/AdminUsuarios";
+import AprobacionesUsuarios from "./components/admin/AprobacionesUsuarios";
 import "./App.css";
 
 function App() {
@@ -186,6 +187,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminUsuarios />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/aprobaciones"
+              element={
+                <ProtectedRoute>
+                  <AprobacionesUsuarios />
                 </ProtectedRoute>
               }
             />

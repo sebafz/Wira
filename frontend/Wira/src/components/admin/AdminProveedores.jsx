@@ -49,22 +49,6 @@ const SearchInput = styled.input`
   font-size: 0.95rem;
 `;
 
-const RefreshButton = styled.button`
-  border: none;
-  background: #0f172a;
-  color: white;
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
 const FilterSelect = styled.select`
   min-width: 180px;
   border: 1px solid #dddddd;
@@ -110,6 +94,10 @@ const Table = styled.table`
     padding: 14px;
     text-align: left;
     border-bottom: 1px solid #edf2f7;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
   }
 
   th {
@@ -259,9 +247,6 @@ const AdminProveedores = () => {
               </option>
             ))}
           </FilterSelect>
-          <RefreshButton onClick={loadData} disabled={loading}>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </RefreshButton>
         </Controls>
 
         {error && <ErrorBanner>{error}</ErrorBanner>}

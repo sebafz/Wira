@@ -37,6 +37,16 @@ namespace Wira.Api.Models
 
         public DateTime? FechaBaja { get; set; }
 
+        [StringLength(20)]
+        public string EstadoAprobacion { get; set; } = AprobacionEstados.Pendiente;
+
+        public DateTime? FechaAprobacion { get; set; }
+
+        public int? AprobadoPorUsuarioID { get; set; }
+
+        [StringLength(500)]
+        public string? MotivoRechazo { get; set; }
+
         public bool ValidadoEmail { get; set; } = false;
 
         [StringLength(255)]

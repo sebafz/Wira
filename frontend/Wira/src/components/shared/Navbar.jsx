@@ -1,9 +1,16 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import logoWira from "../../assets/logoWira.png";
 import { toast } from "react-toastify";
+import { apiService } from "../../services/apiService";
 
 const NavbarContainer = styled.nav`
   background: white;
@@ -78,6 +85,26 @@ const NotificationBadge = styled.div`
   font-weight: bold;
   min-width: 18px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+`;
+
+const ApprovalButton = styled(NotificationButton)`
+  border-color: #d1fae5;
+  color: #0f172a;
+
+  &:hover {
+    background-color: #ecfdf3;
+    border-color: #16a34a;
+    color: #166534;
+  }
+`;
+
+const ApprovalBadge = styled(NotificationBadge)`
+  background: #dc3545;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  padding: 0;
+  box-shadow: none;
 `;
 
 const NotificationDropdown = styled.div`
@@ -304,10 +331,30 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [approvalCount, setApprovalCount] = useState(0);
+  const [loadingApprovals, setLoadingApprovals] = useState(false);
   const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
+
+  const hasApprovalRole = useMemo(() => {
+    const rawRoles = Array.isArray(user?.roles)
+      ? user.roles
+      : Array.isArray(user?.Roles)
+      ? user.Roles
+      : [];
+
+    const normalizedRoles = rawRoles
+      .filter((role) => typeof role === "string")
+      .map((role) => role.trim().toUpperCase());
+
+    return (
+      normalizedRoles.includes("ADMIN_SISTEMA") ||
+      normalizedRoles.includes("MINERA_ADMINISTRADOR") ||
+      normalizedRoles.includes("PROVEEDOR_ADMINISTRADOR")
+    );
+  }, [user]);
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -385,6 +432,32 @@ const Navbar = () => {
       console.error("Error al cargar conteo de notificaciones:", error);
     }
   }, [user, token]);
+
+  const fetchPendingApprovalsCount = useCallback(async () => {
+    if (!hasApprovalRole) return;
+
+    try {
+      setLoadingApprovals(true);
+      const response = await apiService.getPendingApprovalsCount();
+      const count =
+        response.data?.pendientesEmpresaActual ??
+        response.data?.totalPendientes ??
+        0;
+      setApprovalCount(count);
+    } catch (error) {
+      console.error("Error al cargar pendientes de aprobación:", error);
+    } finally {
+      setLoadingApprovals(false);
+    }
+  }, [hasApprovalRole]);
+
+  useEffect(() => {
+    if (hasApprovalRole) {
+      fetchPendingApprovalsCount();
+    } else {
+      setApprovalCount(0);
+    }
+  }, [hasApprovalRole, fetchPendingApprovalsCount]);
 
   const markAsRead = async (notificationId) => {
     if (!user?.usuarioID) return;
@@ -516,6 +589,13 @@ const Navbar = () => {
     }
   };
 
+  const handleApprovalsClick = () => {
+    if (!hasApprovalRole) return;
+    setShowNotifications(false);
+    setShowDropdown(false);
+    navigate("/admin/aprobaciones");
+  };
+
   const handleProfileView = () => {
     setShowDropdown(false);
     navigate("/profile");
@@ -579,6 +659,24 @@ const Navbar = () => {
           <ProfileButton onClick={handleProfileClick}>
             {getUserInitials()}
           </ProfileButton>
+
+          {hasApprovalRole && (
+            <div style={{ position: "relative" }}>
+              <ApprovalButton
+                onClick={handleApprovalsClick}
+                title={
+                  loadingApprovals
+                    ? "Actualizando aprobaciones"
+                    : "Solicitudes de aprobación"
+                }
+              >
+                ✅
+                {approvalCount > 0 && (
+                  <ApprovalBadge aria-label="Pendientes de aprobación" />
+                )}
+              </ApprovalButton>
+            </div>
+          )}
 
           {/* Botón de notificaciones */}
           <div ref={notificationRef} style={{ position: "relative" }}>

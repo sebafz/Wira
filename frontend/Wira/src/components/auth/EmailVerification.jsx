@@ -32,10 +32,6 @@ const Title = styled.h1`
   color: #333;
   font-size: 2rem;
   margin-bottom: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 `;
 
 const Message = styled.p`
