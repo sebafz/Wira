@@ -529,11 +529,18 @@ namespace Wira.Api.Services
                 claims.Add(new Claim("ProveedorID", user.Proveedor.ProveedorID.ToString()));
             }
 
+            var expirationHours = 4d;
+            var expirationSetting = _configuration["Jwt:ExpirationHours"];
+            if (double.TryParse(expirationSetting, out var configuredHours) && configuredHours > 0)
+            {
+                expirationHours = configuredHours;
+            }
+
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(24),
+                expires: DateTime.UtcNow.AddHours(expirationHours),
                 signingCredentials: creds
             );
 
