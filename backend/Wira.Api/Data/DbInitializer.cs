@@ -148,7 +148,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primeraMinera.EmpresaID,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
+                    EstadoAprobacion = AprobacionEstados.Aprobado,
+                    FechaAprobacion = DateTime.Now
                 },
                 new Usuario
                 {
@@ -162,7 +164,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primerProveedor.EmpresaID,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
+                    EstadoAprobacion = AprobacionEstados.Aprobado,
+                    FechaAprobacion = DateTime.Now
                 },
                 new Usuario
                 {
@@ -176,7 +180,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = null,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
+                    EstadoAprobacion = AprobacionEstados.Aprobado,
+                    FechaAprobacion = DateTime.Now
                 },
                 new Usuario
                 {
@@ -190,7 +196,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primeraMinera.EmpresaID,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
+                    EstadoAprobacion = AprobacionEstados.Aprobado,
+                    FechaAprobacion = DateTime.Now
                 },
                 new Usuario
                 {
@@ -204,7 +212,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primerProveedor.EmpresaID,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
+                    EstadoAprobacion = AprobacionEstados.Aprobado,
+                    FechaAprobacion = DateTime.Now
                 }
             };
 
@@ -241,6 +251,7 @@ namespace Wira.Api.Data
                     Nombre = "Extracción Tinkal",
                     Ubicacion = "Salar del Hombre Muerto, Catamarca",
                     Descripcion = "Proyecto de extracción de boratos en la cuenca de Tincalayu, fase de expansión de operaciones existentes con nuevas tecnologías de extracción sostenible.",
+                    FechaInicio = DateTime.Now.AddMonths(-18),
                     Activo = true
                 },
                 new ProyectoMinero
@@ -249,6 +260,7 @@ namespace Wira.Api.Data
                     Nombre = "Planta de Refinado Norte",
                     Ubicacion = "Campo Quijano, Salta",
                     Descripcion = "Construcción de nueva planta de refinado de ácido bórico con tecnología de última generación para incrementar la capacidad de procesamiento.",
+                    FechaInicio = DateTime.Now.AddMonths(-12),
                     Activo = true
                 },
                 new ProyectoMinero
@@ -257,6 +269,7 @@ namespace Wira.Api.Data
                     Nombre = "Modernización Infraestructura",
                     Ubicacion = "Tincalayu, Catamarca",
                     Descripcion = "Actualización integral de sistemas de transporte interno, modernización de equipos de extracción y mejora de la infraestructura logística.",
+                    FechaInicio = DateTime.Now.AddMonths(-9),
                     Activo = true
                 }
             };

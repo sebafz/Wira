@@ -1087,7 +1087,7 @@ const PropuestasProveedor = () => {
         <PageHeader>
           <PageTitle>Propuestas</PageTitle>
           <PageSubtitle>
-            Gestione todas las propuestas enviadas por {getCompanyName()}
+            Gestione todas las propuestas enviadas por {getCompanyName()}.
           </PageSubtitle>
         </PageHeader>
 

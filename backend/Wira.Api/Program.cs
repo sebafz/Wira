@@ -40,6 +40,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddScoped<IPropuestaEvaluacionService, PropuestaEvaluacionService>();
 
 // Configurar CORS para desarrollo
 builder.Services.AddCors(options =>

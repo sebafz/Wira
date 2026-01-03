@@ -437,74 +437,114 @@ const InfoText = styled.div`
   font-style: italic;
 `;
 
-const InfoTooltip = styled.div`
-  position: relative;
-  display: inline-block;
-  margin-left: 8px;
-  cursor: help;
+const CriteriaInfoWrapper = styled.div`
+  display: inline-flex;
+  align-items: center;
 `;
 
-const InfoIcon = styled.span`
+const CriteriaInfoButton = styled.button`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  color: #6c757d;
-  border: 2px solid #6c757d;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: bold;
+  transition: background 0.2s ease, transform 0.2s ease;
+  margin-left: 6px;
 
-  &:hover + div {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+  &:hover {
+    background: #cbd5f5;
+    transform: translateY(-1px);
+  }
+
+  &:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
   }
 `;
 
-const TooltipContent = styled.div`
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-10px);
-  background: #333;
-  color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  line-height: 1.2;
-  white-space: nowrap;
-  max-width: 350px;
-  white-space: normal;
-  width: max-content;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s ease;
-  font-weight: 400;
+const CriteriaInfoOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 3000;
+`;
 
-  &::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #333;
+const CriteriaInfoPopup = styled.div`
+  width: 460px;
+  max-width: 90vw;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 22px 24px 24px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  border: 1px solid #e2e8f0;
+`;
+
+const CriteriaInfoPopupTitle = styled.h5`
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: #0f172a;
+`;
+
+const CriteriaInfoPopupText = styled.p`
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.4;
+`;
+
+const CriteriaInfoList = styled.ul`
+  margin: 0 0 12px 18px;
+  padding: 0;
+  color: #1e293b;
+  font-size: 0.9rem;
+  line-height: 1.4;
+`;
+
+const CriteriaInfoListItem = styled.li`
+  margin-bottom: 8px;
+
+  strong {
+    color: #0f172a;
   }
+`;
 
-  @media (max-width: 768px) {
-    max-width: 280px;
-    left: 0;
-    transform: translateX(0) translateY(-10px);
+const CriteriaInfoSubList = styled.ul`
+  margin: 6px 0 0 18px;
+  padding: 0;
+  color: #475569;
+  list-style: disc;
+  line-height: 1.4;
 
-    &::after {
-      left: 20px;
-      transform: translateX(0);
-    }
+  li {
+    margin-bottom: 4px;
+  }
+`;
+
+const CriteriaInfoCloseButton = styled.button`
+  margin-top: 8px;
+  border: none;
+  background: #0f172a;
+  color: white;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #1f2937;
   }
 `;
 
@@ -818,29 +858,63 @@ const CrearLicitacion = () => {
 
   const [criterios, setCriterios] = useState(() => [
     createCriterio(1, {
-      nombre: "Precio",
-      descripcion: "Costo total de la propuesta",
-      peso: 25,
+      nombre: "Precio total ofertado",
+      descripcion: "Monto final propuesto para la adjudicación",
+      peso: 30,
       tipo: "Numerico",
       mayorMejor: false,
     }),
     createCriterio(2, {
-      nombre: "Experiencia",
-      descripcion: "Años de experiencia en el rubro",
-      peso: 25,
-    }),
-    createCriterio(3, {
-      nombre: "Proyectos realizados",
-      descripcion:
-        "Cantidad de proyectos realizados con características comparables",
-      peso: 25,
-    }),
-    createCriterio(4, {
-      nombre: "Tiempo de entrega",
-      descripcion: "Plazo de entrega propuesto (en días)",
+      nombre: "Tiempo de entrega comprometido",
+      descripcion: "Cantidad de días calendario hasta la puesta en marcha",
       peso: 25,
       tipo: "Numerico",
       mayorMejor: false,
+    }),
+    createCriterio(3, {
+      nombre: "Cumplimiento normativo y de seguridad",
+      descripcion: "Acreditación de habilitaciones, permisos y políticas ESG",
+      peso: 20,
+      tipo: "Booleano",
+      mayorMejor: null,
+      esExcluyente: true,
+      esPuntuable: true,
+      valorRequeridoBooleano: true,
+    }),
+    createCriterio(4, {
+      nombre: "Gestión de riesgos y contingencias",
+      descripcion:
+        "Robustez del plan de mitigación y respuesta ante incidentes",
+      peso: 25,
+      tipo: "Escala",
+      mayorMejor: null,
+      esPuntuable: true,
+      opciones: [
+        createOpcion({
+          valor: "Plan integral",
+          descripcion: "Identifica riesgos críticos, responsables y reservas",
+          puntaje: 10,
+          orden: 1,
+        }),
+        createOpcion({
+          valor: "Plan sólido",
+          descripcion: "Cobertura de riesgos principales con acciones claras",
+          puntaje: 7,
+          orden: 2,
+        }),
+        createOpcion({
+          valor: "Plan básico",
+          descripcion: "Solo cubre riesgos frecuentes sin contingencias",
+          puntaje: 4,
+          orden: 3,
+        }),
+        createOpcion({
+          valor: "Plan insuficiente",
+          descripcion: "No evidencia un enfoque sistemático de mitigación",
+          puntaje: 0,
+          orden: 4,
+        }),
+      ],
     }),
   ]);
 
@@ -864,6 +938,7 @@ const CrearLicitacion = () => {
 
   // Estado para modal de confirmación
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
+  const [showCriteriaInfo, setShowCriteriaInfo] = useState(false);
   // const [pendingFormData, setPendingFormData] = useState(null); // Used for confirmation modal
 
   // Cargar rubros y proyectos mineros al montar el componente
@@ -1194,6 +1269,16 @@ const CrearLicitacion = () => {
           criterio.valorMaximo !== null &&
           criterio.valorMaximo !== undefined;
 
+        if (criterio.esExcluyente && !hasMin) {
+          newErrors[`criterio_${criterio.id}_min`] =
+            "Define un valor mínimo para los criterios excluyentes";
+        }
+
+        if (criterio.esExcluyente && !hasMax) {
+          newErrors[`criterio_${criterio.id}_max`] =
+            "Define un valor máximo para los criterios excluyentes";
+        }
+
         if (hasMin) {
           const minValue = parseFloat(criterio.valorMinimo);
           if (Number.isNaN(minValue)) {
@@ -1235,7 +1320,7 @@ const CrearLicitacion = () => {
               "La etiqueta es obligatoria";
           }
 
-          if (criterio.esPuntuable) {
+          if (criterio.esPuntuable || criterio.esExcluyente) {
             const puntajeValue =
               opcion.puntaje === "" ? NaN : parseFloat(opcion.puntaje);
             if (Number.isNaN(puntajeValue)) {
@@ -1248,7 +1333,7 @@ const CrearLicitacion = () => {
 
       if (
         criterio.tipo === "Booleano" &&
-        criterio.esPuntuable &&
+        (criterio.esPuntuable || criterio.esExcluyente) &&
         (criterio.valorRequeridoBooleano === null ||
           criterio.valorRequeridoBooleano === undefined)
       ) {
@@ -1569,7 +1654,7 @@ const CrearLicitacion = () => {
         <FormCard>
           <FormTitle>Nueva licitación</FormTitle>
           <FormSubtitle>
-            Crea una nueva licitación para {getCompanyName()}
+            Cree una nueva licitación para {getCompanyName()}.
           </FormSubtitle>
 
           <form onSubmit={handleSubmit}>
@@ -1642,17 +1727,7 @@ const CrearLicitacion = () => {
             </FormGroup>
 
             <FormGroup>
-              <FormLabel htmlFor="proyectoMineroID">
-                Proyecto minero
-                <InfoTooltip>
-                  <InfoIcon>?</InfoIcon>
-                  <TooltipContent>
-                    Seleccione el proyecto minero al cual pertenece esta
-                    licitación. Este campo es opcional y le ayudará a organizar
-                    mejor sus licitaciones.
-                  </TooltipContent>
-                </InfoTooltip>
-              </FormLabel>
+              <FormLabel htmlFor="proyectoMineroID">Proyecto minero</FormLabel>
               <FormSelect
                 id="proyectoMineroID"
                 name="proyectoMineroID"
@@ -1811,43 +1886,15 @@ const CrearLicitacion = () => {
             <CriteriosSection>
               <SectionTitle>
                 Criterios de evaluación
-                <InfoTooltip>
-                  <InfoIcon>?</InfoIcon>
-                  <TooltipContent>
-                    <strong>¿Qué son los criterios de evaluación?</strong>
-                    <br />
-                    Definen cómo se comparan las propuestas y qué información es
-                    obligatoria para los proveedores.
-                    <br />
-                    <br />
-                    <strong>Pesos y redistribución:</strong> Cada criterio
-                    aporta un porcentaje del puntaje total. Deben sumar 100% y
-                    al agregar o quitar criterios se reajustan automáticamente
-                    usando múltiplos de 5 (puedes modificarlos luego).
-                    <br />
-                    <br />
-                    <strong>Tipos disponibles:</strong>
-                    <br />
-                    • Valor numérico: define si "Mayor" o "Menor" es mejor y
-                    permite límites mínimos/máximos.
-                    <br />
-                    • Sí/No: selecciona la respuesta correcta si el criterio
-                    aporta puntaje.
-                    <br />
-                    • Escala personalizada: crea opciones ordenadas y, si
-                    corresponde, asigna puntaje a cada una.
-                    <br />
-                    • Respuesta descriptiva: recolecta texto libre y no suma ni
-                    resta puntos.
-                    <br />
-                    <br />
-                    <strong>Configuraciones adicionales:</strong>
-                    <br />
-                    • Criterio excluyente: descarta propuestas que no cumplan.
-                    <br />• Aporta puntaje: controla si el criterio suma puntos
-                    (los descriptivos siempre quedan desactivados).
-                  </TooltipContent>
-                </InfoTooltip>
+                <CriteriaInfoWrapper>
+                  <CriteriaInfoButton
+                    type="button"
+                    aria-label="Información sobre los criterios de evaluación"
+                    onClick={() => setShowCriteriaInfo(true)}
+                  >
+                    i
+                  </CriteriaInfoButton>
+                </CriteriaInfoWrapper>
                 {getTotalPeso() !== 100 && (
                   <span
                     style={{
@@ -1975,7 +2022,7 @@ const CrearLicitacion = () => {
                   {criterio.tipo === "Booleano" && (
                     <TipoConfigBanner>
                       <BannerTitle>Configuración de puntaje</BannerTitle>
-                      {criterio.esPuntuable ? (
+                      {criterio.esPuntuable || criterio.esExcluyente ? (
                         <>
                           <BooleanChoiceRow>
                             <BooleanChoiceLabel>
@@ -2014,8 +2061,9 @@ const CrearLicitacion = () => {
                             </BooleanChoiceLabel>
                           </BooleanChoiceRow>
                           <InfoText>
-                            Seleccione qué respuesta otorga puntaje para este
-                            criterio.
+                            {criterio.esExcluyente && !criterio.esPuntuable
+                              ? "Seleccione qué respuesta debe cumplirse para evitar la descalificación."
+                              : "Seleccione qué respuesta otorga puntaje para este criterio."}
                           </InfoText>
                           {errors[`criterio_${criterio.id}_booleano`] && (
                             <ErrorText>
@@ -2025,8 +2073,8 @@ const CrearLicitacion = () => {
                         </>
                       ) : (
                         <InfoText>
-                          Active "Aporta puntaje" si quiere evaluar esta
-                          respuesta como válida o inválida.
+                          Active "Criterio excluyente" o "Aporta puntaje" si
+                          quiere evaluar esta respuesta como válida o inválida.
                         </InfoText>
                       )}
                     </TipoConfigBanner>
@@ -2165,7 +2213,10 @@ const CrearLicitacion = () => {
                                     e.target.value
                                   )
                                 }
-                                disabled={!criterio.esPuntuable}
+                                disabled={
+                                  !criterio.esPuntuable &&
+                                  !criterio.esExcluyente
+                                }
                               />
                               <RemoveOptionButton
                                 type="button"
@@ -2301,6 +2352,71 @@ const CrearLicitacion = () => {
           </form>
         </FormCard>
       </MainContent>
+
+      {showCriteriaInfo && (
+        <CriteriaInfoOverlay onClick={() => setShowCriteriaInfo(false)}>
+          <CriteriaInfoPopup onClick={(event) => event.stopPropagation()}>
+            <CriteriaInfoPopupTitle>
+              ¿Qué son los criterios de evaluación?
+            </CriteriaInfoPopupTitle>
+            <CriteriaInfoPopupText>
+              Definen cómo se comparan las propuestas y qué información es
+              obligatoria para los proveedores.
+            </CriteriaInfoPopupText>
+            <CriteriaInfoList>
+              <CriteriaInfoListItem>
+                <strong>Pesos y redistribución:</strong> Cada criterio aporta un
+                porcentaje del puntaje total. Deben sumar 100% y, al agregar o
+                quitar criterios, se reajustan automáticamente usando múltiplos
+                de 5 (puede ajustarlos luego).
+              </CriteriaInfoListItem>
+              <CriteriaInfoListItem>
+                <strong>Tipos disponibles:</strong>
+                <CriteriaInfoSubList>
+                  <li>
+                    Valor numérico: define si "mayor" o "menor" es mejor y
+                    permite límites mínimos/máximos.
+                  </li>
+                  <li>
+                    Sí/No: selecciona la respuesta correcta si el criterio
+                    aporta puntaje.
+                  </li>
+                  <li>
+                    Escala personalizada: crea opciones ordenadas y, si
+                    corresponde, asigna puntaje a cada una.
+                  </li>
+                  <li>
+                    Respuesta descriptiva: recolecta texto libre y no suma ni
+                    resta puntos.
+                  </li>
+                </CriteriaInfoSubList>
+              </CriteriaInfoListItem>
+              <CriteriaInfoListItem>
+                <strong>Configuraciones adicionales:</strong>
+                <CriteriaInfoSubList>
+                  <li>
+                    Criterio excluyente: descarta propuestas que no cumplan.
+                  </li>
+                  <li>
+                    Aporta puntaje: controla si el criterio suma puntos (los
+                    descriptivos siempre quedan desactivados).
+                  </li>
+                </CriteriaInfoSubList>
+              </CriteriaInfoListItem>
+            </CriteriaInfoList>
+            <CriteriaInfoPopupText>
+              Use estos campos para explicar claramente qué espera recibir y
+              cómo se calculará la nota final.
+            </CriteriaInfoPopupText>
+            <CriteriaInfoCloseButton
+              type="button"
+              onClick={() => setShowCriteriaInfo(false)}
+            >
+              Entendido
+            </CriteriaInfoCloseButton>
+          </CriteriaInfoPopup>
+        </CriteriaInfoOverlay>
+      )}
 
       {/* Modal de confirmación para crear licitación */}
       {showConfirmCreate && (

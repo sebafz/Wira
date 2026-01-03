@@ -222,6 +222,17 @@ const Actions = styled.div`
   margin-top: 6px;
 `;
 
+const ROLE_GROUPS = {
+  MINERA: [
+    { value: "MINERA_ADMINISTRADOR", label: "Administrador de minera" },
+    { value: "MINERA_USUARIO", label: "Usuario de minera" },
+  ],
+  PROVEEDOR: [
+    { value: "PROVEEDOR_ADMINISTRADOR", label: "Administrador de proveedor" },
+    { value: "PROVEEDOR_USUARIO", label: "Usuario de proveedor" },
+  ],
+};
+
 const AprobacionesUsuarios = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -259,24 +270,27 @@ const AprobacionesUsuarios = () => {
     return "";
   }, [user]);
 
-  const roleOptions = useMemo(() => {
-    if (empresaTipo === "MINERA") {
-      return [
-        { value: "MINERA_ADMINISTRADOR", label: "Administrador de minera" },
-        { value: "MINERA_USUARIO", label: "Usuario de minera" },
-      ];
-    }
-    if (empresaTipo === "PROVEEDOR") {
-      return [
-        {
-          value: "PROVEEDOR_ADMINISTRADOR",
-          label: "Administrador de proveedor",
-        },
-        { value: "PROVEEDOR_USUARIO", label: "Usuario de proveedor" },
-      ];
+  const approverRoleOptions = useMemo(() => {
+    if (empresaTipo === "MINERA" || empresaTipo === "PROVEEDOR") {
+      return ROLE_GROUPS[empresaTipo];
     }
     return [];
   }, [empresaTipo]);
+
+  const getRoleOptionsForUser = useCallback(
+    (usuario) => {
+      const tipo = getEmpresaTipo(usuario);
+      if (tipo && ROLE_GROUPS[tipo]) {
+        return ROLE_GROUPS[tipo];
+      }
+      return approverRoleOptions;
+    },
+    [approverRoleOptions]
+  );
+
+  const modalRoleOptions = selectedUser
+    ? getRoleOptionsForUser(selectedUser)
+    : approverRoleOptions;
 
   const loadPending = useCallback(async () => {
     try {
@@ -305,9 +319,10 @@ const AprobacionesUsuarios = () => {
   }, [hasApprovalRole, loadPending, navigate]);
 
   const openApprove = (usuario) => {
+    const optionsForUser = getRoleOptionsForUser(usuario);
     setSelectedUser(usuario);
     setModalMode("approve");
-    setSelectedRole(roleOptions[0]?.value || "");
+    setSelectedRole(optionsForUser[0]?.value || "");
     setMotivo("");
   };
 
@@ -542,7 +557,7 @@ const AprobacionesUsuarios = () => {
                   onChange={(event) => setSelectedRole(event.target.value)}
                 >
                   <option value="">Seleccioná un rol</option>
-                  {roleOptions.map((role) => (
+                  {modalRoleOptions.map((role) => (
                     <option key={role.value} value={role.value}>
                       {role.label}
                     </option>
