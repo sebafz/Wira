@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Wira.Api.Data;
 using Wira.Api.Models;
 using Wira.Api.Services;
+using Wira.Api.Services.Interfaces;
 
 namespace Wira.Api.Controllers
 {
@@ -14,12 +15,18 @@ namespace Wira.Api.Controllers
         private readonly WiraDbContext _context;
         private readonly ILogger<PropuestasController> _logger;
         private readonly INotificacionService _notificacionService;
+        private readonly IPropuestaEvaluacionService _evaluacionService;
 
-        public PropuestasController(WiraDbContext context, ILogger<PropuestasController> logger, INotificacionService notificacionService)
+        public PropuestasController(
+            WiraDbContext context,
+            ILogger<PropuestasController> logger,
+            INotificacionService notificacionService,
+            IPropuestaEvaluacionService evaluacionService)
         {
             _context = context;
             _logger = logger;
             _notificacionService = notificacionService;
+            _evaluacionService = evaluacionService;
         }
 
         [HttpGet]
@@ -80,10 +87,17 @@ namespace Wira.Api.Controllers
                     .Where(p => p.PropuestaID == id && !p.Eliminado)
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.Minera)
+                    .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.CriteriosLicitacion)
+                            .ThenInclude(c => c.Opciones)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
                     .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
+                    .Include(p => p.RespuestasCriterios)
+                        .ThenInclude(r => r.Criterio)
+                    .Include(p => p.RespuestasCriterios)
+                        .ThenInclude(r => r.OpcionSeleccionada)
                     .FirstOrDefaultAsync();
 
                 if (propuesta == null)
@@ -91,21 +105,21 @@ namespace Wira.Api.Controllers
                     return NotFound(new { message = "Propuesta no encontrada" });
                 }
 
-                // Obtener respuestas a criterios de evaluación
-                var respuestasCriterios = await _context.RespuestasCriteriosLicitacion
-                    .Where(r => r.PropuestaID == id)
-                    .Include(r => r.Criterio)
+                var criterios = propuesta.Licitacion?.CriteriosLicitacion?.ToList() ?? new List<CriterioLicitacion>();
+                var evaluacion = _evaluacionService.CalcularPuntaje(propuesta, criterios);
+
+                var respuestasCriterios = propuesta.RespuestasCriterios
                     .Select(r => new
                     {
                         r.RespuestaID,
                         r.CriterioID,
                         r.ValorProveedor,
-                        CriterioNombre = r.Criterio.Nombre,
-                        CriterioDescripcion = r.Criterio.Descripcion,
-                        CriterioPeso = r.Criterio.Peso,
-                        CriterioMayorMejor = r.Criterio.MayorMejor
+                        CriterioNombre = r.Criterio?.Nombre,
+                        CriterioDescripcion = r.Criterio?.Descripcion,
+                        CriterioPeso = r.Criterio?.Peso,
+                        CriterioMayorMejor = r.Criterio?.MayorMejor
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 var result = new
                 {
@@ -130,7 +144,11 @@ namespace Wira.Api.Controllers
                     ArchivosAdjuntos = propuesta.ArchivosAdjuntos
                         .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
                         .ToList(),
-                    RespuestasCriterios = respuestasCriterios
+                    RespuestasCriterios = respuestasCriterios,
+                    ScoreCalculado = evaluacion.PuntajeNormalizado,
+                    PuntajesPorCriterio = evaluacion.PuntajesPorCriterio,
+                    DescalificadaPorExcluyentes = evaluacion.ExcluidaPorCriterios,
+                    CriteriosExcluyentesFallidos = evaluacion.CriteriosExcluyentesFallidos
                 };
 
                 return Ok(result);
@@ -194,38 +212,64 @@ namespace Wira.Api.Controllers
         {
             try
             {
+                var licitacion = await _context.Licitaciones
+                    .Where(l => l.LicitacionID == licitacionId && !l.Eliminado)
+                    .Include(l => l.CriteriosLicitacion)
+                        .ThenInclude(c => c.Opciones)
+                    .FirstOrDefaultAsync();
+
+                if (licitacion == null)
+                {
+                    return NotFound(new { message = "Licitación no encontrada" });
+                }
+
+                var criterios = licitacion.CriteriosLicitacion?.ToList() ?? new List<CriterioLicitacion>();
+
                 var propuestas = await _context.Propuestas
                     .Where(p => p.LicitacionID == licitacionId && !p.Eliminado)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
                     .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
-                    .Select(p => new
-                    {
-                        p.PropuestaID,
-                        p.LicitacionID,
-                        p.ProveedorID,
-                        p.MonedaID,
-                        p.FechaEnvio,
-                        p.EstadoPropuestaID,
-                        p.Descripcion,
-                        p.PresupuestoOfrecido,
-                        p.FechaEntrega,
-                        p.CumpleRequisitos,
-                        p.CalificacionFinal,
-                        MonedaCodigo = p.Moneda.Codigo,
-                        MonedaNombre = p.Moneda.Nombre,
-                        MonedaSimbolo = p.Moneda.Simbolo,
-                        EstadoNombre = p.EstadoPropuesta.NombreEstado,
-                        ProveedorNombre = p.Proveedor.Nombre,
-                        ArchivosAdjuntos = p.ArchivosAdjuntos
-                            .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
-                            .ToList()
-                    })
-                    .OrderByDescending(p => p.FechaEnvio)
+                    .Include(p => p.RespuestasCriterios)
+                        .ThenInclude(r => r.OpcionSeleccionada)
                     .ToListAsync();
 
-                return Ok(propuestas);
+                var result = propuestas
+                    .Select(p =>
+                    {
+                        var evaluacion = _evaluacionService.CalcularPuntaje(p, criterios);
+                        return new
+                        {
+                            p.PropuestaID,
+                            p.LicitacionID,
+                            p.ProveedorID,
+                            p.MonedaID,
+                            p.FechaEnvio,
+                            p.EstadoPropuestaID,
+                            p.Descripcion,
+                            p.PresupuestoOfrecido,
+                            p.FechaEntrega,
+                            p.CumpleRequisitos,
+                            p.CalificacionFinal,
+                            MonedaCodigo = p.Moneda.Codigo,
+                            MonedaNombre = p.Moneda.Nombre,
+                            MonedaSimbolo = p.Moneda.Simbolo,
+                            EstadoNombre = p.EstadoPropuesta.NombreEstado,
+                            ProveedorNombre = p.Proveedor.Nombre,
+                            ArchivosAdjuntos = p.ArchivosAdjuntos
+                                .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
+                                .ToList(),
+                            ScoreCalculado = evaluacion.PuntajeNormalizado,
+                            PuntajesPorCriterio = evaluacion.PuntajesPorCriterio,
+                            DescalificadaPorExcluyentes = evaluacion.ExcluidaPorCriterios,
+                            CriteriosExcluyentesFallidos = evaluacion.CriteriosExcluyentesFallidos
+                        };
+                    })
+                    .OrderByDescending(p => p.FechaEnvio)
+                    .ToList();
+
+                return Ok(result);
             }
             catch (Exception ex)
             {

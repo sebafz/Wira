@@ -603,10 +603,10 @@ const resolveTipoCriterio = (tipo) => {
 
   if (typeof tipo === "string" && tipo.trim().length > 0) {
     const normalized = tipo.trim().toLowerCase();
+    if (normalized.includes("desc")) return "Descriptivo";
     if (normalized.includes("num")) return "Numerico";
     if (normalized.includes("bool")) return "Booleano";
     if (normalized.includes("esc")) return "Escala";
-    if (normalized.includes("desc")) return "Descriptivo";
     return tipo.trim();
   }
 
@@ -1300,7 +1300,7 @@ const EditarPropuesta = () => {
       <MainContent>
         <FormCard>
           <FormTitle>Editar propuesta</FormTitle>
-          <FormSubtitle>Modifique los datos de su propuesta</FormSubtitle>
+          <FormSubtitle>Modifique los datos de su propuesta.</FormSubtitle>
 
           <form onSubmit={handleSubmit}>
             <FormGroup>

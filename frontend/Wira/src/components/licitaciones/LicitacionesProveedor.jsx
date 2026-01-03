@@ -1740,6 +1740,11 @@ const LicitacionesProveedor = () => {
           ProveedorID: proveedorID,
           Descripcion: propuestaForm.descripcion,
           PresupuestoOfrecido: parseFloat(propuestaForm.presupuestoOfrecido),
+          MonedaID:
+            selectedLicitacion.monedaID ||
+            selectedLicitacion.MonedaID ||
+            selectedLicitacion.moneda?.monedaID ||
+            selectedLicitacion.Moneda?.MonedaID,
           FechaEntrega: propuestaForm.fechaEntrega
             ? new Date(propuestaForm.fechaEntrega).toISOString()
             : null,
@@ -2270,7 +2275,7 @@ const LicitacionesProveedor = () => {
           <PageTitle>Licitaciones activas</PageTitle>
           <PageSubtitle>
             Explore las oportunidades de negocio disponibles para{" "}
-            {getCompanyName()}
+            {getCompanyName()}.
           </PageSubtitle>
         </PageHeader>
 

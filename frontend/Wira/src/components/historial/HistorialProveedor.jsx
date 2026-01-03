@@ -508,7 +508,7 @@ const HistorialProveedor = () => {
           <PageTitle>Mi historial</PageTitle>
           <PageSubtitle>
             Historial completo de participaciones en licitaciones de{" "}
-            {getCompanyName()}
+            {getCompanyName()}.
           </PageSubtitle>
         </PageHeader>
 
@@ -524,7 +524,7 @@ const HistorialProveedor = () => {
             <StatNumber color="#28a745">
               {stats.adjudicacionesGanadas}
             </StatNumber>
-            <StatLabel>Adjudicaciones ganadas</StatLabel>
+            <StatLabel>Licitaciones adjudicadas</StatLabel>
           </StatCard>
           <StatCard color="#dc3545">
             <StatNumber color="#dc3545">
@@ -551,7 +551,7 @@ const HistorialProveedor = () => {
                 }
               >
                 <option value="">Todos los resultados</option>
-                <option value="GANADOR">Ganador</option>
+                <option value="GANADOR">Adjudicada</option>
                 <option value="PERDEDOR">Perdedor</option>
                 <option value="EN_EVALUACION">En evaluación</option>
               </FilterSelect>
@@ -564,7 +564,7 @@ const HistorialProveedor = () => {
                 onChange={(e) => handleFilterChange("ganador", e.target.value)}
               >
                 <option value="">Todos</option>
-                <option value="true">Adjudicaciones ganadas</option>
+                <option value="true">Adjudicadas</option>
                 <option value="false">No adjudicadas</option>
               </FilterSelect>
             </FilterGroup>
@@ -641,7 +641,7 @@ const HistorialProveedor = () => {
                     </HistorialItemTitle>
                     <ResultadoBadge ganador={item.ganador}>
                       {item.ganador === true
-                        ? "Ganador"
+                        ? "Adjudicada"
                         : item.ganador === false
                         ? "Perdedor"
                         : "En evaluación"}

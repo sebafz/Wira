@@ -632,6 +632,117 @@ const PropuestasTitle = styled.h4`
   gap: 10px;
 `;
 
+const PropuestasSubtitle = styled.h5`
+  color: #475569;
+  font-size: 1rem;
+  margin: 25px 0 12px;
+`;
+
+const ScoreInfoWrapper = styled.div`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+`;
+
+const ScoreInfoButton = styled.button`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background: #cbd5f5;
+    transform: translateY(-1px);
+  }
+
+  &:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+`;
+
+const ScoreInfoOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 3000;
+`;
+
+const ScoreInfoPopup = styled.div`
+  width: 420px;
+  max-width: 80vw;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  border: 1px solid #e2e8f0;
+`;
+
+const ScoreInfoPopupTitle = styled.h5`
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #0f172a;
+`;
+
+const ScoreInfoPopupText = styled.p`
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.4;
+`;
+
+const ScoreInfoList = styled.ul`
+  margin: 0 0 12px 18px;
+  padding: 0;
+  color: #1e293b;
+  font-size: 0.9rem;
+  line-height: 1.4;
+`;
+
+const ScoreInfoListItem = styled.li`
+  margin-bottom: 6px;
+
+  strong {
+    color: #0f172a;
+  }
+`;
+
+const ScoreInfoCloseButton = styled.button`
+  margin-top: 4px;
+  border: none;
+  background: #0f172a;
+  color: white;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #1f2937;
+  }
+`;
+
+const PropuestasHint = styled.p`
+  margin: -10px 0 15px;
+  color: #64748b;
+  font-size: 0.9rem;
+`;
+
 const PropuestasList = styled.div`
   display: flex;
   flex-direction: column;
@@ -684,6 +795,14 @@ const PropuestaRankingBadge = styled.div`
   border: 1px solid;
 
   ${(props) => {
+    if (props.variant === "invalid") {
+      return `
+        background: #fdecea;
+        color: #b71c1c;
+        border-color: #f5c2c7;
+      `;
+    }
+
     const position = props.position;
     if (position === 1) {
       return `
@@ -762,6 +881,35 @@ const PropuestaInfo = styled.div`
   color: #666;
 `;
 
+const PropuestaAlert = styled.div`
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  line-height: 1.4;
+`;
+
+const PropuestaAlertTitle = styled.span`
+  font-weight: 700;
+`;
+
+const PropuestaAlertList = styled.ul`
+  margin: 8px 0 0;
+  padding-left: 18px;
+`;
+
+const PropuestaScoreSummary = styled.div`
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-weight: 600;
+  font-size: 0.95rem;
+`;
+
 const SeleccionarGanadoraButton = styled.button`
   ${buttonBaseStyles};
   position: absolute;
@@ -779,6 +927,11 @@ const SeleccionarGanadoraButton = styled.button`
 
   &:hover:not(:disabled) {
     background: #218838;
+  }
+
+  &:disabled {
+    background: #cbd5f5;
+    cursor: not-allowed;
   }
 `;
 
@@ -1291,6 +1444,16 @@ const GanadorPropuestaItem = styled.div`
     border-color: #28a745;
     background: #f8fff8;
   }
+
+  &[data-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &[data-disabled="true"]:hover {
+    border-color: #e1e5e9;
+    background: white;
+  }
 `;
 
 const GanadorPropuestaHeader = styled.div`
@@ -1394,6 +1557,7 @@ const LicitacionesMinera = () => {
   const [showConfirmSeleccionarGanadora, setShowConfirmSeleccionarGanadora] =
     useState(false);
   const [showConfirmFinalizar, setShowConfirmFinalizar] = useState(false);
+  const [showScoreInfo, setShowScoreInfo] = useState(false);
 
   // Estados de acciones pendientes
   const [deletingLicitacion, setDeletingLicitacion] = useState(null);
@@ -1423,6 +1587,34 @@ const LicitacionesMinera = () => {
     "Cancelada",
     "Cerrada",
   ];
+
+  const selectedEstado =
+    selectedLicitacion?.estadoNombre || selectedLicitacion?.EstadoNombre || "";
+  const isSelectedEstadoAdjudicado =
+    selectedEstado === "Adjudicada" || selectedEstado === "Cerrada";
+  const canViewSelectedPropuestas =
+    Boolean(selectedEstado) && selectedEstado !== "Publicada";
+  const shouldShowScoreInfoIcon =
+    selectedEstado === "En Evaluación" &&
+    canViewSelectedPropuestas &&
+    propuestas.length > 0;
+
+  const handleToggleScoreInfo = (event) => {
+    event.stopPropagation();
+    setShowScoreInfo((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (!shouldShowScoreInfoIcon && showScoreInfo) {
+      setShowScoreInfo(false);
+    }
+  }, [shouldShowScoreInfoIcon, showScoreInfo]);
+
+  useEffect(() => {
+    if (!showModal) {
+      setShowScoreInfo(false);
+    }
+  }, [showModal]);
 
   // Utilidades consolidadas
   const getUserMineraID = () =>
@@ -1499,6 +1691,36 @@ const LicitacionesMinera = () => {
     simbolo: propuesta?.monedaSimbolo || propuesta?.MonedaSimbolo,
     nombre: propuesta?.monedaNombre || propuesta?.MonedaNombre,
   });
+
+  const formatCriterioValor = (respuesta) => {
+    const rawValor =
+      respuesta?.valorProveedor ??
+      respuesta?.ValorProveedor ??
+      respuesta?.valorBooleano ??
+      respuesta?.ValorBooleano ??
+      respuesta?.valorNumerico ??
+      respuesta?.ValorNumerico ??
+      respuesta?.valorTexto ??
+      respuesta?.ValorTexto ??
+      null;
+
+    if (rawValor === null || rawValor === undefined || rawValor === "") {
+      return "No especificado";
+    }
+
+    if (typeof rawValor === "boolean") {
+      return rawValor ? "Sí" : "No";
+    }
+
+    if (
+      typeof rawValor === "string" &&
+      ["true", "false"].includes(rawValor.trim().toLowerCase())
+    ) {
+      return rawValor.trim().toLowerCase() === "true" ? "Sí" : "No";
+    }
+
+    return rawValor;
+  };
 
   // Funciones de API consolidadas
   const apiRequest = async (url, options = {}) => {
@@ -1762,83 +1984,237 @@ const LicitacionesMinera = () => {
     }
   };
 
-  const calcularScorePropuesta = (propuesta, criterios) => {
-    if (
-      !propuesta.respuestasCriterios ||
-      !criterios ||
-      criterios.length === 0
-    ) {
-      return 0;
-    }
+  const getScoreFromPropuesta = (propuesta) => {
+    const rawScore =
+      propuesta?.scoreCalculado ??
+      propuesta?.ScoreCalculado ??
+      propuesta?.scoreTotal ??
+      propuesta?.ScoreTotal;
 
-    let scoreTotal = 0;
-    let pesoTotal = 0;
-
-    criterios.forEach((criterio) => {
-      const criterioID = criterio.criterioID || criterio.CriterioID;
-      const respuesta = propuesta.respuestasCriterios.find(
-        (r) => (r.criterioID || r.CriterioID) === criterioID
-      );
-
-      if (respuesta && respuesta.valorProveedor) {
-        const peso = criterio.peso || criterio.Peso || 0;
-        const valorNumerico = parseFloat(respuesta.valorProveedor);
-
-        if (!isNaN(valorNumerico) && peso > 0) {
-          const mayorMejor =
-            typeof criterio.mayorMejor === "boolean"
-              ? criterio.mayorMejor
-              : typeof criterio.MayorMejor === "boolean"
-              ? criterio.MayorMejor
-              : true;
-
-          let valorNormalizado;
-          if (!mayorMejor) {
-            valorNormalizado = 100 / (1 + valorNumerico);
-          } else {
-            valorNormalizado = valorNumerico;
-          }
-
-          scoreTotal += valorNormalizado * peso;
-          pesoTotal += peso;
-        }
-      }
-    });
-
-    return pesoTotal > 0 ? scoreTotal / pesoTotal : 0;
+    const numericScore = Number(rawScore);
+    return Number.isFinite(numericScore) ? numericScore : null;
   };
 
-  const rankearPropuestas = async (propuestas, criterios) => {
-    try {
-      const propuestasDetalladas = await Promise.all(
-        propuestas.map(async (propuesta) => {
-          try {
-            const response = await apiRequest(
-              `http://localhost:5242/api/propuestas/${propuesta.propuestaID}`
-            );
-            return response.ok ? await response.json() : propuesta;
-          } catch (error) {
-            console.error(
-              `Error al cargar detalles de propuesta ${propuesta.propuestaID}:`,
-              error
-            );
-            return propuesta;
-          }
-        })
-      );
+  const isPropuestaDescalificada = (propuesta) =>
+    Boolean(
+      propuesta?.descalificadaPorExcluyentes ??
+        propuesta?.DescalificadaPorExcluyentes
+    );
 
-      const propuestasConScore = propuestasDetalladas.map((propuesta) => {
-        const score = calcularScorePropuesta(propuesta, criterios);
-        return { ...propuesta, scoreCalculado: score, scoreTotal: score };
-      });
+  const getCriteriosExcluyentesFallidos = (propuesta) => {
+    const rawList =
+      propuesta?.criteriosExcluyentesFallidos ??
+      propuesta?.CriteriosExcluyentesFallidos;
+    return Array.isArray(rawList) ? rawList : [];
+  };
 
-      return propuestasConScore.sort(
-        (a, b) => b.scoreCalculado - a.scoreCalculado
-      );
-    } catch (error) {
-      console.error("Error al rankear propuestas:", error);
-      return propuestas;
+  const ordenarPropuestasPorPuntaje = (lista) => {
+    if (!Array.isArray(lista)) return [];
+    const copia = [...lista];
+
+    copia.sort((a, b) => {
+      const aDescalificada = isPropuestaDescalificada(a);
+      const bDescalificada = isPropuestaDescalificada(b);
+      if (aDescalificada !== bDescalificada) {
+        return aDescalificada ? 1 : -1;
+      }
+
+      const aScore = getScoreFromPropuesta(a);
+      const bScore = getScoreFromPropuesta(b);
+      const aTieneScore = aScore !== null;
+      const bTieneScore = bScore !== null;
+
+      if (aTieneScore && bTieneScore) {
+        return bScore - aScore;
+      }
+      if (aTieneScore) return -1;
+      if (bTieneScore) return 1;
+      return 0;
+    });
+
+    return copia;
+  };
+
+  const priorizarPropuestaGanadora = (lista, propuestaGanadora) => {
+    if (!Array.isArray(lista) || !propuestaGanadora) {
+      return Array.isArray(lista) ? lista : [];
     }
+
+    const ganadoraId =
+      propuestaGanadora.propuestaID || propuestaGanadora.PropuestaID;
+    if (!ganadoraId) return lista;
+
+    const propuestaEnLista = lista.find(
+      (propuesta) =>
+        (propuesta.propuestaID || propuesta.PropuestaID) === ganadoraId
+    );
+
+    const listaSinGanadora = lista.filter(
+      (propuesta) =>
+        (propuesta.propuestaID || propuesta.PropuestaID) !== ganadoraId
+    );
+
+    const propuestaFusionada = propuestaEnLista
+      ? {
+          ...propuestaEnLista,
+          HistorialGanador:
+            propuestaGanadora.HistorialGanador ||
+            propuestaEnLista.HistorialGanador,
+        }
+      : { ...propuestaGanadora };
+
+    return [propuestaFusionada, ...listaSinGanadora];
+  };
+
+  const renderPropuestasContenido = (
+    lista,
+    { resaltarGanadora = false, rankingOffset = 0 } = {}
+  ) => {
+    if (!Array.isArray(lista) || lista.length === 0) {
+      return null;
+    }
+
+    let rankingCounter = rankingOffset;
+    const mostrarRanking = !resaltarGanadora;
+
+    return (
+      <PropuestasList>
+        {lista.map((propuesta, index) => {
+          const proveedorNombre =
+            propuesta.proveedorNombre ||
+            propuesta.ProveedorNombre ||
+            "Proveedor desconocido";
+          const presupuesto =
+            propuesta.presupuestoOfrecido || propuesta.PresupuestoOfrecido;
+          const propuestaCurrency = getPropuestaCurrency(propuesta);
+          const fechaEnvio = propuesta.fechaEnvio || propuesta.FechaEnvio;
+          const estado = propuesta.estado || propuesta.Estado || "Enviada";
+          const score = getScoreFromPropuesta(propuesta);
+          const descalificada = isPropuestaDescalificada(propuesta);
+          const criteriosFallidos = getCriteriosExcluyentesFallidos(propuesta);
+          let rankingPosition = null;
+          if (mostrarRanking && !descalificada && score !== null) {
+            rankingPosition = ++rankingCounter;
+          }
+          const rankingBadgeVariant = descalificada ? "invalid" : undefined;
+          const rankingBadgeLabel = descalificada
+            ? "Fuera de evaluación"
+            : rankingPosition
+            ? `#${rankingPosition}`
+            : "Sin puntaje";
+          const esGanadora = resaltarGanadora;
+
+          return (
+            <PropuestaCard
+              key={propuesta.propuestaID || propuesta.PropuestaID}
+              onClick={() => handlePropuestaClick(propuesta)}
+              style={
+                esGanadora
+                  ? {
+                      background:
+                        "linear-gradient(135deg, #f8fff8 0%, #e8f5e8 100%)",
+                      border: "2px solid #28a745",
+                      boxShadow: "0 4px 15px rgba(40, 167, 69, 0.2)",
+                    }
+                  : {}
+              }
+            >
+              {selectedEstado === "En Evaluación" && (
+                <SeleccionarGanadoraButton
+                  className="seleccionar-ganadora-btn"
+                  disabled={descalificada}
+                  title={
+                    descalificada
+                      ? "No disponible: incumple criterios excluyentes"
+                      : undefined
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSeleccionarPropuestaGanadora(propuesta);
+                  }}
+                >
+                  🏆 Seleccionar como adjudicada
+                </SeleccionarGanadoraButton>
+              )}
+
+              <PropuestaHeader>
+                <PropuestaHeaderLeft>
+                  {esGanadora ? (
+                    <PropuestaRankingBadge
+                      position={1}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                        color: "white",
+                        borderColor: "#28a745",
+                      }}
+                    >
+                      👑 Adjudicada
+                    </PropuestaRankingBadge>
+                  ) : (
+                    <PropuestaRankingBadge
+                      position={rankingPosition || undefined}
+                      variant={rankingBadgeVariant}
+                    >
+                      {rankingBadgeLabel}
+                    </PropuestaRankingBadge>
+                  )}
+                  {!descalificada && score !== null && (
+                    <PropuestaScore>⭐ {score.toFixed(1)}</PropuestaScore>
+                  )}
+                  <PropuestaProveedor>{proveedorNombre}</PropuestaProveedor>
+                </PropuestaHeaderLeft>
+                <PropuestaEstado status={esGanadora ? "Adjudicada" : estado}>
+                  {esGanadora ? "Adjudicada" : estado}
+                </PropuestaEstado>
+              </PropuestaHeader>
+
+              <PropuestaInfo>
+                <PropuestaInfoItem>
+                  <PropuestaInfoLabel>Presupuesto</PropuestaInfoLabel>
+                  <PropuestaInfoValue>
+                    {formatCurrency(presupuesto, propuestaCurrency)}
+                  </PropuestaInfoValue>
+                </PropuestaInfoItem>
+                <PropuestaInfoItem>
+                  <PropuestaInfoLabel>Fecha de envío</PropuestaInfoLabel>
+                  <PropuestaInfoValue>
+                    {formatDate(fechaEnvio)}
+                  </PropuestaInfoValue>
+                </PropuestaInfoItem>
+                {esGanadora && propuesta.HistorialGanador && (
+                  <PropuestaInfoItem>
+                    <PropuestaInfoLabel>
+                      Fecha de adjudicación
+                    </PropuestaInfoLabel>
+                    <PropuestaInfoValue>
+                      {formatDate(
+                        propuesta.HistorialGanador.FechaParticipacion
+                      )}
+                    </PropuestaInfoValue>
+                  </PropuestaInfoItem>
+                )}
+              </PropuestaInfo>
+
+              {descalificada && (
+                <PropuestaAlert>
+                  <PropuestaAlertTitle>
+                    Fuera de evaluación por criterio excluyente.
+                  </PropuestaAlertTitle>
+                  {criteriosFallidos.length > 0 && (
+                    <PropuestaAlertList>
+                      {criteriosFallidos.map((criterio) => (
+                        <li key={`${criterio}-${index}`}>{criterio}</li>
+                      ))}
+                    </PropuestaAlertList>
+                  )}
+                </PropuestaAlert>
+              )}
+            </PropuestaCard>
+          );
+        })}
+      </PropuestasList>
+    );
   };
 
   // const fetchPropuestaGanadora = async (licitacionId) => {
@@ -1875,8 +2251,7 @@ const LicitacionesMinera = () => {
       const estadoLicitacion =
         licitacionActual?.estadoNombre || licitacionActual?.EstadoNombre;
 
-      // Si está adjudicada o cerrada, solo mostrar la propuesta ganadora
-      if (estadoLicitacion === "Adjudicada" || estadoLicitacion === "Cerrada") {
+      if (estadoLicitacion === "Cerrada") {
         const propuestaGanadoraResponse = await apiRequest(
           `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
         );
@@ -1885,12 +2260,50 @@ const LicitacionesMinera = () => {
           const propuestaGanadora = await propuestaGanadoraResponse.json();
           setPropuestas([propuestaGanadora]);
         } else if (propuestaGanadoraResponse.status === 404) {
-          // No hay ganador registrado aún
           setPropuestas([]);
         } else {
           console.error(
             "Error al cargar propuesta ganadora:",
             propuestaGanadoraResponse.statusText
+          );
+          setPropuestas([]);
+        }
+      } else if (estadoLicitacion === "Adjudicada") {
+        const [propuestasResponse, propuestaGanadoraResponse] =
+          await Promise.all([
+            apiRequest(
+              `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+            ),
+            apiRequest(
+              `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+            ),
+          ]);
+
+        if (propuestasResponse.ok) {
+          const propuestasData = await propuestasResponse.json();
+          let propuestasOrdenadas = ordenarPropuestasPorPuntaje(propuestasData);
+
+          if (propuestaGanadoraResponse.ok) {
+            const propuestaGanadora = await propuestaGanadoraResponse.json();
+            propuestasOrdenadas = priorizarPropuestaGanadora(
+              propuestasOrdenadas,
+              propuestaGanadora
+            );
+          } else if (
+            propuestaGanadoraResponse.status &&
+            propuestaGanadoraResponse.status !== 404
+          ) {
+            console.error(
+              "Error al cargar propuesta ganadora:",
+              propuestaGanadoraResponse.statusText
+            );
+          }
+
+          setPropuestas(propuestasOrdenadas);
+        } else {
+          console.error(
+            "Error al cargar propuestas:",
+            propuestasResponse.statusText
           );
           setPropuestas([]);
         }
@@ -1904,37 +2317,11 @@ const LicitacionesMinera = () => {
           const data = await response.json();
 
           // Estados que muestran ranking completo
-          const estadosConRanking = ["En Evaluación"];
+          const estadosConRanking = ["En Evaluación", "Adjudicada"];
 
           if (estadosConRanking.includes(estadoLicitacion)) {
-            const criteriosResponse = await apiRequest(
-              `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-            );
-
-            if (criteriosResponse.ok) {
-              const criterios = await criteriosResponse.json();
-              const propuestasRankeadas = await rankearPropuestas(
-                data,
-                criterios
-              );
-              setPropuestas(propuestasRankeadas);
-            } else {
-              // Si no hay criterios, ordenar por presupuesto
-              const propuestasOrdenadas = data
-                .sort((a, b) => {
-                  const presupuestoA =
-                    a.presupuestoOfrecido || a.PresupuestoOfrecido || 0;
-                  const presupuestoB =
-                    b.presupuestoOfrecido || b.PresupuestoOfrecido || 0;
-                  return presupuestoA - presupuestoB;
-                })
-                .map((propuesta) => ({
-                  ...propuesta,
-                  scoreCalculado: 0,
-                  scoreTotal: 0,
-                }));
-              setPropuestas(propuestasOrdenadas);
-            }
+            const propuestasOrdenadas = ordenarPropuestasPorPuntaje(data);
+            setPropuestas(propuestasOrdenadas);
           } else {
             // Para otros estados (Publicada, etc.) mostrar propuestas sin ranking
             setPropuestas(data);
@@ -2105,6 +2492,13 @@ const LicitacionesMinera = () => {
   // };
 
   const handleSeleccionarPropuestaGanadora = (propuesta) => {
+    if (isPropuestaDescalificada(propuesta)) {
+      toast.error(
+        "No podés seleccionar una propuesta que incumple criterios excluyentes"
+      );
+      return;
+    }
+
     setPropuestaGanadora(propuesta);
     setShowConfirmSeleccionarGanadora(true);
   };
@@ -2401,6 +2795,14 @@ const LicitacionesMinera = () => {
 
   // Datos filtrados para renderizado
   const filteredLicitaciones = licitaciones;
+  const propuestasGanadora = isSelectedEstadoAdjudicado
+    ? propuestas.slice(0, 1)
+    : [];
+  const propuestasRestantes = isSelectedEstadoAdjudicado
+    ? propuestas.slice(1)
+    : propuestas;
+  const showPropuestasRecibidasListado =
+    selectedEstado === "Adjudicada" && propuestasRestantes.length > 0;
   const selectedLicitacionCurrency = selectedLicitacion
     ? getLicitacionCurrency(selectedLicitacion)
     : null;
@@ -2417,7 +2819,7 @@ const LicitacionesMinera = () => {
         <PageHeader>
           <PageTitle>Mis licitaciones</PageTitle>
           <PageSubtitle>
-            Gestiona las licitaciones de {getCompanyName()}
+            Gestione las licitaciones de {getCompanyName()}.
           </PageSubtitle>
         </PageHeader>
 
@@ -2778,189 +3180,106 @@ const LicitacionesMinera = () => {
                 {/* Propuestas */}
                 <PropuestasSection>
                   <PropuestasTitle>
-                    {(selectedLicitacion.estadoNombre ||
-                      selectedLicitacion.EstadoNombre) === "Adjudicada" ||
-                    (selectedLicitacion.estadoNombre ||
-                      selectedLicitacion.EstadoNombre) === "Cerrada"
+                    {isSelectedEstadoAdjudicado
                       ? `Propuesta ganadora (${
-                          propuestas.length === 0 ? "sin definir" : "1"
+                          propuestasGanadora.length === 0
+                            ? "sin definir"
+                            : propuestasGanadora.length
                         })`
                       : `Propuestas recibidas (${propuestas.length})`}
+                    {shouldShowScoreInfoIcon && (
+                      <ScoreInfoWrapper>
+                        <ScoreInfoButton
+                          type="button"
+                          aria-label="Explicación del puntaje"
+                          onClick={handleToggleScoreInfo}
+                        >
+                          i
+                        </ScoreInfoButton>
+                      </ScoreInfoWrapper>
+                    )}
                   </PropuestasTitle>
-
-                  {loadingPropuestas ? (
-                    <LoadingPropuestas>
-                      <LoadingPropuestasSpinner />
-                      <PropuestasText>Cargando propuestas...</PropuestasText>
-                    </LoadingPropuestas>
-                  ) : propuestas.length === 0 ? (
-                    <EmptyPropuestas>
-                      <EmptyPropuestasText>
-                        {(selectedLicitacion.estadoNombre ||
-                          selectedLicitacion.EstadoNombre) === "Adjudicada" ||
-                        (selectedLicitacion.estadoNombre ||
-                          selectedLicitacion.EstadoNombre) === "Cerrada"
-                          ? "Todavía no se ha definido una propuesta ganadora."
-                          : "Todavía no hay propuestas recibidas."}
-                      </EmptyPropuestasText>
-                    </EmptyPropuestas>
-                  ) : (
-                    <PropuestasList>
-                      {propuestas.map((propuesta, index) => {
-                        const proveedorNombre =
-                          propuesta.proveedorNombre ||
-                          propuesta.ProveedorNombre ||
-                          "Proveedor desconocido";
-                        const presupuesto =
-                          propuesta.presupuestoOfrecido ||
-                          propuesta.PresupuestoOfrecido;
-                        const propuestaCurrency =
-                          getPropuestaCurrency(propuesta);
-                        const fechaEnvio =
-                          propuesta.fechaEnvio || propuesta.FechaEnvio;
-                        const estado =
-                          propuesta.estado || propuesta.Estado || "Enviada";
-                        const score =
-                          propuesta.scoreCalculado || propuesta.scoreTotal || 0;
-                        const esAdjudicada =
-                          (selectedLicitacion.estadoNombre ||
-                            selectedLicitacion.EstadoNombre) === "Adjudicada" ||
-                          (selectedLicitacion.estadoNombre ||
-                            selectedLicitacion.EstadoNombre) === "Cerrada";
-
-                        return (
-                          <PropuestaCard
-                            key={propuesta.propuestaID || propuesta.PropuestaID}
-                            onClick={() => handlePropuestaClick(propuesta)}
-                            style={
-                              esAdjudicada
-                                ? {
-                                    background:
-                                      "linear-gradient(135deg, #f8fff8 0%, #e8f5e8 100%)",
-                                    border: "2px solid #28a745",
-                                    boxShadow:
-                                      "0 4px 15px rgba(40, 167, 69, 0.2)",
-                                  }
-                                : {}
-                            }
-                          >
-                            {/* Botón para seleccionar como ganadora - solo en estado "En Evaluación" */}
-                            {(selectedLicitacion.estadoNombre ||
-                              selectedLicitacion.EstadoNombre) ===
-                              "En Evaluación" && (
-                              <SeleccionarGanadoraButton
-                                className="seleccionar-ganadora-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSeleccionarPropuestaGanadora(propuesta);
-                                }}
-                              >
-                                🏆 Seleccionar ganadora
-                              </SeleccionarGanadoraButton>
-                            )}
-
-                            <PropuestaHeader>
-                              <PropuestaHeaderLeft>
-                                {esAdjudicada ? (
-                                  <PropuestaRankingBadge
-                                    position={1}
-                                    style={{
-                                      background:
-                                        "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
-                                      color: "white",
-                                      borderColor: "#28a745",
-                                    }}
-                                  >
-                                    👑 GANADORA
-                                  </PropuestaRankingBadge>
-                                ) : (
-                                  <PropuestaRankingBadge position={index + 1}>
-                                    #{index + 1}
-                                  </PropuestaRankingBadge>
-                                )}
-                                {score > 0 && (
-                                  <PropuestaScore>
-                                    ⭐ {score.toFixed(1)}
-                                  </PropuestaScore>
-                                )}
-                                <PropuestaProveedor>
-                                  {proveedorNombre}
-                                </PropuestaProveedor>
-                              </PropuestaHeaderLeft>
-                              <PropuestaEstado
-                                status={esAdjudicada ? "Adjudicada" : estado}
-                              >
-                                {esAdjudicada ? "Adjudicada" : estado}
-                              </PropuestaEstado>
-                            </PropuestaHeader>
-
-                            <PropuestaInfo>
-                              <PropuestaInfoItem>
-                                <PropuestaInfoLabel>
-                                  Presupuesto
-                                </PropuestaInfoLabel>
-                                <PropuestaInfoValue>
-                                  {formatCurrency(
-                                    presupuesto,
-                                    propuestaCurrency
-                                  )}
-                                </PropuestaInfoValue>
-                              </PropuestaInfoItem>
-                              <PropuestaInfoItem>
-                                <PropuestaInfoLabel>
-                                  Fecha de envío
-                                </PropuestaInfoLabel>
-                                <PropuestaInfoValue>
-                                  {formatDate(fechaEnvio)}
-                                </PropuestaInfoValue>
-                              </PropuestaInfoItem>
-                              {esAdjudicada && propuesta.HistorialGanador && (
-                                <PropuestaInfoItem>
-                                  <PropuestaInfoLabel>
-                                    Fecha de adjudicación
-                                  </PropuestaInfoLabel>
-                                  <PropuestaInfoValue>
-                                    {formatDate(
-                                      propuesta.HistorialGanador
-                                        .FechaParticipacion
-                                    )}
-                                  </PropuestaInfoValue>
-                                </PropuestaInfoItem>
-                              )}
-                            </PropuestaInfo>
-                          </PropuestaCard>
-                        );
-                      })}
-                    </PropuestasList>
+                  {selectedEstado === "Publicada" && (
+                    <PropuestasHint>
+                      Las propuestas se verán una vez que la licitación se
+                      cierre.
+                    </PropuestasHint>
                   )}
+
+                  {canViewSelectedPropuestas &&
+                    (loadingPropuestas ? (
+                      <LoadingPropuestas>
+                        <LoadingPropuestasSpinner />
+                        <PropuestasText>Cargando propuestas...</PropuestasText>
+                      </LoadingPropuestas>
+                    ) : isSelectedEstadoAdjudicado ? (
+                      <>
+                        {propuestasGanadora.length === 0 ? (
+                          <EmptyPropuestas>
+                            <EmptyPropuestasText>
+                              Todavía no se ha definido una propuesta ganadora.
+                            </EmptyPropuestasText>
+                          </EmptyPropuestas>
+                        ) : (
+                          renderPropuestasContenido(propuestasGanadora, {
+                            resaltarGanadora: true,
+                          })
+                        )}
+
+                        {showPropuestasRecibidasListado && (
+                          <>
+                            <PropuestasSubtitle>
+                              Propuestas recibidas ({propuestasRestantes.length}
+                              )
+                            </PropuestasSubtitle>
+                            {propuestasRestantes.length === 0 ? (
+                              <EmptyPropuestas>
+                                <EmptyPropuestasText>
+                                  No hay otras propuestas recibidas.
+                                </EmptyPropuestasText>
+                              </EmptyPropuestas>
+                            ) : (
+                              renderPropuestasContenido(propuestasRestantes, {
+                                rankingOffset: propuestasGanadora.length,
+                              })
+                            )}
+                          </>
+                        )}
+                      </>
+                    ) : propuestas.length === 0 ? (
+                      <EmptyPropuestas>
+                        <EmptyPropuestasText>
+                          Todavía no hay propuestas recibidas.
+                        </EmptyPropuestasText>
+                      </EmptyPropuestas>
+                    ) : (
+                      renderPropuestasContenido(propuestas)
+                    ))}
                 </PropuestasSection>
               </ModalBody>
 
               {/* Acciones del modal */}
               <ModalActions>
-                {!["Cerrada", "Adjudicada"].includes(
-                  selectedLicitacion.estadoNombre ||
-                    selectedLicitacion.EstadoNombre
-                ) && (
-                  <EditButton
-                    onClick={() =>
-                      handleEditarLicitacion(
-                        selectedLicitacion.licitacionID ||
-                          selectedLicitacion.LicitacionID
-                      )
-                    }
-                  >
-                    ✏️ Editar
-                  </EditButton>
-                )}
-
                 {(selectedLicitacion.estadoNombre ||
                   selectedLicitacion.EstadoNombre) === "Publicada" && (
-                  <CloseLicitacionButton
-                    onClick={() => handleCloseLicitacion(selectedLicitacion)}
-                  >
-                    ⏰ Pasar a evaluación
-                  </CloseLicitacionButton>
+                  <>
+                    <EditButton
+                      onClick={() =>
+                        handleEditarLicitacion(
+                          selectedLicitacion.licitacionID ||
+                            selectedLicitacion.LicitacionID
+                        )
+                      }
+                    >
+                      ✏️ Editar
+                    </EditButton>
+
+                    <CloseLicitacionButton
+                      onClick={() => handleCloseLicitacion(selectedLicitacion)}
+                    >
+                      ⏰ Pasar a evaluación
+                    </CloseLicitacionButton>
+                  </>
                 )}
 
                 {(selectedLicitacion.estadoNombre ||
@@ -2989,6 +3308,45 @@ const LicitacionesMinera = () => {
           </ModalOverlay>
         )}
 
+        {showScoreInfo && shouldShowScoreInfoIcon && (
+          <ScoreInfoOverlay onClick={() => setShowScoreInfo(false)}>
+            <ScoreInfoPopup onClick={(event) => event.stopPropagation()}>
+              <ScoreInfoPopupTitle>
+                ¿Cómo se calcula el puntaje?
+              </ScoreInfoPopupTitle>
+              <ScoreInfoPopupText>
+                Cada respuesta se lleva a un valor entre 0 y 1 según su tipo y
+                luego se pondera por el peso del criterio. La suma se escala a
+                una nota de 0 a 100.
+              </ScoreInfoPopupText>
+              <ScoreInfoList>
+                <ScoreInfoListItem>
+                  <strong>Numéricos:</strong> se comparan con el rango
+                  mínimo/máximo y se invierten si "menor es mejor".
+                </ScoreInfoListItem>
+                <ScoreInfoListItem>
+                  <strong>Booleanos:</strong> obtienen 1 punto si coinciden con
+                  el valor requerido, de lo contrario 0.
+                </ScoreInfoListItem>
+                <ScoreInfoListItem>
+                  <strong>Escalas:</strong> usan el puntaje de la opción elegida
+                  respecto al valor máximo definido.
+                </ScoreInfoListItem>
+              </ScoreInfoList>
+              <ScoreInfoPopupText>
+                Si falla un criterio excluyente la propuesta queda fuera del
+                ranking.
+              </ScoreInfoPopupText>
+              <ScoreInfoCloseButton
+                type="button"
+                onClick={() => setShowScoreInfo(false)}
+              >
+                Entendido
+              </ScoreInfoCloseButton>
+            </ScoreInfoPopup>
+          </ScoreInfoOverlay>
+        )}
+
         {/* Modales de confirmación */}
         {showConfirmDelete && (
           <ConfirmModal>
@@ -2997,7 +3355,8 @@ const LicitacionesMinera = () => {
               <ConfirmText>
                 ¿Está seguro de que desea eliminar la licitación "
                 {deletingLicitacion?.titulo || deletingLicitacion?.Titulo}"?
-                Esta acción no se puede deshacer.
+                Esta acción no se puede deshacer. La licitación dejará de ser
+                visible para todos los proveedores.
               </ConfirmText>
               <ConfirmActions>
                 <ConfirmDeleteButton onClick={confirmDeleteLicitacion}>
@@ -3017,8 +3376,9 @@ const LicitacionesMinera = () => {
               <ConfirmTitle>⏰ Confirmar paso a evaluación</ConfirmTitle>
               <ConfirmText>
                 ¿Desea cerrar la licitación "
-                {closingLicitacion?.titulo || closingLicitacion?.Titulo}" y
-                pasarla a evaluación?
+                {closingLicitacion?.titulo || closingLicitacion?.Titulo}" de
+                forma temprana y pasarla a evaluación? No podrá recibir más
+                propuestas.
               </ConfirmText>
               <ConfirmActions>
                 <ConfirmDeleteButton onClick={confirmCloseLicitacion}>
@@ -3079,19 +3439,19 @@ const LicitacionesMinera = () => {
           <ConfirmModal>
             <ConfirmContent>
               <ConfirmSuccessTitle>
-                🏆 Confirmar selección de ganadora
+                🏆 Confirmar adjudicación
               </ConfirmSuccessTitle>
               <ConfirmText>
                 ¿Desea seleccionar la propuesta de "
                 {propuestaGanadora?.proveedorNombre ||
                   propuestaGanadora?.ProveedorNombre}
-                " como ganadora? La licitación pasará a estado "Adjudicada".
+                " como adjudicada? No podrá revertir esta acción.
               </ConfirmText>
               <ConfirmActions>
                 <ConfirmSuccessButton
                   onClick={confirmSeleccionarPropuestaGanadora}
                 >
-                  Seleccionar ganadora
+                  Confirmar
                 </ConfirmSuccessButton>
                 <CancelButton onClick={cancelSeleccionarPropuestaGanadora}>
                   Cancelar
@@ -3116,58 +3476,95 @@ const LicitacionesMinera = () => {
                   propuestas están ordenadas por puntuación.
                 </GanadorInstruccion>
 
-                <GanadorPropuestasList>
-                  {propuestas.map((propuesta, index) => {
-                    const monedaInfo = getPropuestaCurrency(propuesta);
-                    return (
-                      <GanadorPropuestaItem
-                        key={propuesta.propuestaID || propuesta.PropuestaID}
-                        selected={
-                          selectedGanador &&
-                          (selectedGanador.propuestaID ||
-                            selectedGanador.PropuestaID) ===
-                            (propuesta.propuestaID || propuesta.PropuestaID)
-                        }
-                        onClick={() => setSelectedGanador(propuesta)}
-                      >
-                        <GanadorPropuestaHeader>
-                          <GanadorProveedorNombre>
-                            {propuesta.proveedorNombre ||
-                              propuesta.ProveedorNombre}
-                          </GanadorProveedorNombre>
-                          <GanadorPropuestaRanking position={index + 1}>
-                            Puesto #{index + 1}
-                          </GanadorPropuestaRanking>
-                        </GanadorPropuestaHeader>
+                {(() => {
+                  let ganadorRankingCounter = 0;
+                  return (
+                    <GanadorPropuestasList>
+                      {propuestas.map((propuesta) => {
+                        const monedaInfo = getPropuestaCurrency(propuesta);
+                        const score = getScoreFromPropuesta(propuesta);
+                        const descalificada =
+                          isPropuestaDescalificada(propuesta);
+                        const rankingPosition =
+                          !descalificada && score !== null
+                            ? ++ganadorRankingCounter
+                            : null;
+                        const handleSelect = () => {
+                          if (descalificada) {
+                            toast.error(
+                              "No podés adjudicar una propuesta excluida"
+                            );
+                            return;
+                          }
+                          setSelectedGanador(propuesta);
+                        };
 
-                        <GanadorPropuestaInfo>
-                          <div>
-                            <strong>Presupuesto:</strong>{" "}
-                            {formatCurrency(
-                              propuesta.presupuestoOfrecido ||
-                                propuesta.PresupuestoOfrecido,
-                              monedaInfo
+                        return (
+                          <GanadorPropuestaItem
+                            key={propuesta.propuestaID || propuesta.PropuestaID}
+                            selected={
+                              selectedGanador &&
+                              (selectedGanador.propuestaID ||
+                                selectedGanador.PropuestaID) ===
+                                (propuesta.propuestaID || propuesta.PropuestaID)
+                            }
+                            data-disabled={descalificada}
+                            onClick={handleSelect}
+                          >
+                            <GanadorPropuestaHeader>
+                              <GanadorProveedorNombre>
+                                {propuesta.proveedorNombre ||
+                                  propuesta.ProveedorNombre}
+                              </GanadorProveedorNombre>
+                              <GanadorPropuestaRanking
+                                position={rankingPosition || undefined}
+                              >
+                                {descalificada
+                                  ? "Fuera de evaluación"
+                                  : rankingPosition
+                                  ? `Puesto #${rankingPosition}`
+                                  : "Sin puntaje"}
+                              </GanadorPropuestaRanking>
+                            </GanadorPropuestaHeader>
+
+                            <GanadorPropuestaInfo>
+                              <div>
+                                <strong>Presupuesto:</strong>{" "}
+                                {formatCurrency(
+                                  propuesta.presupuestoOfrecido ||
+                                    propuesta.PresupuestoOfrecido,
+                                  monedaInfo
+                                )}
+                              </div>
+                              <div>
+                                <strong>Puntuación:</strong>{" "}
+                                {score !== null ? score.toFixed(1) : "N/D"}
+                              </div>
+                            </GanadorPropuestaInfo>
+
+                            {descalificada && (
+                              <PropuestaAlert style={{ marginTop: 10 }}>
+                                <PropuestaAlertTitle>
+                                  No elegible.
+                                </PropuestaAlertTitle>
+                              </PropuestaAlert>
                             )}
-                          </div>
-                          <div>
-                            <strong>Puntuación:</strong>{" "}
-                            {(
-                              propuesta.scoreCalculado ||
-                              propuesta.scoreTotal ||
-                              0
-                            ).toFixed(1)}
-                          </div>
-                        </GanadorPropuestaInfo>
-                      </GanadorPropuestaItem>
-                    );
-                  })}
-                </GanadorPropuestasList>
+                          </GanadorPropuestaItem>
+                        );
+                      })}
+                    </GanadorPropuestasList>
+                  );
+                })()}
               </GanadorModalBody>
 
               <GanadorModalActions>
                 <GanadorConfirmButton
                   onClick={confirmSeleccionarGanador}
-                  disabled={!selectedGanador}
+                  disabled={
+                    !selectedGanador ||
+                    (selectedGanador &&
+                      isPropuestaDescalificada(selectedGanador))
+                  }
                 >
                   Confirmar Ganador
                 </GanadorConfirmButton>
@@ -3199,6 +3596,37 @@ const LicitacionesMinera = () => {
               </PropuestaModalHeader>
 
               <PropuestaModalBody>
+                {(() => {
+                  const detalleScore = getScoreFromPropuesta(selectedPropuesta);
+                  const detalleDescalificada =
+                    isPropuestaDescalificada(selectedPropuesta);
+                  const detalleCriteriosFallidos =
+                    getCriteriosExcluyentesFallidos(selectedPropuesta);
+
+                  return (
+                    <>
+                      {detalleScore !== null && (
+                        <PropuestaScoreSummary>
+                          Puntaje normalizado: {detalleScore.toFixed(1)} / 100
+                        </PropuestaScoreSummary>
+                      )}
+                      {detalleDescalificada && (
+                        <PropuestaAlert>
+                          <PropuestaAlertTitle>
+                            Esta propuesta no se consideró para el cálculo.
+                          </PropuestaAlertTitle>
+                          {detalleCriteriosFallidos.length > 0 && (
+                            <PropuestaAlertList>
+                              {detalleCriteriosFallidos.map((criterio) => (
+                                <li key={`detalle-${criterio}`}>{criterio}</li>
+                              ))}
+                            </PropuestaAlertList>
+                          )}
+                        </PropuestaAlert>
+                      )}
+                    </>
+                  );
+                })()}
                 <PropuestaDetailSection>
                   <SectionTitle>Información de la propuesta</SectionTitle>
                   <PropuestaDetailGrid>
@@ -3261,8 +3689,7 @@ const LicitacionesMinera = () => {
                                     "Sin descripción"}
                                 </PropuestaCriterioDescription>
                                 <PropuestaCriterioValue>
-                                  {respuesta.valorProveedor ||
-                                    "No especificado"}
+                                  {formatCriterioValor(respuesta)}
                                 </PropuestaCriterioValue>
                               </PropuestaCriterioItem>
                             )
