@@ -15,13 +15,13 @@ namespace Wira.Api.Models
         [Required]
         public int LicitacionID { get; set; }
 
-        [Range(0, 10)]
+        [Range(1, 5)]
         public int? Puntualidad { get; set; }
 
-        [Range(0, 10)]
+        [Range(1, 5)]
         public int? Calidad { get; set; }
 
-        [Range(0, 10)]
+        [Range(1, 5)]
         public int? Comunicacion { get; set; }
 
         [Column(TypeName = "text")]

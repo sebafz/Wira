@@ -25,6 +25,8 @@ namespace Wira.Api.Models
 
         public DateTime FechaParticipacion { get; set; } = DateTime.Now;
 
+        public DateTime? FechaGanador { get; set; }
+
         // Navegación
         [ForeignKey("ProveedorID")]
         public virtual Empresa Proveedor { get; set; } = null!;

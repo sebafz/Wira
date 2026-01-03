@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 
 const FormContainer = styled.div`
@@ -248,81 +249,6 @@ const RetryButton = styled.button`
 
   &:active {
     transform: translateY(0);
-  }
-`;
-
-const ConfirmModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1100;
-  padding: 20px;
-`;
-
-const ConfirmContent = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  max-width: 450px;
-  width: 100%;
-  padding: 30px;
-  text-align: center;
-`;
-
-const ConfirmTitle = styled.h3`
-  color: #fc6b0a;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-`;
-
-const ConfirmText = styled.p`
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 25px;
-  line-height: 1.5;
-`;
-
-const ConfirmActions = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-`;
-
-const ConfirmButton = styled.button`
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-`;
-
-const ConfirmUpdateButton = styled(ConfirmButton)`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-
-  &:hover {
-    box-shadow: 0 4px 15px rgba(252, 107, 10, 0.3);
-  }
-`;
-
-const CancelConfirmButton = styled(ConfirmButton)`
-  background: #6c757d;
-  color: white;
-
-  &:hover {
-    background: #5a6268;
   }
 `;
 
@@ -1630,29 +1556,22 @@ const EditarPropuesta = () => {
         </FormCard>
       </MainContent>
 
-      {showConfirmUpdate && (
-        <ConfirmModal
-          onClick={(e) => e.target === e.currentTarget && cancelUpdate()}
-        >
-          <ConfirmContent>
-            <ConfirmTitle>💾 Confirmar actualización</ConfirmTitle>
-            <ConfirmText>
-              ¿Está seguro que desea actualizar esta propuesta?
-              <br />
-              <br />
-              Los cambios se guardarán permanentemente.
-            </ConfirmText>
-            <ConfirmActions>
-              <CancelConfirmButton onClick={cancelUpdate}>
-                Cancelar
-              </CancelConfirmButton>
-              <ConfirmUpdateButton onClick={confirmUpdate}>
-                Actualizar
-              </ConfirmUpdateButton>
-            </ConfirmActions>
-          </ConfirmContent>
-        </ConfirmModal>
-      )}
+      <DialogModal
+        isOpen={showConfirmUpdate}
+        title="💾 Confirmar actualización"
+        variant="green"
+        description={
+          <>
+            ¿Está seguro que desea actualizar esta propuesta?
+            <br />
+            Los cambios se guardarán permanentemente.
+          </>
+        }
+        confirmText="Actualizar"
+        cancelText="Cancelar"
+        onConfirm={confirmUpdate}
+        onCancel={cancelUpdate}
+      />
 
       <ToastStyles>
         <ToastContainer

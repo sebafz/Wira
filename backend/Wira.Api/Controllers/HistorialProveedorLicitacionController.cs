@@ -42,6 +42,7 @@ namespace Wira.Api.Controllers
                         h.Ganador,
                         h.Observaciones,
                         h.FechaParticipacion,
+                        h.FechaGanador,
                         ProveedorNombre = h.Proveedor.Nombre,
                         LicitacionTitulo = h.Licitacion.Titulo
                     })
@@ -75,6 +76,7 @@ namespace Wira.Api.Controllers
                         h.Ganador,
                         h.Observaciones,
                         h.FechaParticipacion,
+                        h.FechaGanador,
                         ProveedorNombre = h.Proveedor.Nombre,
                         LicitacionTitulo = h.Licitacion.Titulo
                     })
@@ -129,6 +131,15 @@ namespace Wira.Api.Controllers
                     historialExistente.Observaciones = request.Observaciones;
                     historialExistente.FechaParticipacion = DateTime.Now;
 
+                    if (esNuevoGanador)
+                    {
+                        historialExistente.FechaGanador = DateTime.Now;
+                    }
+                    else if (request.Ganador != true)
+                    {
+                        historialExistente.FechaGanador = null;
+                    }
+
                     await _context.SaveChangesAsync();
 
                     // Enviar notificación solo si se está marcando como ganador por primera vez
@@ -162,6 +173,7 @@ namespace Wira.Api.Controllers
                         historialExistente.Ganador,
                         historialExistente.Observaciones,
                         historialExistente.FechaParticipacion,
+                        historialExistente.FechaGanador,
                         message = "Historial actualizado exitosamente"
                     });
                 }
@@ -175,7 +187,8 @@ namespace Wira.Api.Controllers
                         Resultado = request.Resultado,
                         Ganador = request.Ganador,
                         Observaciones = request.Observaciones,
-                        FechaParticipacion = DateTime.Now
+                        FechaParticipacion = DateTime.Now,
+                        FechaGanador = request.Ganador == true ? DateTime.Now : null
                     };
 
                     _context.HistorialProveedorLicitacion.Add(nuevoHistorial);
@@ -212,6 +225,7 @@ namespace Wira.Api.Controllers
                         nuevoHistorial.Ganador,
                         nuevoHistorial.Observaciones,
                         nuevoHistorial.FechaParticipacion,
+                        nuevoHistorial.FechaGanador,
                         message = "Historial creado exitosamente"
                     });
                 }
@@ -240,6 +254,7 @@ namespace Wira.Api.Controllers
                         h.Ganador,
                         h.Observaciones,
                         h.FechaParticipacion,
+                        h.FechaGanador,
                         LicitacionTitulo = h.Licitacion.Titulo
                     })
                     .OrderByDescending(h => h.FechaParticipacion)
@@ -271,6 +286,7 @@ namespace Wira.Api.Controllers
                         h.Ganador,
                         h.Observaciones,
                         h.FechaParticipacion,
+                        h.FechaGanador,
                         ProveedorNombre = h.Proveedor.Nombre
                     })
                     .OrderByDescending(h => h.FechaParticipacion)
@@ -303,6 +319,7 @@ namespace Wira.Api.Controllers
                         h.Ganador,
                         h.Observaciones,
                         h.FechaParticipacion,
+                        h.FechaGanador,
                         ProveedorNombre = h.Proveedor.Nombre,
                         LicitacionTitulo = h.Licitacion.Titulo
                     })
@@ -376,7 +393,8 @@ namespace Wira.Api.Controllers
                             historialGanador.HistorialID,
                             historialGanador.Resultado,
                             historialGanador.Observaciones,
-                            historialGanador.FechaParticipacion
+                            historialGanador.FechaParticipacion,
+                            historialGanador.FechaGanador
                         }
                     })
                     .FirstOrDefaultAsync();

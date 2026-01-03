@@ -230,6 +230,10 @@ const DashboardMinera = () => {
     navigate("/mis-licitaciones");
   };
 
+  const handlePosCalificaciones = () => {
+    navigate("/calificaciones-poslicitacion");
+  };
+
   const getUserName = () => {
     return user?.Nombre || user?.nombre || "Usuario";
   };
@@ -308,13 +312,15 @@ const DashboardMinera = () => {
           </ActionCard>
 
           <ActionCard>
-            <ActionIcon>📈</ActionIcon>
-            <ActionTitle>Reportes</ActionTitle>
+            <ActionIcon>⭐</ActionIcon>
+            <ActionTitle>Calificaciones poslicitacion</ActionTitle>
             <ActionDescription>
-              Genere reportes detallados sobre el rendimiento de sus procesos de
-              licitación.
+              Revise las adjudicaciones pendientes de evaluacion y registre la
+              calificacion final de cada proveedor.
             </ActionDescription>
-            <ActionButton disabled>Próximamente</ActionButton>
+            <ActionButton onClick={handlePosCalificaciones}>
+              Ver calificaciones
+            </ActionButton>
           </ActionCard>
         </ActionsSection>
       </MainContent>

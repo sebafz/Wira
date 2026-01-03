@@ -23,6 +23,7 @@ import LicitacionesProveedor from "./components/licitaciones/LicitacionesProveed
 import PropuestasProveedor from "./components/propuestas/PropuestasProveedor";
 import EditarPropuesta from "./components/propuestas/EditarPropuesta";
 import HistorialProveedor from "./components/historial/HistorialProveedor";
+import CalificacionesPosLicitacion from "./components/calificaciones/CalificacionesPosLicitacion";
 import Profile from "./components/profile/Profile";
 import ColorPalette from "./components/shared/ColorPalette";
 import AdminMineras from "./components/admin/AdminMineras";
@@ -115,6 +116,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LicitacionesMinera />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/calificaciones-poslicitacion"
+              element={
+                <ProtectedRoute>
+                  <CalificacionesPosLicitacion />
                 </ProtectedRoute>
               }
             />
