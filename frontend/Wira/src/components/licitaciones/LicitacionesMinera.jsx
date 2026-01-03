@@ -935,6 +935,8 @@ const SeleccionarGanadoraButton = styled.button`
   &:disabled {
     background: #cbd5f5;
     cursor: not-allowed;
+    opacity: 0;
+    pointer-events: none;
   }
 `;
 
