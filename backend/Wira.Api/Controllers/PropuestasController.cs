@@ -106,9 +106,10 @@ namespace Wira.Api.Controllers
                 }
 
                 var criterios = propuesta.Licitacion?.CriteriosLicitacion?.ToList() ?? new List<CriterioLicitacion>();
-                var evaluacion = _evaluacionService.CalcularPuntaje(propuesta, criterios);
+                var stats = _evaluacionService.ConstruirEstadisticasNumericas(new[] { propuesta });
+                var evaluacion = _evaluacionService.CalcularPuntaje(propuesta, criterios, stats);
 
-                var respuestasCriterios = propuesta.RespuestasCriterios
+                var respuestasCriterios = (propuesta.RespuestasCriterios ?? new List<RespuestaCriterioLicitacion>())
                     .Select(r => new
                     {
                         r.RespuestaID,
@@ -120,6 +121,13 @@ namespace Wira.Api.Controllers
                         CriterioMayorMejor = r.Criterio?.MayorMejor
                     })
                     .ToList();
+
+                var licitacion = propuesta.Licitacion;
+                var minera = licitacion?.Minera;
+                var moneda = propuesta.Moneda;
+                var estadoPropuesta = propuesta.EstadoPropuesta;
+                var proveedor = propuesta.Proveedor;
+                var archivosAdjuntos = propuesta.ArchivosAdjuntos ?? new List<ArchivoAdjunto>();
 
                 var result = new
                 {
@@ -134,14 +142,14 @@ namespace Wira.Api.Controllers
                     propuesta.FechaEntrega,
                     propuesta.CumpleRequisitos,
                     propuesta.CalificacionFinal,
-                    MonedaCodigo = propuesta.Moneda.Codigo,
-                    MonedaNombre = propuesta.Moneda.Nombre,
-                    MonedaSimbolo = propuesta.Moneda.Simbolo,
-                    EstadoNombre = propuesta.EstadoPropuesta.NombreEstado,
-                    LicitacionTitulo = propuesta.Licitacion.Titulo,
-                    MineraNombre = propuesta.Licitacion.Minera.Nombre,
-                    ProveedorNombre = propuesta.Proveedor.Nombre,
-                    ArchivosAdjuntos = propuesta.ArchivosAdjuntos
+                    MonedaCodigo = moneda?.Codigo,
+                    MonedaNombre = moneda?.Nombre,
+                    MonedaSimbolo = moneda?.Simbolo,
+                    EstadoNombre = estadoPropuesta?.NombreEstado,
+                    LicitacionTitulo = licitacion?.Titulo,
+                    MineraNombre = minera?.Nombre,
+                    ProveedorNombre = proveedor?.Nombre,
+                    ArchivosAdjuntos = archivosAdjuntos
                         .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
                         .ToList(),
                     RespuestasCriterios = respuestasCriterios,
@@ -235,10 +243,12 @@ namespace Wira.Api.Controllers
                         .ThenInclude(r => r.OpcionSeleccionada)
                     .ToListAsync();
 
+                var numericStats = _evaluacionService.ConstruirEstadisticasNumericas(propuestas);
+
                 var result = propuestas
                     .Select(p =>
                     {
-                        var evaluacion = _evaluacionService.CalcularPuntaje(p, criterios);
+                        var evaluacion = _evaluacionService.CalcularPuntaje(p, criterios, numericStats);
                         return new
                         {
                             p.PropuestaID,

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using Wira.Api.Models;
 using Wira.Api.Services.Interfaces;
@@ -13,7 +14,10 @@ namespace Wira.Api.Services
             new CultureInfo("es-ES"),
         };
 
-        public EvaluacionPropuestaResult CalcularPuntaje(Propuesta propuesta, IEnumerable<CriterioLicitacion> criterios)
+        public EvaluacionPropuestaResult CalcularPuntaje(
+            Propuesta propuesta,
+            IEnumerable<CriterioLicitacion> criterios,
+            IDictionary<int, NumericCriterionStats>? criteriosStats = null)
         {
             var criterioList = criterios?.ToList() ?? new List<CriterioLicitacion>();
             var respuestas = propuesta.RespuestasCriterios?.ToList() ?? new List<RespuestaCriterioLicitacion>();
@@ -39,7 +43,7 @@ namespace Wira.Api.Services
                     continue;
                 }
 
-                var scoreCriterio = CalcularScoreCriterio(criterio, respuesta);
+                var scoreCriterio = CalcularScoreCriterio(criterio, respuesta, criteriosStats);
                 resultado.PuntajesPorCriterio[criterio.CriterioID] = Math.Round(scoreCriterio * 100m, 2, MidpointRounding.AwayFromZero);
                 sumaContribuciones += scoreCriterio * criterio.Peso;
             }
@@ -57,6 +61,68 @@ namespace Wira.Api.Services
             }
 
             return resultado;
+        }
+
+        public IDictionary<int, NumericCriterionStats> ConstruirEstadisticasNumericas(IEnumerable<Propuesta> propuestas)
+        {
+            var stats = new Dictionary<int, NumericCriterionStats>();
+            if (propuestas == null)
+            {
+                return stats;
+            }
+
+            foreach (var propuesta in propuestas)
+            {
+                var respuestas = propuesta?.RespuestasCriterios;
+                if (respuestas == null)
+                {
+                    continue;
+                }
+
+                foreach (var respuesta in respuestas)
+                {
+                    if (respuesta == null)
+                    {
+                        continue;
+                    }
+
+                    var valor = respuesta.ValorNumerico ?? ParseDecimal(respuesta.ValorProveedor);
+                    if (!valor.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (!stats.TryGetValue(respuesta.CriterioID, out var entry))
+                    {
+                        entry = new NumericCriterionStats
+                        {
+                            Min = valor.Value,
+                            Max = valor.Value,
+                            HasMultipleValues = false
+                        };
+                        stats[respuesta.CriterioID] = entry;
+                    }
+                    else
+                    {
+                        if (!entry.Min.HasValue || valor.Value < entry.Min.Value)
+                        {
+                            entry.Min = valor.Value;
+                        }
+
+                        if (!entry.Max.HasValue || valor.Value > entry.Max.Value)
+                        {
+                            entry.Max = valor.Value;
+                        }
+
+                        if (entry.Min.HasValue && entry.Max.HasValue && entry.Min.Value != entry.Max.Value)
+                        {
+                            entry.HasMultipleValues = true;
+                        }
+                    }
+                }
+            }
+
+            return stats;
         }
 
         private static bool CumpleCriterioExcluyente(CriterioLicitacion criterio, RespuestaCriterioLicitacion? respuesta)
@@ -104,18 +170,24 @@ namespace Wira.Api.Services
             return true;
         }
 
-        private static decimal CalcularScoreCriterio(CriterioLicitacion criterio, RespuestaCriterioLicitacion? respuesta)
+        private static decimal CalcularScoreCriterio(
+            CriterioLicitacion criterio,
+            RespuestaCriterioLicitacion? respuesta,
+            IDictionary<int, NumericCriterionStats>? criteriosStats)
         {
             return criterio.Tipo switch
             {
-                TipoCriterio.Numerico => CalcularScoreNumerico(criterio, respuesta),
+                TipoCriterio.Numerico => CalcularScoreNumerico(criterio, respuesta, criteriosStats),
                 TipoCriterio.Booleano => CalcularScoreBooleano(criterio, respuesta),
                 TipoCriterio.Escala => CalcularScoreEscala(criterio, respuesta),
                 _ => 0m
             };
         }
 
-        private static decimal CalcularScoreNumerico(CriterioLicitacion criterio, RespuestaCriterioLicitacion? respuesta)
+        private static decimal CalcularScoreNumerico(
+            CriterioLicitacion criterio,
+            RespuestaCriterioLicitacion? respuesta,
+            IDictionary<int, NumericCriterionStats>? criteriosStats)
         {
             var valor = respuesta?.ValorNumerico ?? ParseDecimal(respuesta?.ValorProveedor);
             if (!valor.HasValue)
@@ -125,34 +197,84 @@ namespace Wira.Api.Services
 
             var hasMin = criterio.ValorMinimo.HasValue;
             var hasMax = criterio.ValorMaximo.HasValue;
+            var mayorMejor = criterio.MayorMejor ?? true;
+            var statsEntry = criteriosStats != null && criteriosStats.TryGetValue(criterio.CriterioID, out var entry)
+                ? entry
+                : null;
+            var observedMin = statsEntry?.Min;
+            var observedMax = statsEntry?.Max;
 
             if (!hasMin && !hasMax)
             {
-                return 0m;
+                return CalcularDesdeObservados(valor.Value, observedMin, observedMax, mayorMejor);
             }
 
             if (hasMin && hasMax)
             {
-                var min = criterio.ValorMinimo!.Value;
-                var max = criterio.ValorMaximo!.Value;
-                if (max <= min)
+                var minConfigurado = criterio.ValorMinimo!.Value;
+                var maxConfigurado = criterio.ValorMaximo!.Value;
+                if (maxConfigurado <= minConfigurado)
                 {
-                    return valor.Value >= min && valor.Value <= max ? 1m : 0m;
+                    return valor.Value >= minConfigurado && valor.Value <= maxConfigurado ? 1m : 0m;
                 }
 
-                var clamped = Clamp(valor.Value, min, max);
-                var ratio = (clamped - min) / (max - min);
-                var mayorMejor = criterio.MayorMejor ?? true;
-                var normalized = mayorMejor ? ratio : 1m - ratio;
-                return Clamp(normalized, 0m, 1m);
+                return NormalizarEnRango(valor.Value, minConfigurado, maxConfigurado, mayorMejor);
             }
 
             if (hasMin)
             {
-                return valor.Value >= criterio.ValorMinimo!.Value ? 1m : 0m;
+                var minPermitido = criterio.ValorMinimo!.Value;
+                if (observedMax.HasValue && observedMax.Value > minPermitido)
+                {
+                    return NormalizarEnRango(valor.Value, minPermitido, observedMax.Value, mayorMejor);
+                }
+
+                return valor.Value >= minPermitido
+                    ? (mayorMejor ? 1m : 0m)
+                    : 0m;
             }
 
-            return valor.Value <= criterio.ValorMaximo!.Value ? 1m : 0m;
+            var maxPermitido = criterio.ValorMaximo!.Value;
+            if (observedMin.HasValue && observedMin.Value < maxPermitido)
+            {
+                return NormalizarEnRango(valor.Value, observedMin.Value, maxPermitido, mayorMejor);
+            }
+
+            return valor.Value <= maxPermitido
+                ? (mayorMejor ? 1m : 0m)
+                : 0m;
+        }
+
+        private static decimal CalcularDesdeObservados(
+            decimal valor,
+            decimal? observedMin,
+            decimal? observedMax,
+            bool mayorMejor)
+        {
+            if (!observedMin.HasValue || !observedMax.HasValue)
+            {
+                return mayorMejor ? 1m : 0m;
+            }
+
+            if (observedMax.Value == observedMin.Value)
+            {
+                return mayorMejor ? 1m : 0m;
+            }
+
+            return NormalizarEnRango(valor, observedMin.Value, observedMax.Value, mayorMejor);
+        }
+
+        private static decimal NormalizarEnRango(decimal valor, decimal min, decimal max, bool mayorMejor)
+        {
+            if (max <= min)
+            {
+                return mayorMejor ? 1m : 0m;
+            }
+
+            var clamped = Clamp(valor, min, max);
+            var ratio = (clamped - min) / (max - min);
+            var normalized = mayorMejor ? ratio : 1m - ratio;
+            return Clamp(normalized, 0m, 1m);
         }
 
         private static decimal CalcularScoreBooleano(CriterioLicitacion criterio, RespuestaCriterioLicitacion? respuesta)
