@@ -4,7 +4,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
+import CalificacionProveedorModal from "../calificaciones/CalificacionProveedorModal";
+import { registrarCalificacionPostLicitacion } from "../../services/calificacionesService";
 import { buttonBaseStyles } from "../shared/buttonStyles";
 
 const Container = styled.div`
@@ -1058,103 +1061,6 @@ const DeleteButton = styled(ActionButton)`
   }
 `;
 
-const ConfirmModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1100;
-  padding: 20px;
-`;
-
-const ConfirmContent = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  max-width: 400px;
-  width: 100%;
-  padding: 30px;
-  text-align: center;
-`;
-
-const ConfirmTitle = styled.h3`
-  color: #dc3545;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-`;
-
-const ConfirmSuccessTitle = styled.h3`
-  color: #28a745;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-`;
-
-const ConfirmText = styled.p`
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 25px;
-  line-height: 1.5;
-`;
-
-const ConfirmActions = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-`;
-
-const ConfirmButton = styled.button`
-  ${buttonBaseStyles};
-  padding: 10px 20px;
-  font-size: 0.9rem;
-`;
-
-const ConfirmDeleteButton = styled(ConfirmButton)`
-  background: #dc3545;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #c82333;
-  }
-`;
-
-const ConfirmSuccessButton = styled(ConfirmButton)`
-  background: #28a745;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #218838;
-  }
-`;
-
-const ConfirmYellowTitle = styled.h3`
-  color: #ffc107;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-`;
-
-const ConfirmYellowButton = styled(ConfirmButton)`
-  background: #ffc107;
-  color: #1f2937;
-
-  &:hover:not(:disabled) {
-    background: #e0a800;
-  }
-`;
-
-const CancelButton = styled(ConfirmButton)`
-  background: #6c757d;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #5a6268;
-  }
-`;
-
 // Styled components para el modal de propuesta
 const PropuestaModalOverlay = styled.div`
   position: fixed;
@@ -1556,8 +1462,10 @@ const LicitacionesMinera = () => {
   const [showConfirmAdjudicar, setShowConfirmAdjudicar] = useState(false);
   const [showConfirmSeleccionarGanadora, setShowConfirmSeleccionarGanadora] =
     useState(false);
-  const [showConfirmFinalizar, setShowConfirmFinalizar] = useState(false);
   const [showScoreInfo, setShowScoreInfo] = useState(false);
+  const [showCalificacionModal, setShowCalificacionModal] = useState(false);
+  const [calificacionTarget, setCalificacionTarget] = useState(null);
+  const [submittingCalificacion, setSubmittingCalificacion] = useState(false);
 
   // Estados de acciones pendientes
   const [deletingLicitacion, setDeletingLicitacion] = useState(null);
@@ -1943,12 +1851,14 @@ const LicitacionesMinera = () => {
       setOriginalLicitaciones(licitacionesMinera);
       setLicitaciones(licitacionesMinera);
       await fetchPropuestasCount(licitacionesMinera);
+      return licitacionesMinera;
     } catch (error) {
       console.error("Error fetching licitaciones:", error);
       setError(
         "Error al cargar las licitaciones. Por favor, intente nuevamente."
       );
       toast.error("Error al cargar las licitaciones");
+      return [];
     } finally {
       setLoading(false);
     }
@@ -2064,6 +1974,26 @@ const LicitacionesMinera = () => {
       : { ...propuestaGanadora };
 
     return [propuestaFusionada, ...listaSinGanadora];
+  };
+
+  const obtenerPropuestaGanadoraActual = () => {
+    if (!Array.isArray(propuestas) || propuestas.length === 0) {
+      return null;
+    }
+
+    const propuestaMarcada = propuestas.find((propuesta) => {
+      const historial =
+        propuesta.HistorialGanador || propuesta.historialGanador || {};
+      if (typeof historial.Ganador === "boolean") {
+        return historial.Ganador;
+      }
+      if (typeof historial.ganador === "boolean") {
+        return historial.ganador;
+      }
+      return false;
+    });
+
+    return propuestaMarcada || propuestas[0];
   };
 
   const renderPropuestasContenido = (
@@ -2439,8 +2369,19 @@ const LicitacionesMinera = () => {
   // };
 
   const handleFinalizarLicitacion = (licitacion) => {
+    const propuestaGanadoraActual = obtenerPropuestaGanadoraActual();
+
+    if (!propuestaGanadoraActual) {
+      toast.error("Necesitas una propuesta adjudicada antes de calificar");
+      return;
+    }
+
     setFinalizandoLicitacion(licitacion);
-    setShowConfirmFinalizar(true);
+    setCalificacionTarget({
+      licitacion,
+      propuesta: propuestaGanadoraActual,
+    });
+    setShowCalificacionModal(true);
   };
 
   // const handleSeleccionarGanador = async (licitacion) => {
@@ -2501,6 +2442,69 @@ const LicitacionesMinera = () => {
 
     setPropuestaGanadora(propuesta);
     setShowConfirmSeleccionarGanadora(true);
+  };
+
+  const closeCalificacionModal = () => {
+    setShowCalificacionModal(false);
+    setCalificacionTarget(null);
+    setFinalizandoLicitacion(null);
+  };
+
+  const handleSubmitCalificacion = async ({
+    puntualidad,
+    calidad,
+    comunicacion,
+    comentarios,
+  }) => {
+    if (!calificacionTarget?.licitacion || !calificacionTarget?.propuesta) {
+      toast.error("No encontramos la informacion necesaria para calificar");
+      return;
+    }
+
+    const licitacionId = calificacionTarget.licitacion.licitacionID;
+    const proveedorId = calificacionTarget.propuesta.proveedorID;
+
+    if (!licitacionId || !proveedorId) {
+      toast.error("No pudimos identificar la licitacion seleccionada");
+      return;
+    }
+
+    try {
+      setSubmittingCalificacion(true);
+      await registrarCalificacionPostLicitacion({
+        token,
+        licitacionId,
+        proveedorId,
+        puntualidad,
+        calidad,
+        comunicacion,
+        comentarios,
+      });
+
+      toast.success("Calificacion registrada y licitacion cerrada");
+      closeCalificacionModal();
+
+      const licitacionesActualizadas = await fetchLicitaciones();
+      if (Array.isArray(licitacionesActualizadas)) {
+        const licitacionRefrescada = licitacionesActualizadas.find((item) => {
+          const itemId = item.licitacionID || item.LicitacionID;
+          return String(itemId) === String(licitacionId);
+        });
+
+        if (licitacionRefrescada) {
+          setSelectedLicitacion(licitacionRefrescada);
+          setShowModal(true);
+          fetchPropuestas(licitacionId);
+          fetchArchivosLicitacion(licitacionId);
+        }
+      }
+    } catch (error) {
+      console.error("Error al calificar proveedor:", error);
+      toast.error(error.message || "No pudimos registrar la calificacion");
+    } finally {
+      setSubmittingCalificacion(false);
+      setFinalizandoLicitacion(null);
+    }
   };
 
   // Funciones de confirmación consolidadas
@@ -2587,24 +2591,6 @@ const LicitacionesMinera = () => {
     if (success) {
       setShowConfirmAdjudicar(false);
       setAdjudicandoLicitacion(null);
-    }
-  };
-
-  const confirmFinalizarLicitacion = async () => {
-    if (!finalizandoLicitacion) return;
-
-    const licitacionId =
-      finalizandoLicitacion.licitacionID || finalizandoLicitacion.LicitacionID;
-    const success = await executeAction(
-      "finalizar",
-      licitacionId,
-      "Licitación finalizada exitosamente",
-      "Error al finalizar la licitación"
-    );
-
-    if (success) {
-      setShowConfirmFinalizar(false);
-      setFinalizandoLicitacion(null);
     }
   };
 
@@ -2726,12 +2712,27 @@ const LicitacionesMinera = () => {
         "Propuesta seleccionada como ganadora y licitación adjudicada exitosamente"
       );
 
-      // Cerrar modales y recargar
+      // Actualizar vista con la información más reciente
       setShowConfirmSeleccionarGanadora(false);
-      setShowModal(false);
       setPropuestaGanadora(null);
-      setSelectedLicitacion(null);
-      await fetchLicitaciones();
+
+      const licitacionesActualizadas = await fetchLicitaciones();
+      if (Array.isArray(licitacionesActualizadas)) {
+        const licitacionRefrescada = licitacionesActualizadas.find((item) => {
+          const itemId = item.licitacionID || item.LicitacionID;
+          return String(itemId) === String(licitacionId);
+        });
+
+        if (licitacionRefrescada) {
+          setSelectedLicitacion(licitacionRefrescada);
+          setShowModal(true);
+          fetchPropuestas(licitacionId);
+          fetchArchivosLicitacion(licitacionId);
+        } else {
+          setShowModal(false);
+          setSelectedLicitacion(null);
+        }
+      }
     } catch (error) {
       console.error("Error al seleccionar propuesta ganadora:", error);
       toast.error(
@@ -2754,11 +2755,6 @@ const LicitacionesMinera = () => {
   const cancelAdjudicarLicitacion = () => {
     setShowConfirmAdjudicar(false);
     setAdjudicandoLicitacion(null);
-  };
-
-  const cancelFinalizarLicitacion = () => {
-    setShowConfirmFinalizar(false);
-    setFinalizandoLicitacion(null);
   };
 
   const cancelSeleccionarGanador = () => {
@@ -3289,7 +3285,7 @@ const LicitacionesMinera = () => {
                       handleFinalizarLicitacion(selectedLicitacion)
                     }
                   >
-                    🏁 Finalizar Licitación
+                    🏅 Calificar al proveedor
                   </CloseLicitacionButton>
                 )}
 
@@ -3348,118 +3344,100 @@ const LicitacionesMinera = () => {
         )}
 
         {/* Modales de confirmación */}
-        {showConfirmDelete && (
-          <ConfirmModal>
-            <ConfirmContent>
-              <ConfirmTitle>⚠️ Confirmar eliminación</ConfirmTitle>
-              <ConfirmText>
-                ¿Está seguro de que desea eliminar la licitación "
-                {deletingLicitacion?.titulo || deletingLicitacion?.Titulo}"?
-                Esta acción no se puede deshacer. La licitación dejará de ser
-                visible para todos los proveedores.
-              </ConfirmText>
-              <ConfirmActions>
-                <ConfirmDeleteButton onClick={confirmDeleteLicitacion}>
-                  Eliminar
-                </ConfirmDeleteButton>
-                <CancelButton onClick={cancelDeleteLicitacion}>
-                  Cancelar
-                </CancelButton>
-              </ConfirmActions>
-            </ConfirmContent>
-          </ConfirmModal>
-        )}
+        <DialogModal
+          isOpen={showConfirmDelete}
+          title="⚠️ Confirmar eliminación"
+          variant="red"
+          description={
+            <>
+              ¿Está seguro de que desea eliminar la licitación "
+              {deletingLicitacion?.titulo || deletingLicitacion?.Titulo}"?
+              <br />
+              Esta acción no se puede deshacer y la licitación dejará de ser
+              visible para todos los proveedores.
+            </>
+          }
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={confirmDeleteLicitacion}
+          onCancel={cancelDeleteLicitacion}
+        />
 
-        {showConfirmClose && (
-          <ConfirmModal>
-            <ConfirmContent>
-              <ConfirmTitle>⏰ Confirmar paso a evaluación</ConfirmTitle>
-              <ConfirmText>
-                ¿Desea cerrar la licitación "
-                {closingLicitacion?.titulo || closingLicitacion?.Titulo}" de
-                forma temprana y pasarla a evaluación? No podrá recibir más
-                propuestas.
-              </ConfirmText>
-              <ConfirmActions>
-                <ConfirmDeleteButton onClick={confirmCloseLicitacion}>
-                  Pasar a evaluación
-                </ConfirmDeleteButton>
-                <CancelButton onClick={cancelCloseLicitacion}>
-                  Cancelar
-                </CancelButton>
-              </ConfirmActions>
-            </ConfirmContent>
-          </ConfirmModal>
-        )}
+        <DialogModal
+          isOpen={showConfirmClose}
+          title="⏰ Confirmar paso a evaluación"
+          variant="yellow"
+          description={
+            <>
+              ¿Desea cerrar la licitación "
+              {closingLicitacion?.titulo || closingLicitacion?.Titulo}" de forma
+              temprana y pasarla a evaluación?
+              <br />
+              No podrá recibir más propuestas luego de confirmarlo.
+            </>
+          }
+          confirmText="Pasar a evaluación"
+          cancelText="Cancelar"
+          onConfirm={confirmCloseLicitacion}
+          onCancel={cancelCloseLicitacion}
+        />
 
-        {showConfirmAdjudicar && (
-          <ConfirmModal>
-            <ConfirmContent>
-              <ConfirmTitle>✅ Confirmar adjudicación</ConfirmTitle>
-              <ConfirmText>
-                ¿Desea marcar la licitación "
-                {adjudicandoLicitacion?.titulo || adjudicandoLicitacion?.Titulo}
-                " como adjudicada?
-              </ConfirmText>
-              <ConfirmActions>
-                <ConfirmDeleteButton onClick={confirmAdjudicarLicitacion}>
-                  Adjudicar
-                </ConfirmDeleteButton>
-                <CancelButton onClick={cancelAdjudicarLicitacion}>
-                  Cancelar
-                </CancelButton>
-              </ConfirmActions>
-            </ConfirmContent>
-          </ConfirmModal>
-        )}
-
-        {showConfirmFinalizar && (
-          <ConfirmModal>
-            <ConfirmContent>
-              <ConfirmYellowTitle>🏁 Confirmar finalización</ConfirmYellowTitle>
-              <ConfirmText>
-                ¿Desea finalizar la licitación "
-                {finalizandoLicitacion?.titulo || finalizandoLicitacion?.Titulo}
-                " y marcarla como cerrada?
-              </ConfirmText>
-              <ConfirmActions>
-                <ConfirmYellowButton onClick={confirmFinalizarLicitacion}>
-                  Finalizar
-                </ConfirmYellowButton>
-                <CancelButton onClick={cancelFinalizarLicitacion}>
-                  Cancelar
-                </CancelButton>
-              </ConfirmActions>
-            </ConfirmContent>
-          </ConfirmModal>
-        )}
+        <DialogModal
+          isOpen={showConfirmAdjudicar}
+          title="✅ Confirmar adjudicación"
+          variant="green"
+          description={
+            <>
+              ¿Desea marcar la licitación "
+              {adjudicandoLicitacion?.titulo || adjudicandoLicitacion?.Titulo}"
+              como adjudicada?
+            </>
+          }
+          confirmText="Adjudicar"
+          cancelText="Cancelar"
+          onConfirm={confirmAdjudicarLicitacion}
+          onCancel={cancelAdjudicarLicitacion}
+        />
 
         {/* Modal de confirmación para seleccionar propuesta ganadora */}
-        {showConfirmSeleccionarGanadora && (
-          <ConfirmModal>
-            <ConfirmContent>
-              <ConfirmSuccessTitle>
-                🏆 Confirmar adjudicación
-              </ConfirmSuccessTitle>
-              <ConfirmText>
-                ¿Desea seleccionar la propuesta de "
-                {propuestaGanadora?.proveedorNombre ||
-                  propuestaGanadora?.ProveedorNombre}
-                " como adjudicada? No podrá revertir esta acción.
-              </ConfirmText>
-              <ConfirmActions>
-                <ConfirmSuccessButton
-                  onClick={confirmSeleccionarPropuestaGanadora}
-                >
-                  Confirmar
-                </ConfirmSuccessButton>
-                <CancelButton onClick={cancelSeleccionarPropuestaGanadora}>
-                  Cancelar
-                </CancelButton>
-              </ConfirmActions>
-            </ConfirmContent>
-          </ConfirmModal>
-        )}
+        <DialogModal
+          isOpen={showConfirmSeleccionarGanadora}
+          title="🏆 Confirmar adjudicación"
+          variant="green"
+          description={
+            <>
+              ¿Desea seleccionar la propuesta de "
+              {propuestaGanadora?.proveedorNombre ||
+                propuestaGanadora?.ProveedorNombre}
+              " como adjudicada?
+              <br />
+              No podrá revertir esta acción.
+            </>
+          }
+          confirmText="Confirmar"
+          cancelText="Cancelar"
+          onConfirm={confirmSeleccionarPropuestaGanadora}
+          onCancel={cancelSeleccionarPropuestaGanadora}
+        />
+
+        <CalificacionProveedorModal
+          isOpen={showCalificacionModal}
+          licitacionTitulo={
+            finalizandoLicitacion?.titulo || finalizandoLicitacion?.Titulo
+          }
+          proveedorNombre={
+            calificacionTarget?.propuesta?.proveedorNombre ||
+            calificacionTarget?.propuesta?.ProveedorNombre
+          }
+          fechaAdjudicacion={
+            calificacionTarget?.propuesta?.HistorialGanador
+              ?.FechaParticipacion ||
+            calificacionTarget?.propuesta?.HistorialGanador?.fechaParticipacion
+          }
+          onCancel={closeCalificacionModal}
+          onSubmit={handleSubmitCalificacion}
+          isSubmitting={submittingCalificacion}
+        />
 
         {/* Modal de selección de ganador */}
         {showGanadorModal && (

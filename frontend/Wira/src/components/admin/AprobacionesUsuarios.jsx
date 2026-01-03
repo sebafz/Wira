@@ -154,9 +154,9 @@ const Badge = styled.span`
 `;
 
 const EmptyState = styled.div`
-  padding: 50px 20px;
+  padding: 60px 20px;
   text-align: center;
-  color: #94a3b8;
+  color: #475569;
   font-weight: 600;
 `;
 
@@ -462,7 +462,7 @@ const AprobacionesUsuarios = () => {
                     <td colSpan={5}>
                       <EmptyState>
                         No hay solicitudes pendientes para tu empresa en este
-                        momento
+                        momento.
                       </EmptyState>
                     </td>
                   </tr>
@@ -566,7 +566,7 @@ const AprobacionesUsuarios = () => {
               </Field>
             ) : (
               <Field>
-                Motivo (opcional)
+                Motivo
                 <TextArea
                   value={motivo}
                   onChange={(event) => setMotivo(event.target.value)}

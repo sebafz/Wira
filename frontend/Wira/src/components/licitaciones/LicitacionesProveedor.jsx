@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 // import { useNavigate } from "react-router-dom"; // Currently not used
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import { buttonBaseStyles } from "../shared/buttonStyles";
 
@@ -967,75 +968,6 @@ const FileErrorMessage = styled.div`
   margin-top: 10px;
   border: 1px solid #f5c6cb;
   font-size: 0.8rem;
-`;
-
-// Componentes para modal de confirmación - mismo estilo que CrearLicitacion
-const ConfirmModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-`;
-
-const ConfirmContent = styled.div`
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  max-width: 450px;
-  width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-`;
-
-const ConfirmTitle = styled.h3`
-  color: #333;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const ConfirmText = styled.p`
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 25px;
-  line-height: 1.5;
-`;
-
-const ConfirmActions = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: flex-end;
-`;
-
-const ConfirmSubmitButton = styled.button`
-  ${buttonBaseStyles};
-  padding: 12px 24px;
-  font-size: 1rem;
-  background: #28a745;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #218838;
-  }
-`;
-
-const CancelConfirmButton = styled.button`
-  ${buttonBaseStyles};
-  padding: 12px 24px;
-  font-size: 1rem;
-  background: #6c757d;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #5a6268;
-  }
 `;
 
 const tipoCriterioLabels = {
@@ -3093,36 +3025,24 @@ const LicitacionesProveedor = () => {
       )}
 
       {/* Modal de confirmación para enviar propuesta */}
-      {showConfirmSubmit && selectedLicitacion && (
-        <ConfirmModal
-          onClick={(e) => e.target === e.currentTarget && cancelSubmit()}
-        >
-          <ConfirmContent>
-            <ConfirmTitle>⚠️ Confirmar envío de propuesta</ConfirmTitle>
-            <ConfirmText>
-              ¿Está seguro que desea enviar su propuesta para la licitación{" "}
-              <strong>
-                {selectedLicitacion.titulo || selectedLicitacion.Titulo}
-              </strong>
-              ?
-            </ConfirmText>
-            <ConfirmText>
-              Una vez enviada, no podrá modificar ni eliminar su propuesta.
-            </ConfirmText>
-            <ConfirmActions>
-              <CancelConfirmButton onClick={cancelSubmit}>
-                Cancelar
-              </CancelConfirmButton>
-              <ConfirmSubmitButton
-                onClick={confirmSubmit}
-                disabled={postulando}
-              >
-                {postulando ? "Enviando..." : "Confirmar y enviar"}
-              </ConfirmSubmitButton>
-            </ConfirmActions>
-          </ConfirmContent>
-        </ConfirmModal>
-      )}
+      <DialogModal
+        isOpen={showConfirmSubmit && !!selectedLicitacion}
+        title="⚠️ Confirmar envío de propuesta"
+        variant="green"
+        description={
+          <>
+            ¿Está seguro que desea enviar su propuesta para la licitación "
+            {selectedLicitacion?.titulo || selectedLicitacion?.Titulo}" ?
+            <br />
+            Una vez enviada, no podrá modificar ni eliminar su propuesta.
+          </>
+        }
+        confirmText={postulando ? "Enviando..." : "Confirmar y enviar"}
+        confirmDisabled={postulando}
+        cancelText="Cancelar"
+        onConfirm={confirmSubmit}
+        onCancel={cancelSubmit}
+      />
 
       <ToastContainer
         position="top-right"

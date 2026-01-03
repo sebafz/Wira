@@ -61,13 +61,19 @@ const Button = styled.button`
   ${buttonBaseStyles};
   padding: 10px 20px;
   font-size: 0.9rem;
-  background: ${(props) =>
-    props.variant === "secondary" ? "#6c757d" : "#fc6b0a"};
+  background: ${(props) => {
+    if (props.variant === "secondary") return "#6c757d";
+    if (props.variant === "dark") return "#0f172a";
+    return "#fc6b0a";
+  }};
   color: white;
 
   &:hover:not(:disabled) {
-    background: ${(props) =>
-      props.variant === "secondary" ? "#5a6268" : "#e55a09"};
+    background: ${(props) => {
+      if (props.variant === "secondary") return "#5a6268";
+      if (props.variant === "dark") return "#020617";
+      return "#e55a09";
+    }};
   }
 `;
 
@@ -274,7 +280,8 @@ const RoleOptions = styled.div`
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  margin-top: 6px;
 `;
 
 const RoleOption = styled.label`
@@ -904,6 +911,7 @@ const AdminUsuarios = () => {
                             Editar
                           </Button>
                           <Button
+                            variant="dark"
                             onClick={(event) => {
                               event.stopPropagation();
                               handleToggleStatus(usuario);
@@ -1104,7 +1112,7 @@ const AdminUsuarios = () => {
                 </SwitchGroup>
               </FormRow>
               <div>
-                <SectionLabel>Rol principal</SectionLabel>
+                <FormLabel>Rol principal</FormLabel>
                 <RoleOptions>
                   {ROLE_OPTIONS.map((role) => (
                     <RoleOption key={role.value || "none"}>

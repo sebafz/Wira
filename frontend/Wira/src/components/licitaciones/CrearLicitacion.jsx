@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import apiService from "../../services/apiService";
 
@@ -672,11 +673,51 @@ const SuccessMessage = styled.div`
   font-size: 0.9rem;
 `;
 
+const ConfirmDescriptionWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  line-height: 1.45;
+
+  p {
+    margin: 0;
+  }
+`;
+
+const ConfirmDetails = styled.div`
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const ConfirmDetailRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+`;
+
+const ConfirmDetailLabel = styled.span`
+  font-weight: 600;
+  color: #0b152e;
+`;
+
+const ConfirmDetailValue = styled.span`
+  color: #111827;
+`;
+
 // Estilos personalizados para react-toastify
 const ToastStyles = styled.div`
   .Toastify__toast--success {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
+    background: #ffffff;
+    color: #1f2933;
+    border: 1px solid #e2e8f0;
   }
 
   .Toastify__toast--error {
@@ -690,7 +731,7 @@ const ToastStyles = styled.div`
   }
 
   .Toastify__progress-bar--success {
-    background: rgba(255, 255, 255, 0.7);
+    background: white;
   }
 
   .Toastify__progress-bar--error {
@@ -699,91 +740,6 @@ const ToastStyles = styled.div`
 
   .Toastify__progress-bar--info {
     background: rgba(255, 255, 255, 0.7);
-  }
-`;
-
-// Estilos para el modal de confirmación
-const ConfirmModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-`;
-
-const ConfirmContent = styled.div`
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  max-width: 450px;
-  width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-`;
-
-const ConfirmTitle = styled.h3`
-  color: #333;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const ConfirmText = styled.p`
-  color: #666;
-  font-size: 1rem;
-  margin-bottom: 25px;
-  line-height: 1.5;
-`;
-
-const ConfirmActions = styled.div`
-  display: flex;
-  gap: 15px;
-  justify-content: flex-end;
-`;
-
-const ConfirmCreateButton = styled.button`
-  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(252, 107, 10, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const CancelConfirmButton = styled.button`
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #5a6268;
-    transform: translateY(-1px);
   }
 `;
 
@@ -1562,6 +1518,20 @@ const CrearLicitacion = () => {
 
   const getSelectedMoneda = () =>
     monedas.find((moneda) => String(moneda.id) === String(formData.monedaID));
+
+  const formatFechaCierre = () => {
+    if (!formData.fechaCierre) {
+      return "Sin fecha definida";
+    }
+
+    return new Date(formData.fechaCierre).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   const selectedMoneda = getSelectedMoneda();
 
@@ -2418,47 +2388,36 @@ const CrearLicitacion = () => {
         </CriteriaInfoOverlay>
       )}
 
-      {/* Modal de confirmación para crear licitación */}
-      {showConfirmCreate && (
-        <ConfirmModal
-          onClick={(e) => e.target === e.currentTarget && cancelCreate()}
-        >
-          <ConfirmContent>
-            <ConfirmTitle>🏗️ Confirmar creación de licitación</ConfirmTitle>
-            <ConfirmText>
-              ¿Está seguro que desea crear esta licitación?
-              <br />
-              <br />
-              <strong>Título:</strong> {formData.titulo}
-              <br />
-              <strong>Fecha de cierre:</strong>{" "}
-              {new Date(formData.fechaCierre).toLocaleDateString("es-ES", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-              <br />
-              <br />
+      <DialogModal
+        isOpen={showConfirmCreate}
+        title="🏗️ Confirmar creación de licitación"
+        variant="yellow"
+        description={
+          <ConfirmDescriptionWrapper>
+            <p>¿Está seguro que desea crear esta licitación?</p>
+            <ConfirmDetails>
+              <ConfirmDetailRow>
+                <ConfirmDetailLabel>Título:</ConfirmDetailLabel>
+                <ConfirmDetailValue>
+                  {formData.titulo?.trim() ? formData.titulo : "Sin título"}
+                </ConfirmDetailValue>
+              </ConfirmDetailRow>
+              <ConfirmDetailRow>
+                <ConfirmDetailLabel>Fecha de cierre:</ConfirmDetailLabel>
+                <ConfirmDetailValue>{formatFechaCierre()}</ConfirmDetailValue>
+              </ConfirmDetailRow>
+            </ConfirmDetails>
+            <p>
               Una vez creada, la licitación será visible para todos los
               proveedores.
-            </ConfirmText>
-            <ConfirmActions>
-              <CancelConfirmButton type="button" onClick={cancelCreate}>
-                Cancelar
-              </CancelConfirmButton>
-              <ConfirmCreateButton
-                type="button"
-                onClick={confirmCreate}
-                disabled={loading}
-              >
-                {loading ? "Creando..." : "Crear licitación"}
-              </ConfirmCreateButton>
-            </ConfirmActions>
-          </ConfirmContent>
-        </ConfirmModal>
-      )}
+            </p>
+          </ConfirmDescriptionWrapper>
+        }
+        confirmText={loading ? "Creando..." : "Crear licitación"}
+        confirmDisabled={loading}
+        onConfirm={confirmCreate}
+        onCancel={cancelCreate}
+      />
 
       {/* Toast Container para las notificaciones */}
       <ToastStyles>

@@ -107,11 +107,11 @@ namespace Wira.Api.Data
             // Configuración de restricciones CHECK para calificaciones
             modelBuilder.Entity<CalificacionPostLicitacion>()
                 .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Puntualidad",
-                    "[Puntualidad] BETWEEN 0 AND 10"))
+                    "[Puntualidad] BETWEEN 1 AND 5"))
                 .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Calidad",
-                    "[Calidad] BETWEEN 0 AND 10"))
+                    "[Calidad] BETWEEN 1 AND 5"))
                 .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Comunicacion",
-                    "[Comunicacion] BETWEEN 0 AND 10"));
+                    "[Comunicacion] BETWEEN 1 AND 5"));
 
             // Configuración de relaciones opcionales para Usuario
             modelBuilder.Entity<Usuario>()
