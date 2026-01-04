@@ -118,7 +118,7 @@ const Badge = styled.span`
   background: ${(props) => {
     switch (props.type) {
       case "verified":
-        return "#d1fae5";
+        return "#d4edda";
       case "unverified":
         return "#fef3c7";
       default:
@@ -128,7 +128,7 @@ const Badge = styled.span`
   color: ${(props) => {
     switch (props.type) {
       case "verified":
-        return "#15803d";
+        return "#155724";
       case "unverified":
         return "#92400e";
       default:

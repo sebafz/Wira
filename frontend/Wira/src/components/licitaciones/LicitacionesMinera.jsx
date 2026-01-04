@@ -885,13 +885,15 @@ const PropuestaInfo = styled.div`
 `;
 
 const PropuestaAlert = styled.div`
-  margin-top: 12px;
+  margin-bottom: 12px;
   padding: 12px;
   border-radius: 8px;
   background: #fef2f2;
   color: #b91c1c;
   font-size: 0.85rem;
   line-height: 1.4;
+  border: 1px solid;
+  border-color: #f5c2c7;
 `;
 
 const PropuestaAlertTitle = styled.span`
@@ -2517,12 +2519,14 @@ const LicitacionesMinera = () => {
     errorMessage
   ) => {
     try {
-      const response = await apiRequest(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/${action}`,
-        {
-          method: action === "delete" ? "DELETE" : "PUT",
-        }
-      );
+      const isDelete = action === "delete";
+      const url = isDelete
+        ? `http://localhost:5242/api/licitaciones/${licitacionId}`
+        : `http://localhost:5242/api/licitaciones/${licitacionId}/${action}`;
+
+      const response = await apiRequest(url, {
+        method: isDelete ? "DELETE" : "PUT",
+      });
 
       if (!response.ok)
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -2550,8 +2554,8 @@ const LicitacionesMinera = () => {
     const success = await executeAction(
       "delete",
       licitacionId,
-      "Licitación eliminada exitosamente",
-      "Error al eliminar la licitación"
+      "Licitación cancelada exitosamente",
+      "Error al cancelar la licitación"
     );
 
     if (success) {
@@ -3291,7 +3295,7 @@ const LicitacionesMinera = () => {
                   </CloseLicitacionButton>
                 )}
 
-                {!["Cerrada", "Adjudicada"].includes(
+                {!["Cerrada", "Adjudicada", "Cancelada"].includes(
                   selectedLicitacion.estadoNombre ||
                     selectedLicitacion.EstadoNombre
                 ) && (

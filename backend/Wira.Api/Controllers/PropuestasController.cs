@@ -38,6 +38,8 @@ namespace Wira.Api.Controllers
                     .Where(p => !p.Eliminado)
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.Minera)
+                    .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.EstadoLicitacion)
                     .Include(p => p.Proveedor)
                     .Include(p => p.EstadoPropuesta)
                     .Include(p => p.Moneda)
@@ -61,6 +63,8 @@ namespace Wira.Api.Controllers
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
                         MineraNombre = p.Licitacion.Minera.Nombre,
+                        LicitacionEstadoNombre = p.Licitacion.EstadoLicitacion.NombreEstado,
+                        LicitacionEliminada = p.Licitacion.Eliminado,
                         ProveedorNombre = p.Proveedor.Nombre,
                         ArchivosAdjuntos = p.ArchivosAdjuntos
                             .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
@@ -87,6 +91,8 @@ namespace Wira.Api.Controllers
                     .Where(p => p.PropuestaID == id && !p.Eliminado)
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.Minera)
+                    .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.EstadoLicitacion)
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.CriteriosLicitacion)
                             .ThenInclude(c => c.Opciones)
@@ -148,6 +154,8 @@ namespace Wira.Api.Controllers
                     EstadoNombre = estadoPropuesta?.NombreEstado,
                     LicitacionTitulo = licitacion?.Titulo,
                     MineraNombre = minera?.Nombre,
+                    LicitacionEstadoNombre = licitacion?.EstadoLicitacion?.NombreEstado,
+                    LicitacionEliminada = licitacion?.Eliminado,
                     ProveedorNombre = proveedor?.Nombre,
                     ArchivosAdjuntos = archivosAdjuntos
                         .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })
@@ -177,6 +185,8 @@ namespace Wira.Api.Controllers
                     .Where(p => p.ProveedorID == proveedorId && !p.Eliminado)
                     .Include(p => p.Licitacion)
                         .ThenInclude(l => l.Minera)
+                    .Include(p => p.Licitacion)
+                        .ThenInclude(l => l.EstadoLicitacion)
                     .Include(p => p.EstadoPropuesta)
                     .Include(p => p.Moneda)
                     .Include(p => p.ArchivosAdjuntos)
@@ -198,6 +208,8 @@ namespace Wira.Api.Controllers
                         MonedaSimbolo = p.Moneda.Simbolo,
                         EstadoNombre = p.EstadoPropuesta.NombreEstado,
                         LicitacionTitulo = p.Licitacion.Titulo,
+                        LicitacionEstadoNombre = p.Licitacion.EstadoLicitacion.NombreEstado,
+                        LicitacionEliminada = p.Licitacion.Eliminado,
                         MineraNombre = p.Licitacion.Minera.Nombre,
                         ArchivosAdjuntos = p.ArchivosAdjuntos
                             .Select(a => new { a.ArchivoID, a.NombreArchivo, a.RutaArchivo })

@@ -239,6 +239,36 @@ const PropuestaStatus = styled.span`
   }}
 `;
 
+const LicitacionStatusPill = styled.span`
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 6px;
+  background: #fef2f2;
+  color: #b91c1c;
+`;
+
+const PropuestaAlert = styled.div`
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  border: 1px solid #f5c2c7;
+`;
+
+const PropuestaAlertTitle = styled.span`
+  font-weight: 700;
+`;
+
+const PropuestaAlertBody = styled.ul`
+  margin: 8px 0 0;
+  padding-left: 18px;
+`;
+
 const PropuestaMeta = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1136,9 +1166,23 @@ const PropuestasProveedor = () => {
                     <PropuestaTitle>
                       {propuesta.licitacionTitulo || "Licitación sin título"}
                     </PropuestaTitle>
-                    <PropuestaStatus status={propuesta.estadoNombre}>
-                      {formatStatus(propuesta.estadoNombre)}
-                    </PropuestaStatus>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <PropuestaStatus status={propuesta.estadoNombre}>
+                        {formatStatus(propuesta.estadoNombre)}
+                      </PropuestaStatus>
+                      {(propuesta.licitacionEstadoNombre === "Cancelada" ||
+                        propuesta.licitacionEliminada) && (
+                        <LicitacionStatusPill>
+                          Licitación cancelada
+                        </LicitacionStatusPill>
+                      )}
+                    </div>
                   </PropuestaHeader>
 
                   <PropuestaMeta>
@@ -1187,6 +1231,22 @@ const PropuestasProveedor = () => {
             </ModalHeader>
 
             <ModalBody>
+              {(selectedPropuesta.licitacionEstadoNombre === "Cancelada" ||
+                selectedPropuesta.licitacionEliminada) && (
+                <PropuestaAlert>
+                  <PropuestaAlertTitle>
+                    Licitación cancelada
+                  </PropuestaAlertTitle>
+                  <PropuestaAlertBody>
+                    <li>
+                      Esta propuesta pertenece a una licitación que fue
+                      cancelada por la minera.
+                    </li>
+                    <li>No se esperan más acciones sobre esta licitación.</li>
+                  </PropuestaAlertBody>
+                </PropuestaAlert>
+              )}
+
               <DetailSection>
                 <SectionTitle>Información general</SectionTitle>
                 <DetailGrid>
