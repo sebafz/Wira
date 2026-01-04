@@ -9,8 +9,7 @@ namespace Wira.Api.Models
         [Key]
         public int AuditoriaID { get; set; }
 
-        [Required]
-        public int UsuarioID { get; set; }
+        public int? UsuarioID { get; set; }
 
         public DateTime Fecha { get; set; } = DateTime.Now;
 
@@ -30,6 +29,6 @@ namespace Wira.Api.Models
 
         // Navegación
         [ForeignKey("UsuarioID")]
-        public virtual Usuario Usuario { get; set; } = null!;
+        public virtual Usuario? Usuario { get; set; }
     }
 }

@@ -375,6 +375,7 @@ namespace Wira.Api.Data
 
             var nowUtc = DateTime.UtcNow;
             var userId = ObtenerUsuarioActual();
+            int? userIdForAudit = userId > 0 ? userId : null;
 
             var entries = ChangeTracker.Entries()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
@@ -388,7 +389,7 @@ namespace Wira.Api.Data
                 list.Add(new AuditoriaEntry
                 {
                     Entry = entry,
-                    UsuarioID = userId,
+                    UsuarioID = userIdForAudit,
                     Fecha = nowUtc,
                     Operacion = ObtenerOperacion(entry.State),
                     TablaAfectada = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name,
@@ -464,7 +465,7 @@ namespace Wira.Api.Data
         private class AuditoriaEntry
         {
             public Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry { get; set; } = default!;
-            public int UsuarioID { get; set; }
+            public int? UsuarioID { get; set; }
             public DateTime Fecha { get; set; }
             public string Operacion { get; set; } = string.Empty;
             public string TablaAfectada { get; set; } = string.Empty;

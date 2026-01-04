@@ -744,7 +744,7 @@ const ToastStyles = styled.div`
 `;
 
 const CrearLicitacion = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
 
   const tipoCriterioOptions = [
@@ -1400,10 +1400,17 @@ const CrearLicitacion = () => {
         Criterios: criteriosPayload,
       };
 
+      if (!token) {
+        throw new Error(
+          "Su sesión caducó, por favor inicie sesión nuevamente."
+        );
+      }
+
       const response = await fetch("http://localhost:5242/api/licitaciones", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(licitacionData),
       });
@@ -1439,6 +1446,9 @@ const CrearLicitacion = () => {
           "http://localhost:5242/api/archivos/upload",
           {
             method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
             body: formDataFile,
           }
         );
