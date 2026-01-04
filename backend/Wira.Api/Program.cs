@@ -49,13 +49,16 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IPropuestaEvaluacionService, PropuestaEvaluacionService>();
 
-// Configurar CORS para desarrollo
+// Configurar CORS (orígenes desde configuración, separadas por coma)
+var allowedOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -93,8 +96,15 @@ app.UseAuthorization();
 // Mapear controladores
 app.MapControllers();
 
-// Ruta raíz health/info
-app.MapGet("/", () => Results.Ok(new { status = "ok", env = app.Environment.EnvironmentName }));
+// Ruta raíz: redirige a Swagger si está habilitado, sino responde health
+if (enableSwagger)
+{
+    app.MapGet("/", () => Results.Redirect("/swagger"));
+}
+else
+{
+    app.MapGet("/", () => Results.Ok(new { status = "ok", env = app.Environment.EnvironmentName }));
+}
 
 app.Run();
 
