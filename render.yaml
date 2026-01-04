@@ -1,0 +1,92 @@
+services:
+  - type: web
+    name: wira-api-dev
+    env: docker
+    plan: starter
+    branch: dev
+    autoDeploy: true
+    rootDir: backend/Wira.Api
+    buildCommand: dotnet restore && dotnet publish -c Release -o ./publish
+    startCommand: dotnet ./publish/Wira.Api.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Key
+        sync: false
+      - key: Jwt__Issuer
+        value: WiraApi
+      - key: Jwt__Audience
+        value: WiraFrontend
+      - key: Email__FromEmail
+        sync: false
+      - key: Email__SmtpHost
+        sync: false
+      - key: Email__SmtpPort
+        value: "587"
+      - key: Email__Username
+        sync: false
+      - key: Email__Password
+        sync: false
+      - key: Frontend__BaseUrl
+        value: https://app-dev.example.com
+      - key: DOTNET_PRINT_TELEMETRY_MESSAGE
+        value: "false"
+
+  - type: web
+    name: wira-api-prod
+    env: docker
+    plan: starter
+    branch: main
+    autoDeploy: true
+    rootDir: backend/Wira.Api
+    buildCommand: dotnet restore && dotnet publish -c Release -o ./publish
+    startCommand: dotnet ./publish/Wira.Api.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Key
+        sync: false
+      - key: Jwt__Issuer
+        value: WiraApi
+      - key: Jwt__Audience
+        value: WiraFrontend
+      - key: Email__FromEmail
+        sync: false
+      - key: Email__SmtpHost
+        sync: false
+      - key: Email__SmtpPort
+        value: "587"
+      - key: Email__Username
+        sync: false
+      - key: Email__Password
+        sync: false
+      - key: Frontend__BaseUrl
+        value: https://app.example.com
+      - key: DOTNET_PRINT_TELEMETRY_MESSAGE
+        value: "false"
+
+  - type: static_site
+    name: wira-web-dev
+    branch: dev
+    autoDeploy: true
+    rootDir: frontend/Wira
+    buildCommand: npm ci && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://wira-api-dev.onrender.com
+
+  - type: static_site
+    name: wira-web-prod
+    branch: main
+    autoDeploy: true
+    rootDir: frontend/Wira
+    buildCommand: npm ci && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://wira-api-prod.onrender.com

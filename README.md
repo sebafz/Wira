@@ -102,6 +102,15 @@ Por defecto: `http://localhost:5173`
 
 ---
 
+## Despliegue a Render (dev/main)
+
+- Infraestructura declarada en `render.yaml` con cuatro servicios: backend y frontend para `dev` y `main`, con despliegue automático por rama.
+- Base de datos: la API usa SQL Server (`Microsoft.EntityFrameworkCore.SqlServer`), Render no ofrece SQL Server gestionado. Usa un SQL Server externo (Azure SQL u on-prem expuesto de forma segura) y define `ConnectionStrings__DefaultConnection` en cada servicio.
+- Configurar env vars en Render: `Jwt__Key` (>=32 chars), `Jwt__Issuer`, `Jwt__Audience`, `Email__*`, `Frontend__BaseUrl`, `VITE_API_URL` en los sitios estáticos. El almacenamiento de adjuntos es en disco local y efímero en Render; para persistencia usa un bucket externo (S3/compatible) antes de producción.
+- Workflow `render-deploy.yml`: al hacer push a `dev` o `main` se llama al deploy hook de Render. Añade en GitHub Secrets los hooks de cada servicio: `RENDER_HOOK_API_DEV`, `RENDER_HOOK_WEB_DEV`, `RENDER_HOOK_API_PROD`, `RENDER_HOOK_WEB_PROD`.
+- Flujo: commit a `dev` → Render despliega `wira-api-dev` y `wira-web-dev`; commit a `main` → Render despliega `wira-api-prod` y `wira-web-prod`.
+- Verificación rápida: en Render revisa logs de build/run, prueba `/swagger` de la API y la SPA ya publicada con la URL configurada en `VITE_API_URL`.
+
 ## Seguridad y buenas prácticas
 
 - Autenticación: uso de contraseñas cifradas y roles
@@ -121,9 +130,9 @@ Por defecto: `http://localhost:5173`
 
 ## Autor
 
-**Nombre:** Sebastián Fernandez Zavalía  
-**Carrera:** Ingeniería Informática  
-**Universidad:** Universidad Católica de Salta  
+**Nombre:** Sebastián Fernandez Zavalía
+**Carrera:** Ingeniería Informática
+**Universidad:** Universidad Católica de Salta
 **Fecha:** 2025
 
 

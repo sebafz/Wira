@@ -42,7 +42,7 @@ dist-ssr/
 *.vsix
 
 # Entity Framework
-**/Migrations/
+
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
@@ -50,6 +50,14 @@ ScaffoldingReadMe.txt
 # Environment configs
 **/appsettings.Development.json
 **/appsettings.Local.json
+**/appsettings.json
+.env
+.env.*
+**/*.env
+**/*.env.*
+
+# Local uploads (do not commit generated files)
+backend/Wira.Api/uploads/
 
 # Others
 *.ntvs*

@@ -93,20 +93,6 @@ app.MapControllers();
 // Ruta raíz que redirecciona a Swagger
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// Inicializar la base de datos con datos semilla (solo en entornos que no sean Testing)
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
-        // Crear la base de datos y las tablas si no existen (crea esquema desde los modelos)
-        await context.Database.EnsureCreatedAsync();
-
-        // Luego inicializar datos semilla
-        await DbInitializer.InitializeAsync(context);
-    }
-}
-
 app.Run();
 
 // Hacer la clase Program accesible para tests de integración
