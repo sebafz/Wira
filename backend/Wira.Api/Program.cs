@@ -70,14 +70,6 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Aplicar migraciones y seed inicial en arranque
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
-    await db.Database.MigrateAsync();
-    await DbInitializer.InitializeAsync(db);
-}
-
 // Configurar pipeline HTTP request
 if (enableSwagger)
 {

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wira.Api.Data;
@@ -11,9 +12,11 @@ using Wira.Api.Data;
 namespace Wira.Api.Migrations
 {
     [DbContext(typeof(WiraDbContext))]
-    partial class WiraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104195153_PostgresDefaults")]
+    partial class PostgresDefaults
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
