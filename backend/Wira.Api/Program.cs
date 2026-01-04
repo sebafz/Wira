@@ -8,6 +8,10 @@ using Wira.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Swagger se habilita en Development o si Swagger:Enabled=true (útil para staging/prod)
+var enableSwagger = builder.Environment.IsDevelopment() ||
+    builder.Configuration.GetValue<bool>("Swagger:Enabled");
+
 builder.Services.AddOpenApi();
 
 // Agregar Swagger
@@ -64,10 +68,9 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // Configurar pipeline HTTP request
-if (app.Environment.IsDevelopment())
+if (enableSwagger)
 {
     app.MapOpenApi();
-    app.UseDeveloperExceptionPage();
 
     // Habilitar Swagger UI
     app.UseSwagger();
@@ -90,8 +93,8 @@ app.UseAuthorization();
 // Mapear controladores
 app.MapControllers();
 
-// Ruta raíz que redirecciona a Swagger
-app.MapGet("/", () => Results.Redirect("/swagger"));
+// Ruta raíz health/info
+app.MapGet("/", () => Results.Ok(new { status = "ok", env = app.Environment.EnvironmentName }));
 
 app.Run();
 
