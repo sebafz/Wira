@@ -998,7 +998,14 @@ const EditarLicitacion = () => {
       setError("");
 
       const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${id}`
+        `http://localhost:5242/api/licitaciones/${id}`,
+        {
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+        }
       );
 
       if (!response.ok) {
@@ -1749,6 +1756,11 @@ const EditarLicitacion = () => {
           "http://localhost:5242/api/archivos/upload",
           {
             method: "POST",
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : undefined,
             body: formData,
           }
         );
@@ -1775,6 +1787,7 @@ const EditarLicitacion = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(updateData),
         }

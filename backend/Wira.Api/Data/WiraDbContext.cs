@@ -1,12 +1,18 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using Wira.Api.Models;
 
 namespace Wira.Api.Data
 {
     public class WiraDbContext : DbContext
     {
-        public WiraDbContext(DbContextOptions<WiraDbContext> options) : base(options)
+        private readonly IHttpContextAccessor? _httpContextAccessor;
+        private bool _auditoriaEnProgreso;
+
+        public WiraDbContext(DbContextOptions<WiraDbContext> options, IHttpContextAccessor? httpContextAccessor = null) : base(options)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // DbSets
@@ -30,6 +36,16 @@ namespace Wira.Api.Data
         public DbSet<Auditoria> Auditoria { get; set; }
         public DbSet<ProyectoMinero> ProyectosMineros { get; set; }
         public DbSet<Moneda> Monedas { get; set; }
+
+        public override int SaveChanges()
+        {
+            return SaveChangesInternal(() => base.SaveChanges());
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return SaveChangesInternalAsync(() => base.SaveChangesAsync(cancellationToken));
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -287,6 +303,197 @@ namespace Wira.Api.Data
                 .WithMany(e => e.HistorialesProveedor)
                 .HasForeignKey(h => h.ProveedorID)
                 .OnDelete(DeleteBehavior.Restrict);
+        }
+
+        private int SaveChangesInternal(Func<int> saveFunc)
+        {
+            if (_auditoriaEnProgreso)
+            {
+                return saveFunc();
+            }
+
+            var auditoriasPendientes = PrepararEntradasAuditoria();
+            var result = saveFunc();
+
+            if (auditoriasPendientes.Count > 0)
+            {
+                _auditoriaEnProgreso = true;
+                try
+                {
+                    foreach (var pending in auditoriasPendientes)
+                    {
+                        pending.CompletarClave();
+                        Auditoria.Add(pending.ToEntity());
+                    }
+
+                    saveFunc();
+                }
+                finally
+                {
+                    _auditoriaEnProgreso = false;
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<int> SaveChangesInternalAsync(Func<Task<int>> saveFunc)
+        {
+            if (_auditoriaEnProgreso)
+            {
+                return await saveFunc();
+            }
+
+            var auditoriasPendientes = PrepararEntradasAuditoria();
+            var result = await saveFunc();
+
+            if (auditoriasPendientes.Count > 0)
+            {
+                _auditoriaEnProgreso = true;
+                try
+                {
+                    foreach (var pending in auditoriasPendientes)
+                    {
+                        pending.CompletarClave();
+                        Auditoria.Add(pending.ToEntity());
+                    }
+
+                    await saveFunc();
+                }
+                finally
+                {
+                    _auditoriaEnProgreso = false;
+                }
+            }
+
+            return result;
+        }
+
+        private List<AuditoriaEntry> PrepararEntradasAuditoria()
+        {
+            ChangeTracker.DetectChanges();
+
+            var nowUtc = DateTime.UtcNow;
+            var userId = ObtenerUsuarioActual();
+            int? userIdForAudit = userId > 0 ? userId : null;
+
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
+                .Where(e => !(e.Entity is Auditoria))
+                .ToList();
+
+            var list = new List<AuditoriaEntry>();
+
+            foreach (var entry in entries)
+            {
+                list.Add(new AuditoriaEntry
+                {
+                    Entry = entry,
+                    UsuarioID = userIdForAudit,
+                    Fecha = nowUtc,
+                    Operacion = ObtenerOperacion(entry.State),
+                    TablaAfectada = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name,
+                    ClaveRegistro = ObtenerClave(entry, includeTemporary: false),
+                    Descripcion = ConstruirDescripcion(entry)
+                });
+            }
+
+            return list;
+        }
+
+        private int ObtenerUsuarioActual()
+        {
+            var userIdClaim = _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+        }
+
+        private static string ObtenerOperacion(EntityState state) => state switch
+        {
+            EntityState.Added => "CREATE",
+            EntityState.Modified => "UPDATE",
+            EntityState.Deleted => "DELETE",
+            _ => "UNKNOWN"
+        };
+
+        private static string? ObtenerClave(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, bool includeTemporary)
+        {
+            var keyValues = entry.Properties
+                .Where(p => p.Metadata.IsPrimaryKey())
+                .Where(p => includeTemporary || !p.IsTemporary)
+                .Select(p => p.CurrentValue ?? p.OriginalValue)
+                .Where(v => v != null)
+                .Select(v => v?.ToString());
+
+            var joined = string.Join("|", keyValues);
+            return string.IsNullOrWhiteSpace(joined) ? null : joined;
+        }
+
+        private static string? ConstruirDescripcion(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+        {
+            try
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    var currentValues = entry.Properties.ToDictionary(p => p.Metadata.Name, p => p.CurrentValue);
+                    return JsonSerializer.Serialize(currentValues);
+                }
+
+                if (entry.State == EntityState.Deleted)
+                {
+                    var originalValues = entry.Properties.ToDictionary(p => p.Metadata.Name, p => p.OriginalValue);
+                    return JsonSerializer.Serialize(originalValues);
+                }
+
+                if (entry.State == EntityState.Modified)
+                {
+                    var changes = entry.Properties
+                        .Where(p => p.IsModified)
+                        .ToDictionary(p => p.Metadata.Name, p => new { Original = p.OriginalValue, Current = p.CurrentValue });
+
+                    return changes.Count > 0 ? JsonSerializer.Serialize(changes) : null;
+                }
+            }
+            catch
+            {
+                // No bloquear por fallas de serialización; registrar mínimo.
+                return null;
+            }
+
+            return null;
+        }
+
+        private class AuditoriaEntry
+        {
+            public Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry { get; set; } = default!;
+            public int? UsuarioID { get; set; }
+            public DateTime Fecha { get; set; }
+            public string Operacion { get; set; } = string.Empty;
+            public string TablaAfectada { get; set; } = string.Empty;
+            public string? ClaveRegistro { get; set; }
+            public string? Descripcion { get; set; }
+
+            public void CompletarClave()
+            {
+                if (!string.IsNullOrWhiteSpace(ClaveRegistro))
+                {
+                    return;
+                }
+
+                ClaveRegistro = ObtenerClave(Entry, includeTemporary: true);
+            }
+
+            public Auditoria ToEntity()
+            {
+                return new Auditoria
+                {
+                    UsuarioID = UsuarioID,
+                    Fecha = Fecha,
+                    Operacion = Operacion,
+                    TablaAfectada = TablaAfectada,
+                    ClaveRegistro = ClaveRegistro,
+                    Descripcion = Descripcion
+                };
+            }
         }
     }
 }
