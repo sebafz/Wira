@@ -70,6 +70,16 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// Ejecución opcional de migraciones + seed manual al arrancar con --seed
+if (args.Contains("--seed"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
+    await db.Database.MigrateAsync();
+    await DbInitializer.InitializeAsync(db);
+    return;
+}
+
 // Configurar pipeline HTTP request
 if (enableSwagger)
 {

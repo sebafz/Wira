@@ -89,9 +89,9 @@ namespace Wira.Api.Data
             // Agregar empresas mineras de ejemplo
             var mineras = new[]
             {
-                new Empresa { Nombre = "Borax Argentina", RazonSocial = "Borax Argentina SA", CUIT = "30-12345678-9", EmailContacto = "contacto@borax.com", Telefono = "+54 9 11 4000 0001", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now },
-                new Empresa { Nombre = "Bajo de la Alumbrera", RazonSocial = "Bajo de la Alumbrera SA", CUIT = "30-87654321-2", EmailContacto = "info@bajoalumbrera.com", Telefono = "+54 9 11 4000 0002", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now },
-                new Empresa { Nombre = "Cauchari-Olaroz", RazonSocial = "Cauchari-Olaroz SA", CUIT = "30-11223344-5", EmailContacto = "contacto@cauchari-olaroz.com", Telefono = "+54 9 11 4000 0003", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.Now }
+                new Empresa { Nombre = "Borax Argentina", RazonSocial = "Borax Argentina SA", CUIT = "30-12345678-9", EmailContacto = "contacto@borax.com", Telefono = "+54 9 11 4000 0001", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Bajo de la Alumbrera", RazonSocial = "Bajo de la Alumbrera SA", CUIT = "30-87654321-2", EmailContacto = "info@bajoalumbrera.com", Telefono = "+54 9 11 4000 0002", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Cauchari-Olaroz", RazonSocial = "Cauchari-Olaroz SA", CUIT = "30-11223344-5", EmailContacto = "contacto@cauchari-olaroz.com", Telefono = "+54 9 11 4000 0003", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow }
             };
 
             await context.Empresas.AddRangeAsync(mineras);
@@ -108,10 +108,10 @@ namespace Wira.Api.Data
             // Agregar proveedores de ejemplo con rubros asignados
             var proveedores = new[]
             {
-                new Empresa { Nombre = "Transportes del Norte", RazonSocial = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0001", FechaAlta = DateTime.Now },
-                new Empresa { Nombre = "Equipos Mineros", RazonSocial = "Equipos Mineros SRL", CUIT = "30-99887766-4", RubroID = rubroEquipos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0002", FechaAlta = DateTime.Now },
-                new Empresa { Nombre = "Servicios Técnicos Unidos", RazonSocial = "Servicios Técnicos Unidos SA", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0003", FechaAlta = DateTime.Now },
-                new Empresa { Nombre = "Químicos Industriales", RazonSocial = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0004", FechaAlta = DateTime.Now }
+                new Empresa { Nombre = "Transportes del Norte", RazonSocial = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0001", FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Equipos Mineros", RazonSocial = "Equipos Mineros SRL", CUIT = "30-99887766-4", RubroID = rubroEquipos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0002", FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Servicios Técnicos Unidos", RazonSocial = "Servicios Técnicos Unidos SA", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0003", FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Químicos Industriales", RazonSocial = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0004", FechaAlta = DateTime.UtcNow }
             };
 
             await context.Empresas.AddRangeAsync(proveedores);
@@ -148,9 +148,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primeraMinera.EmpresaID,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
-                    FechaAprobacion = DateTime.Now
+                    FechaAprobacion = DateTime.UtcNow
                 },
                 new Usuario
                 {
@@ -164,9 +164,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primerProveedor.EmpresaID,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
-                    FechaAprobacion = DateTime.Now
+                    FechaAprobacion = DateTime.UtcNow
                 },
                 new Usuario
                 {
@@ -180,9 +180,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = null,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
-                    FechaAprobacion = DateTime.Now
+                    FechaAprobacion = DateTime.UtcNow
                 },
                 new Usuario
                 {
@@ -196,9 +196,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primeraMinera.EmpresaID,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
-                    FechaAprobacion = DateTime.Now
+                    FechaAprobacion = DateTime.UtcNow
                 },
                 new Usuario
                 {
@@ -212,9 +212,9 @@ namespace Wira.Api.Data
                     ValidadoEmail = true,
                     FechaBaja = null,
                     EmpresaID = primerProveedor.EmpresaID,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
-                    FechaAprobacion = DateTime.Now
+                    FechaAprobacion = DateTime.UtcNow
                 }
             };
 
@@ -251,7 +251,7 @@ namespace Wira.Api.Data
                     Nombre = "Extracción Tinkal",
                     Ubicacion = "Salar del Hombre Muerto, Catamarca",
                     Descripcion = "Proyecto de extracción de boratos en la cuenca de Tincalayu, fase de expansión de operaciones existentes con nuevas tecnologías de extracción sostenible.",
-                    FechaInicio = DateTime.Now.AddMonths(-18),
+                    FechaInicio = DateTime.UtcNow.AddMonths(-18),
                     Activo = true
                 },
                 new ProyectoMinero
@@ -260,7 +260,7 @@ namespace Wira.Api.Data
                     Nombre = "Planta de Refinado Norte",
                     Ubicacion = "Campo Quijano, Salta",
                     Descripcion = "Construcción de nueva planta de refinado de ácido bórico con tecnología de última generación para incrementar la capacidad de procesamiento.",
-                    FechaInicio = DateTime.Now.AddMonths(-12),
+                    FechaInicio = DateTime.UtcNow.AddMonths(-12),
                     Activo = true
                 },
                 new ProyectoMinero
@@ -269,7 +269,7 @@ namespace Wira.Api.Data
                     Nombre = "Modernización Infraestructura",
                     Ubicacion = "Tincalayu, Catamarca",
                     Descripcion = "Actualización integral de sistemas de transporte interno, modernización de equipos de extracción y mejora de la infraestructura logística.",
-                    FechaInicio = DateTime.Now.AddMonths(-9),
+                    FechaInicio = DateTime.UtcNow.AddMonths(-9),
                     Activo = true
                 }
             };
