@@ -242,8 +242,9 @@ namespace Wira.Api.Controllers
         {
             try
             {
-                var historial = await _context.HistorialProveedorLicitacion
+                var historialBase = await _context.HistorialProveedorLicitacion
                     .Include(h => h.Licitacion)
+                        .ThenInclude(l => l.EstadoLicitacion)
                     .Where(h => h.ProveedorID == proveedorId)
                     .Select(h => new
                     {
@@ -255,10 +256,74 @@ namespace Wira.Api.Controllers
                         h.Observaciones,
                         h.FechaParticipacion,
                         h.FechaGanador,
-                        LicitacionTitulo = h.Licitacion.Titulo
+                        LicitacionTitulo = h.Licitacion.Titulo,
+                        LicitacionEstadoNombre = h.Licitacion.EstadoLicitacion.NombreEstado
                     })
                     .OrderByDescending(h => h.FechaParticipacion)
                     .ToListAsync();
+
+                var calificaciones = await _context.CalificacionesPostLicitacion
+                    .Where(c => c.ProveedorID == proveedorId)
+                    .ToListAsync();
+
+                var calificacionLookup = calificaciones
+                    .GroupBy(c => c.LicitacionID)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.OrderByDescending(c => c.FechaCalificacion).First()
+                    );
+
+                var historial = historialBase
+                    .Select(h =>
+                    {
+                        calificacionLookup.TryGetValue(h.LicitacionID, out var calificacion);
+
+                        decimal? puntajePromedio = null;
+                        if (calificacion != null)
+                        {
+                            var valores = new List<int?>
+                            {
+                                calificacion.Puntualidad,
+                                calificacion.Calidad,
+                                calificacion.Comunicacion
+                            }
+                            .Where(v => v.HasValue)
+                            .Select(v => (decimal)v!.Value)
+                            .ToList();
+
+                            if (valores.Any())
+                            {
+                                puntajePromedio = Math.Round(valores.Average(), 2);
+                            }
+                        }
+
+                        return new
+                        {
+                            h.HistorialID,
+                            h.ProveedorID,
+                            h.LicitacionID,
+                            h.Resultado,
+                            h.Ganador,
+                            h.Observaciones,
+                            h.FechaParticipacion,
+                            h.FechaGanador,
+                            h.LicitacionTitulo,
+                            h.LicitacionEstadoNombre,
+                            Calificacion = calificacion == null
+                                ? null
+                                : new
+                                {
+                                    calificacion.CalificacionID,
+                                    calificacion.Puntualidad,
+                                    calificacion.Calidad,
+                                    calificacion.Comunicacion,
+                                    calificacion.Comentarios,
+                                    calificacion.FechaCalificacion,
+                                    PuntajePromedio = puntajePromedio
+                                }
+                        };
+                    })
+                    .ToList();
 
                 return Ok(historial);
             }

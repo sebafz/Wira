@@ -441,11 +441,22 @@ namespace Wira.Api.Controllers
                     return NotFound();
                 }
 
-                // Soft delete
-                licitacion.Eliminado = true;
+                var estadoCancelada = await _context.EstadosLicitacion
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.NombreEstado == "Cancelada");
+
+                if (estadoCancelada == null)
+                {
+                    _logger.LogWarning("Estado 'Cancelada' no encontrado al intentar cancelar licitación {LicitacionId}", id);
+                    return StatusCode(500, "Estado 'Cancelada' no configurado");
+                }
+
+                licitacion.EstadoLicitacionID = estadoCancelada.EstadoLicitacionID;
+                licitacion.Eliminado = false;
+
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Licitación eliminada (soft delete) con ID: {id}");
+                _logger.LogInformation($"Licitación marcada como Cancelada con ID: {id}");
 
                 return NoContent();
             }

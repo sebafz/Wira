@@ -213,7 +213,7 @@ const HistorialItemTitle = styled.h4`
 `;
 
 const ResultadoBadge = styled.span`
-  padding: 6px 12px;
+  padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -221,30 +221,145 @@ const ResultadoBadge = styled.span`
   ${(props) => {
     if (props.ganador === true) {
       return `
-        background: #e8f5e8;
-        color: #2d5a2d;
-        border: 1px solid #d4e6d4;
+        background: #d4edda;
+        color: #155724;
       `;
     } else if (props.ganador === false) {
       return `
-        background: #fae8e8;
-        color: #5a2d2d;
-        border: 1px solid #e6d4d4;
+        background: #ffebee;
+        color: #d32f2f;
       `;
     } else {
       return `
-        background: #fdf6e3;
-        color: #5a4d2d;
-        border: 1px solid #f0e6c7;
+        background: #fff3cd;
+        color: #856404;
       `;
     }
   }}
 `;
 
+const CalificacionPill = styled.span`
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff3e0;
+  color: #f57c00;
+`;
+
+const StarsRow = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+`;
+
+const Star = styled.span`
+  color: ${(props) => (props.filled ? "#f59e0b" : "#e5e7eb")};
+  font-size: 1rem;
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+`;
+
+const ModalCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+`;
+
+const ModalHeader = styled.div`
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #fc6b0a 0%, #ff8f42 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const ModalTitle = styled.h4`
+  margin: 0;
+  font-size: 1.1rem;
+`;
+
+const ModalClose = styled.button`
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 18px 20px 22px;
+  display: grid;
+  gap: 12px;
+`;
+
+const ModalRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const ModalLabel = styled.span`
+  color: #475569;
+  font-size: 0.9rem;
+`;
+
+const ModalValue = styled.span`
+  color: #0f172a;
+  font-weight: 700;
+`;
+
+const ModalSectionTitle = styled.h5`
+  color: #333;
+  font-size: 1.2rem;
+  margin: 6px 0 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f0f0f0;
+  font-weight: 700;
+`;
+
+const CommentBox = styled.div`
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+`;
+
 const HistorialItemMeta = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
+  gap: 10px;
   margin-bottom: 10px;
 `;
 
@@ -353,6 +468,8 @@ const HistorialProveedor = () => {
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showCalificacionModal, setShowCalificacionModal] = useState(false);
+  const [calificacionDetalle, setCalificacionDetalle] = useState(null);
 
   const [filtros, setFiltros] = useState({
     resultado: "",
@@ -469,6 +586,57 @@ const HistorialProveedor = () => {
     return (
       user?.Proveedor?.Nombre || user?.proveedor?.nombre || "Empresa Proveedora"
     );
+  };
+
+  const renderStars = (score) => {
+    if (!score && score !== 0) return null;
+    const totalStars = 5;
+    const rounded = Math.round(score * 2) / 2; // permit half steps if ever needed
+
+    return (
+      <StarsRow>
+        {Array.from({ length: totalStars }).map((_, idx) => {
+          const position = idx + 1;
+          const filled = position <= rounded;
+          return (
+            <Star key={idx} filled={filled}>
+              ★
+            </Star>
+          );
+        })}
+      </StarsRow>
+    );
+  };
+
+  const handleCalificacionClick = (item) => {
+    const estado = item.licitacionEstadoNombre || item.estadoLicitacion;
+    if (estado !== "Cerrada") {
+      toast.info(
+        "La calificación estará disponible cuando la licitación esté cerrada"
+      );
+      return;
+    }
+
+    if (!item.calificacion) {
+      toast.info("Aún no hay calificación poslicitación");
+      return;
+    }
+
+    setCalificacionDetalle({
+      licitacionTitulo: item.licitacionTitulo,
+      puntajePromedio: item.calificacion.puntajePromedio,
+      puntualidad: item.calificacion.puntualidad,
+      calidad: item.calificacion.calidad,
+      comunicacion: item.calificacion.comunicacion,
+      comentarios: item.calificacion.comentarios,
+      fechaCalificacion: item.calificacion.fechaCalificacion,
+    });
+    setShowCalificacionModal(true);
+  };
+
+  const closeCalificacionModal = () => {
+    setShowCalificacionModal(false);
+    setCalificacionDetalle(null);
   };
 
   const filteredHistorial = historial.filter((item) => {
@@ -665,6 +833,26 @@ const HistorialProveedor = () => {
                           : "En proceso"}
                       </MetaValue>
                     </MetaItem>
+                    <MetaItem
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleCalificacionClick(item)}
+                    >
+                      <MetaLabel>Calificación poslicitación</MetaLabel>
+                      <MetaValue>
+                        {item.licitacionEstadoNombre !== "Cerrada" ? (
+                          "Disponible cuando la licitación esté cerrada"
+                        ) : item.calificacion?.puntajePromedio ? (
+                          <CalificacionPill>
+                            {renderStars(item.calificacion.puntajePromedio)}
+                            <span>
+                              {item.calificacion.puntajePromedio.toFixed(1)}
+                            </span>
+                          </CalificacionPill>
+                        ) : (
+                          "Sin calificar"
+                        )}
+                      </MetaValue>
+                    </MetaItem>
                   </HistorialItemMeta>
 
                   {/* {item.observaciones && (
@@ -680,6 +868,90 @@ const HistorialProveedor = () => {
             </HistorialList>
           )}
         </HistorialContainer>
+
+        {showCalificacionModal && calificacionDetalle && (
+          <ModalOverlay
+            onClick={(e) =>
+              e.target === e.currentTarget && closeCalificacionModal()
+            }
+          >
+            <ModalCard>
+              <ModalHeader>
+                <ModalTitle>
+                  Calificación poslicitación ·{" "}
+                  {calificacionDetalle.licitacionTitulo}
+                </ModalTitle>
+                <ModalClose onClick={closeCalificacionModal}>x</ModalClose>
+              </ModalHeader>
+              <ModalBody>
+                <ModalSectionTitle>Promedio</ModalSectionTitle>
+                <ModalRow>
+                  <ModalLabel>Promedio</ModalLabel>
+                  <ModalValue>
+                    <CalificacionPill>
+                      {renderStars(calificacionDetalle.puntajePromedio)}
+                      <span>
+                        {calificacionDetalle.puntajePromedio?.toFixed(1)}
+                      </span>
+                    </CalificacionPill>
+                  </ModalValue>
+                </ModalRow>
+                <ModalSectionTitle style={{ marginTop: "6px" }}>
+                  Detalle por categoría
+                </ModalSectionTitle>
+                <ModalRow>
+                  <ModalLabel>Puntualidad</ModalLabel>
+                  <ModalValue>
+                    {calificacionDetalle.puntualidad ? (
+                      <CalificacionPill>
+                        {renderStars(calificacionDetalle.puntualidad)}
+                        <span>
+                          {calificacionDetalle.puntualidad.toFixed(1)}
+                        </span>
+                      </CalificacionPill>
+                    ) : (
+                      "Sin dato"
+                    )}
+                  </ModalValue>
+                </ModalRow>
+                <ModalRow>
+                  <ModalLabel>Calidad</ModalLabel>
+                  <ModalValue>
+                    {calificacionDetalle.calidad ? (
+                      <CalificacionPill>
+                        {renderStars(calificacionDetalle.calidad)}
+                        <span>{calificacionDetalle.calidad.toFixed(1)}</span>
+                      </CalificacionPill>
+                    ) : (
+                      "Sin dato"
+                    )}
+                  </ModalValue>
+                </ModalRow>
+                <ModalRow>
+                  <ModalLabel>Comunicación</ModalLabel>
+                  <ModalValue>
+                    {calificacionDetalle.comunicacion ? (
+                      <CalificacionPill>
+                        {renderStars(calificacionDetalle.comunicacion)}
+                        <span>
+                          {calificacionDetalle.comunicacion.toFixed(1)}
+                        </span>
+                      </CalificacionPill>
+                    ) : (
+                      "Sin dato"
+                    )}
+                  </ModalValue>
+                </ModalRow>
+                {calificacionDetalle.comentarios && (
+                  <div>
+                    <ModalSectionTitle>Comentarios</ModalSectionTitle>
+                    <CommentBox>{calificacionDetalle.comentarios}</CommentBox>
+                  </div>
+                )}
+              </ModalBody>
+            </ModalCard>
+          </ModalOverlay>
+        )}
       </MainContent>
     </Container>
   );
