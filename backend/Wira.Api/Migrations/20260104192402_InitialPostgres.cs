@@ -62,7 +62,7 @@ namespace Wira.Api.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Titulo = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Mensaje = table.Column<string>(type: "text", nullable: false),
-                    FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()"),
+                    FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     Tipo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     EntidadTipo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     EntidadID = table.Column<int>(type: "integer", nullable: true)
@@ -112,14 +112,14 @@ namespace Wira.Api.Migrations
                     EmailContacto = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     Telefono = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     TipoEmpresa = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    FechaAlta = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()"),
+                    FechaAlta = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     Activo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     RubroID = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Empresas", x => x.EmpresaID);
-                    table.CheckConstraint("CK_Empresas_TipoEmpresa", "[TipoEmpresa] IN ('MINERA', 'PROVEEDOR')");
+                    table.CheckConstraint("CK_Empresas_TipoEmpresa", "\"TipoEmpresa\" IN ('MINERA','PROVEEDOR')");
                     table.ForeignKey(
                         name: "FK_Empresas_Rubros_RubroID",
                         column: x => x.RubroID,
@@ -165,7 +165,7 @@ namespace Wira.Api.Migrations
                     DNI = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Telefono = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     Activo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    FechaRegistro = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()"),
+                    FechaRegistro = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     FechaBaja = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EstadoAprobacion = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     FechaAprobacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -196,7 +196,7 @@ namespace Wira.Api.Migrations
                     AuditoriaID = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UsuarioID = table.Column<int>(type: "integer", nullable: true),
-                    Fecha = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()"),
+                    Fecha = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     Operacion = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     TablaAfectada = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ClaveRegistro = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
@@ -275,12 +275,12 @@ namespace Wira.Api.Migrations
                     RutaArchivo = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     TipoMime = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     TamañoBytes = table.Column<int>(type: "integer", nullable: true),
-                    FechaSubida = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()")
+                    FechaSubida = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ArchivosAdjuntos", x => x.ArchivoID);
-                    table.CheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", "[EntidadTipo] IN ('LICITACION', 'PROPUESTA')");
+                    table.CheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", "\"EntidadTipo\" IN ('LICITACION','PROPUESTA')");
                 });
 
             migrationBuilder.CreateTable(
@@ -302,7 +302,7 @@ namespace Wira.Api.Migrations
                     Eliminado = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     ArchivoID = table.Column<int>(type: "integer", nullable: true),
                     ProyectoMineroID = table.Column<int>(type: "integer", nullable: true),
-                    FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()")
+                    FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -356,14 +356,14 @@ namespace Wira.Api.Migrations
                     Calidad = table.Column<int>(type: "integer", nullable: true),
                     Comunicacion = table.Column<int>(type: "integer", nullable: true),
                     Comentarios = table.Column<string>(type: "text", nullable: true),
-                    FechaCalificacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()")
+                    FechaCalificacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CalificacionesPostLicitacion", x => x.CalificacionID);
-                    table.CheckConstraint("CK_CalificacionPostLicitacion_Calidad", "[Calidad] BETWEEN 1 AND 5");
-                    table.CheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", "[Comunicacion] BETWEEN 1 AND 5");
-                    table.CheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", "[Puntualidad] BETWEEN 1 AND 5");
+                    table.CheckConstraint("CK_CalificacionPostLicitacion_Calidad", "\"Calidad\" BETWEEN 1 AND 5");
+                    table.CheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", "\"Comunicacion\" BETWEEN 1 AND 5");
+                    table.CheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", "\"Puntualidad\" BETWEEN 1 AND 5");
                     table.ForeignKey(
                         name: "FK_CalificacionesPostLicitacion_Empresas_ProveedorID",
                         column: x => x.ProveedorID,
@@ -399,12 +399,12 @@ namespace Wira.Api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CriteriosLicitacion", x => x.CriterioID);
-                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable", "[Tipo] = 1 OR [MayorMejor] IS NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido", "[Tipo] <> 1 OR [MayorMejor] IS NOT NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_Tipo", "[Tipo] IN (1,2,3,4)");
-                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable", "[Tipo] = 2 OR [ValorRequeridoBooleano] IS NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido", "[Tipo] <> 2 OR [EsPuntuable] = 0 OR [ValorRequeridoBooleano] IS NOT NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_Valores", "[ValorMinimo] IS NULL OR [ValorMaximo] IS NULL OR [ValorMinimo] <= [ValorMaximo]");
+                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable", "\"Tipo\" = 1 OR \"MayorMejor\" IS NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido", "\"Tipo\" <> 1 OR \"MayorMejor\" IS NOT NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_Tipo", "\"Tipo\" IN (1,2,3,4)");
+                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable", "\"Tipo\" = 2 OR \"ValorRequeridoBooleano\" IS NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido", "\"Tipo\" <> 2 OR \"EsPuntuable\" = FALSE OR \"ValorRequeridoBooleano\" IS NOT NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_Valores", "\"ValorMinimo\" IS NULL OR \"ValorMaximo\" IS NULL OR \"ValorMinimo\" <= \"ValorMaximo\"");
                     table.ForeignKey(
                         name: "FK_CriteriosLicitacion_Licitaciones_LicitacionID",
                         column: x => x.LicitacionID,
@@ -424,7 +424,7 @@ namespace Wira.Api.Migrations
                     Resultado = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Ganador = table.Column<bool>(type: "boolean", nullable: true),
                     Observaciones = table.Column<string>(type: "text", nullable: true),
-                    FechaParticipacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()"),
+                    FechaParticipacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     FechaGanador = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
@@ -452,7 +452,7 @@ namespace Wira.Api.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     LicitacionID = table.Column<int>(type: "integer", nullable: false),
                     ProveedorID = table.Column<int>(type: "integer", nullable: false),
-                    FechaEnvio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETDATE()"),
+                    FechaEnvio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     EstadoPropuestaID = table.Column<int>(type: "integer", nullable: false),
                     Descripcion = table.Column<string>(type: "text", nullable: true),
                     PresupuestoOfrecido = table.Column<decimal>(type: "numeric(18,2)", nullable: false),

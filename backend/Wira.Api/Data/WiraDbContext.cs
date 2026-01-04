@@ -82,7 +82,7 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<Empresa>()
                 .ToTable(t => t.HasCheckConstraint("CK_Empresas_TipoEmpresa",
-                    "[TipoEmpresa] IN ('MINERA', 'PROVEEDOR')"));
+                    "\"TipoEmpresa\" IN ('MINERA','PROVEEDOR')"));
 
             modelBuilder.Entity<EstadoLicitacion>()
                 .HasIndex(el => el.NombreEstado)
@@ -97,17 +97,17 @@ namespace Wira.Api.Data
                 entity.ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable",
-                        "[Tipo] = 1 OR [MayorMejor] IS NULL");
+                        "\"Tipo\" = 1 OR \"MayorMejor\" IS NULL");
                     t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido",
-                        "[Tipo] <> 1 OR [MayorMejor] IS NOT NULL");
+                        "\"Tipo\" <> 1 OR \"MayorMejor\" IS NOT NULL");
                     t.HasCheckConstraint("CK_CriterioLicitacion_Valores",
-                        "[ValorMinimo] IS NULL OR [ValorMaximo] IS NULL OR [ValorMinimo] <= [ValorMaximo]");
+                        "\"ValorMinimo\" IS NULL OR \"ValorMaximo\" IS NULL OR \"ValorMinimo\" <= \"ValorMaximo\"");
                     t.HasCheckConstraint("CK_CriterioLicitacion_Tipo",
-                        "[Tipo] IN (1,2,3,4)");
+                        "\"Tipo\" IN (1,2,3,4)");
                     t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable",
-                        "[Tipo] = 2 OR [ValorRequeridoBooleano] IS NULL");
+                        "\"Tipo\" = 2 OR \"ValorRequeridoBooleano\" IS NULL");
                     t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido",
-                        "[Tipo] <> 2 OR [EsPuntuable] = 0 OR [ValorRequeridoBooleano] IS NOT NULL");
+                        "\"Tipo\" <> 2 OR \"EsPuntuable\" = FALSE OR \"ValorRequeridoBooleano\" IS NOT NULL");
                 });
             });
 
@@ -118,16 +118,16 @@ namespace Wira.Api.Data
             // Configuración de restricciones CHECK para EntidadTipo en ArchivosAdjuntos
             modelBuilder.Entity<ArchivoAdjunto>()
                 .ToTable(t => t.HasCheckConstraint("CK_ArchivosAdjuntos_EntidadTipo",
-                    "[EntidadTipo] IN ('LICITACION', 'PROPUESTA')"));
+                    "\"EntidadTipo\" IN ('LICITACION','PROPUESTA')"));
 
             // Configuración de restricciones CHECK para calificaciones
             modelBuilder.Entity<CalificacionPostLicitacion>()
                 .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Puntualidad",
-                    "[Puntualidad] BETWEEN 1 AND 5"))
+                    "\"Puntualidad\" BETWEEN 1 AND 5"))
                 .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Calidad",
-                    "[Calidad] BETWEEN 1 AND 5"))
+                    "\"Calidad\" BETWEEN 1 AND 5"))
                 .ToTable(t => t.HasCheckConstraint("CK_CalificacionPostLicitacion_Comunicacion",
-                    "[Comunicacion] BETWEEN 1 AND 5"));
+                    "\"Comunicacion\" BETWEEN 1 AND 5"));
 
             // Configuración de relaciones opcionales para Usuario
             modelBuilder.Entity<Usuario>()
@@ -140,7 +140,7 @@ namespace Wira.Api.Data
             // Configuración de propiedades con valores por defecto
             modelBuilder.Entity<Usuario>()
                 .Property(u => u.FechaRegistro)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Usuario>()
                 .Property(u => u.Activo)
@@ -160,7 +160,7 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<Empresa>()
                 .Property(e => e.FechaAlta)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Rubro>()
                 .Property(r => r.Activo)
@@ -172,7 +172,7 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<Licitacion>()
                 .Property(l => l.FechaCreacion)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Empresa>()
                 .HasOne(e => e.Rubro)
@@ -194,7 +194,7 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<Propuesta>()
                 .Property(p => p.FechaEnvio)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Propuesta>()
                 .Property(p => p.Eliminado)
@@ -208,11 +208,11 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<ArchivoAdjunto>()
                 .Property(a => a.FechaSubida)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Notificacion>()
                 .Property(n => n.FechaCreacion)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<NotificacionUsuario>()
                 .Property(nu => nu.Leido)
@@ -220,15 +220,15 @@ namespace Wira.Api.Data
 
             modelBuilder.Entity<HistorialProveedorLicitacion>()
                 .Property(h => h.FechaParticipacion)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<CalificacionPostLicitacion>()
                 .Property(c => c.FechaCalificacion)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Auditoria>()
                 .Property(a => a.Fecha)
-                .HasDefaultValueSql("GETDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             modelBuilder.Entity<Licitacion>()
                 .HasOne(l => l.ArchivoAdjunto)
