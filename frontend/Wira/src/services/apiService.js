@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5242/api";
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5242/api"
+).replace(/\/$/, "");
 
 // Configurar axios con la base URL
 const apiClient = axios.create({
