@@ -109,6 +109,18 @@ export const apiService = {
   testConnection: () => apiClient.get("/test/connection"),
   getRoles: () => apiClient.get("/test/roles"),
   getEstados: () => apiClient.get("/test/estados"),
+
+  // Notification endpoints
+  getUserNotifications: (usuarioId, params = {}) =>
+    apiClient.get(`/notificaciones/usuario/${usuarioId}`, { params }),
+  getUnreadNotificationsCount: (usuarioId) =>
+    apiClient.get(`/notificaciones/usuario/${usuarioId}/no-leidas/count`),
+  markNotificationAsRead: (notificacionId, usuarioId) =>
+    apiClient.put(
+      `/notificaciones/${notificacionId}/marcar-leida/${usuarioId}`
+    ),
+  markAllNotificationsAsRead: (usuarioId) =>
+    apiClient.put(`/notificaciones/usuario/${usuarioId}/marcar-todas-leidas`),
 };
 
 export default apiService;

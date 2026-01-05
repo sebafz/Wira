@@ -333,7 +333,7 @@ const Navbar = () => {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [approvalCount, setApprovalCount] = useState(0);
   const [loadingApprovals, setLoadingApprovals] = useState(false);
-  const { user, logout, token } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
@@ -391,47 +391,28 @@ const Navbar = () => {
 
     try {
       setLoadingNotifications(true);
-      const response = await fetch(
-        `http://localhost:5242/api/notificaciones/usuario/${user.usuarioID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-      }
+      const response = await apiService.getUserNotifications(user.usuarioID);
+      setNotifications(response.data || []);
     } catch (error) {
       console.error("Error al cargar notificaciones:", error);
     } finally {
       setLoadingNotifications(false);
     }
-  }, [user, token]);
+  }, [user]);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!user?.usuarioID) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/notificaciones/usuario/${user.usuarioID}/no-leidas/count`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await apiService.getUnreadNotificationsCount(
+        user.usuarioID
       );
-
-      if (response.ok) {
-        const count = await response.json();
-        setUnreadCount(count);
-      }
+      const count = Number(response.data) || 0;
+      setUnreadCount(count);
     } catch (error) {
       console.error("Error al cargar conteo de notificaciones:", error);
     }
-  }, [user, token]);
+  }, [user]);
 
   const fetchPendingApprovalsCount = useCallback(async () => {
     if (!hasApprovalRole) return;
@@ -463,33 +444,23 @@ const Navbar = () => {
     if (!user?.usuarioID) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/notificaciones/${notificationId}/marcar-leida/${user.usuarioID}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await apiService.markNotificationAsRead(notificationId, user.usuarioID);
+
+      // Actualizar el estado local
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.notificacionID === notificationId
+            ? {
+                ...notification,
+                leido: true,
+                fechaLeido: new Date().toISOString(),
+              }
+            : notification
+        )
       );
 
-      if (response.ok) {
-        // Actualizar el estado local
-        setNotifications((prev) =>
-          prev.map((notification) =>
-            notification.notificacionID === notificationId
-              ? {
-                  ...notification,
-                  leido: true,
-                  fechaLeido: new Date().toISOString(),
-                }
-              : notification
-          )
-        );
-
-        // Actualizar el conteo
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
+      // Actualizar el conteo
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error al marcar notificación como leída:", error);
     }
@@ -499,29 +470,19 @@ const Navbar = () => {
     if (!user?.usuarioID) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/notificaciones/usuario/${user.usuarioID}/marcar-todas-leidas`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      await apiService.markAllNotificationsAsRead(user.usuarioID);
+
+      // Actualizar el estado local
+      setNotifications((prev) =>
+        prev.map((notification) => ({
+          ...notification,
+          leido: true,
+          fechaLeido: new Date().toISOString(),
+        }))
       );
 
-      if (response.ok) {
-        // Actualizar el estado local
-        setNotifications((prev) =>
-          prev.map((notification) => ({
-            ...notification,
-            leido: true,
-            fechaLeido: new Date().toISOString(),
-          }))
-        );
-
-        // Actualizar el conteo
-        setUnreadCount(0);
-      }
+      // Actualizar el conteo
+      setUnreadCount(0);
     } catch (error) {
       console.error(
         "Error al marcar todas las notificaciones como leídas:",
