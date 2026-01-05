@@ -1,6 +1,15 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5242/api";
+const normalizeEnvApiUrl = (rawUrl) => rawUrl?.replace(/\/+$/, "");
+const rawEnvApiUrl = import.meta.env.VITE_API_URL;
+const normalizedEnvApiUrl = normalizeEnvApiUrl(rawEnvApiUrl);
+const envUrlIncludesApi = normalizedEnvApiUrl?.endsWith("/api");
+
+const API_BASE_URL = envUrlIncludesApi
+  ? normalizedEnvApiUrl
+  : normalizedEnvApiUrl
+  ? `${normalizedEnvApiUrl}/api`
+  : "http://localhost:5242/api";
 
 // Configurar axios con la base URL
 const apiClient = axios.create({

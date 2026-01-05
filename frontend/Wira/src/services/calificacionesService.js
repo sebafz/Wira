@@ -1,4 +1,12 @@
-const API_BASE_URL = "http://localhost:5242/api";
+const normalizeEnvApiUrl = (rawUrl) => rawUrl?.replace(/\/+$/, "");
+const rawEnvApiUrl = import.meta.env.VITE_API_URL;
+const normalizedEnvApiUrl = normalizeEnvApiUrl(rawEnvApiUrl);
+const envUrlIncludesApi = normalizedEnvApiUrl?.endsWith("/api");
+const API_BASE_URL = envUrlIncludesApi
+  ? normalizedEnvApiUrl
+  : normalizedEnvApiUrl
+  ? `${normalizedEnvApiUrl}/api`
+  : "http://localhost:5242/api";
 
 const buildHeaders = (token, customHeaders = {}, hasBody = false) => {
   const headers = {
