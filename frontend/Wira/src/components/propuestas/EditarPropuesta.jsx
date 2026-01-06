@@ -6,6 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
+import apiService from "../../services/apiService";
 
 const FormContainer = styled.div`
   min-height: 100vh;
@@ -755,23 +756,8 @@ const EditarPropuesta = () => {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          `http://localhost:5242/api/propuestas/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Propuesta no encontrada");
-          }
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const res = await apiService.get(`/propuestas/${id}`);
+        const data = res?.data ?? {};
 
         setFormData({
           descripcion: data.descripcion || "",
@@ -786,11 +772,16 @@ const EditarPropuesta = () => {
         let criteriosActuales = [];
         if (licitacionId) {
           try {
-            const criteriosResponse = await fetch(
-              `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-            );
-            if (criteriosResponse.ok) {
-              criteriosActuales = await criteriosResponse.json();
+            try {
+              const criteriosRes = await apiService.getCriteriosLicitacion(
+                licitacionId
+              );
+              criteriosActuales = criteriosRes?.data ?? [];
+            } catch (e) {
+              console.error(
+                "Error al cargar criterios vigentes de la licitación:",
+                e
+              );
             }
           } catch (criteriosError) {
             console.error(
@@ -1009,20 +1000,9 @@ const EditarPropuesta = () => {
 
   const downloadFile = async (archivoID, nombreArchivo) => {
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/descargar/${archivoID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      const blob = await response.blob();
+      const res = await apiService.downloadArchivo(archivoID);
+      if (!res || !res.data) throw new Error("Error al descargar el archivo");
+      const blob = res.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -1151,21 +1131,7 @@ const EditarPropuesta = () => {
         })),
       };
 
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(dataToSend),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
+      await apiService.put(`/propuestas/${id}`, dataToSend);
 
       toast.success("Propuesta actualizada exitosamente");
       navigate("/propuestas-proveedor");

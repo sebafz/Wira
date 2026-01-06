@@ -1651,7 +1651,7 @@ const LicitacionesMinera = () => {
           finalUrl = `${API_BASE}${url}`;
         }
       }
-    } catch (e) {
+    } catch {
       finalUrl = url;
     }
 

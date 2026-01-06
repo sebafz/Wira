@@ -971,13 +971,6 @@ const FileErrorMessage = styled.div`
   font-size: 0.8rem;
 `;
 
-const tipoCriterioLabels = {
-  Numerico: "Valor numérico",
-  Booleano: "Sí / No",
-  Descriptivo: "Respuesta descriptiva",
-  Escala: "Escala personalizada",
-};
-
 const resolveTipoCriterio = (tipoValue) => {
   if (typeof tipoValue === "string" && tipoValue.trim()) {
     const normalized = tipoValue.trim().toLowerCase();
@@ -1096,8 +1089,6 @@ const createRespuestaInicial = () => ({
   valorBooleano: null,
   opcionSeleccionadaId: "",
 });
-
-const getTipoDisplayLabel = (tipo) => tipoCriterioLabels[tipo] || "Texto libre";
 
 const LicitacionesProveedor = () => {
   const { user, token } = useAuth();
@@ -1358,21 +1349,16 @@ const LicitacionesProveedor = () => {
 
       const res = await apiService.getCriteriosLicitacion(licitacionId);
       const data = res?.data ?? [];
-        const normalized = data.map((criterio, index) =>
-          normalizeCriterioResponse(criterio, index)
-        );
-        setCriteriosLicitacion(normalized);
+      const normalized = data.map((criterio, index) =>
+        normalizeCriterioResponse(criterio, index)
+      );
+      setCriteriosLicitacion(normalized);
 
-        const respuestasIniciales = {};
-        normalized.forEach((criterio) => {
-          respuestasIniciales[criterio.id] = createRespuestaInicial();
-        });
-        setRespuestasCriterios(respuestasIniciales);
-      } else {
-        console.error("Error al cargar criterios:", response.statusText);
-        setCriteriosLicitacion([]);
-        setRespuestasCriterios({});
-      }
+      const respuestasIniciales = {};
+      normalized.forEach((criterio) => {
+        respuestasIniciales[criterio.id] = createRespuestaInicial();
+      });
+      setRespuestasCriterios(respuestasIniciales);
     } catch (error) {
       console.error("Error al cargar criterios de licitación:", error);
       setCriteriosLicitacion([]);
@@ -1467,31 +1453,6 @@ const LicitacionesProveedor = () => {
     nombre: licitacion?.monedaNombre || licitacion?.MonedaNombre,
   });
 
-  const getCurrencyLabelText = (currency) => {
-    if (!currency) return "ARS";
-
-    const code =
-      currency?.codigo ||
-      currency?.Codigo ||
-      currency?.monedaCodigo ||
-      currency?.MonedaCodigo;
-    const name =
-      currency?.nombre ||
-      currency?.Nombre ||
-      currency?.monedaNombre ||
-      currency?.MonedaNombre;
-    const symbol =
-      currency?.simbolo ||
-      currency?.Simbolo ||
-      currency?.monedaSimbolo ||
-      currency?.MonedaSimbolo;
-
-    if (code && name) return `${code} - ${name}`;
-    if (code && symbol) return `${code} (${symbol})`;
-    if (symbol && name) return `${symbol} - ${name}`;
-    return code || symbol || name || "ARS";
-  };
-
   const getCurrencyAbbreviation = (currency) => {
     if (!currency) return "ARS";
 
@@ -1543,27 +1504,24 @@ const LicitacionesProveedor = () => {
       const res = await apiService.getArchivosByLicitacion(licitacionId);
       const archivos = res?.data ?? [];
 
-        // Actualizar la licitación seleccionada con los archivos
-        setSelectedLicitacion((prev) => {
-          if (prev) {
-            const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
-            return {
-              ...prev,
-              archivosAdjuntos: archivos,
-              // Para mantener compatibilidad con el código existente
-              archivoNombre:
-                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
-              ArchivoNombre:
-                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
-              archivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
-              ArchivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
-            };
-          }
-          return prev;
-        });
-      } else {
-        // No se encontraron archivos para la licitación
-      }
+      // Actualizar la licitación seleccionada con los archivos
+      setSelectedLicitacion((prev) => {
+        if (prev) {
+          const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
+          return {
+            ...prev,
+            archivosAdjuntos: archivos,
+            // Para mantener compatibilidad con el código existente
+            archivoNombre:
+              archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+            ArchivoNombre:
+              archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+            archivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+            ArchivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+          };
+        }
+        return prev;
+      });
     } catch (error) {
       console.error("Error al cargar archivos de licitación:", error);
     }
@@ -1769,9 +1727,6 @@ const LicitacionesProveedor = () => {
   const selectedLicitacionCurrency = selectedLicitacion
     ? getLicitacionCurrency(selectedLicitacion)
     : null;
-  const selectedPropuestaCurrencyLabel = getCurrencyLabelText(
-    selectedLicitacionCurrency
-  );
   const selectedPropuestaCurrencyAbbr = getCurrencyAbbreviation(
     selectedLicitacionCurrency
   );
