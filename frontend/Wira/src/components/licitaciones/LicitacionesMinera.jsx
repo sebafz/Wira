@@ -11,6 +11,10 @@ import { registrarCalificacionPostLicitacion } from "../../services/calificacion
 import { buttonBaseStyles } from "../shared/buttonStyles";
 import apiService from "../../services/apiService";
 
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5242/api"
+).replace(/\/$/, "");
+
 const Container = styled.div`
   min-height: 100vh;
   background: #f8f9fa;
@@ -1702,7 +1706,7 @@ const LicitacionesMinera = () => {
       if (!proveedorId) return;
 
       const response = await apiRequest(
-        `http://localhost:5242/api/propuestas/proveedor/${proveedorId}`
+        `${API_BASE_URL}/propuestas/proveedor/${proveedorId}`
       );
 
       if (response.ok) {
@@ -1744,7 +1748,7 @@ const LicitacionesMinera = () => {
         const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
         try {
           const response = await apiRequest(
-            `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+            `${API_BASE_URL}/propuestas/licitacion/${licitacionId}`
           );
           if (response.ok) {
             const propuestas = await response.json();
@@ -1846,9 +1850,7 @@ const LicitacionesMinera = () => {
       setError("");
 
       const mineraID = getUserMineraID();
-      const response = await apiRequest(
-        "http://localhost:5242/api/licitaciones"
-      );
+      const response = await apiRequest(`${API_BASE_URL}/licitaciones`);
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -1888,7 +1890,7 @@ const LicitacionesMinera = () => {
   const fetchArchivosLicitacion = async (licitacionId) => {
     try {
       const response = await apiRequest(
-        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`
+        `${API_BASE_URL}/archivos/entidad/LICITACION/${licitacionId}`
       );
 
       if (response.ok) {
@@ -2204,7 +2206,7 @@ const LicitacionesMinera = () => {
 
       if (estadoLicitacion === "Cerrada") {
         const propuestaGanadoraResponse = await apiRequest(
-          `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+          `${API_BASE_URL}/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
         );
 
         if (propuestaGanadoraResponse.ok) {
@@ -2222,11 +2224,9 @@ const LicitacionesMinera = () => {
       } else if (estadoLicitacion === "Adjudicada") {
         const [propuestasResponse, propuestaGanadoraResponse] =
           await Promise.all([
+            apiRequest(`${API_BASE_URL}/propuestas/licitacion/${licitacionId}`),
             apiRequest(
-              `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
-            ),
-            apiRequest(
-              `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+              `${API_BASE_URL}/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
             ),
           ]);
 
@@ -2261,7 +2261,7 @@ const LicitacionesMinera = () => {
       } else {
         // Para otros estados, cargar todas las propuestas
         const response = await apiRequest(
-          `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+          `${API_BASE_URL}/propuestas/licitacion/${licitacionId}`
         );
 
         if (response.ok) {
@@ -2337,7 +2337,7 @@ const LicitacionesMinera = () => {
     try {
       const propuestaId = propuesta.propuestaID || propuesta.PropuestaID;
       const response = await apiRequest(
-        `http://localhost:5242/api/propuestas/${propuestaId}`
+        `${API_BASE_URL}/propuestas/${propuestaId}`
       );
 
       if (response.ok) {
@@ -2538,8 +2538,8 @@ const LicitacionesMinera = () => {
     try {
       const isDelete = action === "delete";
       const url = isDelete
-        ? `http://localhost:5242/api/licitaciones/${licitacionId}`
-        : `http://localhost:5242/api/licitaciones/${licitacionId}/${action}`;
+        ? `${API_BASE_URL}/licitaciones/${licitacionId}`
+        : `${API_BASE_URL}/licitaciones/${licitacionId}/${action}`;
 
       const response = await apiRequest(url, {
         method: isDelete ? "DELETE" : "PUT",
@@ -2639,7 +2639,7 @@ const LicitacionesMinera = () => {
       };
 
       const historialResponse = await apiRequest(
-        "http://localhost:5242/api/historial-proveedor-licitacion",
+        `${API_BASE_URL}/historial-proveedor-licitacion`,
         {
           method: "POST",
           body: JSON.stringify(historialData),
@@ -2654,7 +2654,7 @@ const LicitacionesMinera = () => {
 
       // Cerrar licitación (pasar a "En Evaluación")
       const licitacionResponse = await apiRequest(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
+        `${API_BASE_URL}/licitaciones/${licitacionId}/cerrar`,
         {
           method: "PUT",
         }
@@ -2704,7 +2704,7 @@ const LicitacionesMinera = () => {
       };
 
       const historialResponse = await apiRequest(
-        "http://localhost:5242/api/historial-proveedor-licitacion",
+        `${API_BASE_URL}/historial-proveedor-licitacion`,
         {
           method: "POST",
           body: JSON.stringify(historialData),
@@ -2719,7 +2719,7 @@ const LicitacionesMinera = () => {
 
       // Adjudicar licitación
       const licitacionResponse = await apiRequest(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/adjudicar`,
+        `${API_BASE_URL}/licitaciones/${licitacionId}/adjudicar`,
         {
           method: "PUT",
         }

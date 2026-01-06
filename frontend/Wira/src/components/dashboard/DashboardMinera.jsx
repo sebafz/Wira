@@ -164,19 +164,6 @@ const DashboardMinera = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  const isEmpresaAdmin = useMemo(() => {
-    const rawRoles = Array.isArray(user?.roles)
-      ? user.roles
-      : Array.isArray(user?.Roles)
-      ? user.Roles
-      : [];
-
-    return rawRoles
-      .filter((role) => typeof role === "string")
-      .map((role) => role.trim().toUpperCase())
-      .includes("MINERA_ADMINISTRADOR");
-  }, [user]);
-
   const fetchKpis = useCallback(async () => {
     try {
       setLoading(true);
@@ -241,7 +228,7 @@ const DashboardMinera = () => {
         <CompanyInfo>
           <WelcomeTitle>Bienvenido, {getUserName()}</WelcomeTitle>
           <WelcomeSubtitle>
-            Gestione las licitaciones de su empresa minera desde acá. v1.1
+            Gestione las licitaciones de su empresa minera desde acá. v1.2
           </WelcomeSubtitle>
           <CompanyName>{getCompanyName()}</CompanyName>
         </CompanyInfo>

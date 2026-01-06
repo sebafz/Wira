@@ -1,55 +1,23 @@
-const API_BASE_URL = "http://localhost:5242/api";
+import apiService from "./apiService";
 
-const buildHeaders = (token, customHeaders = {}, hasBody = false) => {
-  const headers = {
-    ...(hasBody ? { "Content-Type": "application/json" } : {}),
-    ...customHeaders,
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
-};
-
-const authorizedFetch = (path, token, options = {}) => {
-  const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
-  const hasBody = Boolean(options.body);
-
-  return fetch(url, {
-    ...options,
-    headers: buildHeaders(token, options.headers, hasBody),
-  });
-};
-
-const getErrorMessage = async (
-  response,
+const getErrorMessageFromAxios = (
+  error,
   fallback = "Error al procesar la solicitud"
 ) => {
-  try {
-    const data = await response.json();
-    if (typeof data?.message === "string" && data.message.trim().length > 0) {
-      return `${fallback}: ${data.message}`;
+  const resp = error?.response?.data;
+  if (resp) {
+    if (typeof resp.message === "string" && resp.message.trim().length > 0) {
+      return `${fallback}: ${resp.message}`;
     }
-  } catch (error) {
-    // Ignorar parse errors y recurrir a texto plano o fallback
-  }
-
-  try {
-    const text = await response.text();
-    if (text && text.trim().length > 0) {
-      return `${fallback}: ${text}`;
+    if (typeof resp === "string" && resp.trim().length > 0) {
+      return `${fallback}: ${resp}`;
     }
-  } catch (error) {
-    // Ignorar
   }
-
+  if (error?.message) return `${fallback}: ${error.message}`;
   return fallback;
 };
 
 export const registrarCalificacionPostLicitacion = async ({
-  token,
   licitacionId,
   proveedorId,
   puntualidad,
@@ -89,34 +57,24 @@ export const registrarCalificacionPostLicitacion = async ({
         : null,
   };
 
-  const detalleResponse = await authorizedFetch(
-    "/calificaciones-postlicitacion",
-    token,
-    {
-      method: "POST",
-      body: JSON.stringify(calificacionDetallada),
-    }
-  );
-
-  if (!detalleResponse.ok) {
-    const message = await getErrorMessage(
-      detalleResponse,
+  try {
+    await apiService.post(
+      "/calificaciones-postlicitacion",
+      calificacionDetallada
+    );
+  } catch (err) {
+    const message = getErrorMessageFromAxios(
+      err,
       "No pudimos registrar el detalle de la calificacion"
     );
     throw new Error(message);
   }
 
-  const finalizeResponse = await authorizedFetch(
-    `/licitaciones/${licitacionId}/finalizar`,
-    token,
-    {
-      method: "PUT",
-    }
-  );
-
-  if (!finalizeResponse.ok) {
-    const message = await getErrorMessage(
-      finalizeResponse,
+  try {
+    await apiService.put(`/licitaciones/${licitacionId}/finalizar`);
+  } catch (err) {
+    const message = getErrorMessageFromAxios(
+      err,
       "La licitacion se adjudico, pero no pudimos marcarla como cerrada"
     );
     throw new Error(message);
