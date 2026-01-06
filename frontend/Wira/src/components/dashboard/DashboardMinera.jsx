@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../shared/Navbar";
 import { toast } from "react-toastify";
+import apiService from "../../services/apiService";
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -181,31 +182,17 @@ const DashboardMinera = () => {
       setLoading(true);
       const mineraId = user?.minera?.mineraID;
 
-      console.log("DashboardMinera - fetchKpis called:", {
-        user,
-        mineraId,
-        token: !!token,
-      });
-
       if (!mineraId) {
         console.error("No mineraID found in user:", user);
         setLoading(false);
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/dashboard/minera/${mineraId}/kpis`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setKpis(data);
-      } else {
+      try {
+        const res = await apiService.get(`/dashboard/minera/${mineraId}/kpis`);
+        setKpis(res?.data ?? {});
+      } catch (e) {
+        console.error("Error al cargar estadísticas del dashboard:", e);
         toast.error("Error al cargar estadísticas del dashboard");
       }
     } catch (error) {
@@ -254,7 +241,7 @@ const DashboardMinera = () => {
         <CompanyInfo>
           <WelcomeTitle>Bienvenido, {getUserName()}</WelcomeTitle>
           <WelcomeSubtitle>
-            Gestione las licitaciones de su empresa minera desde acá.
+            Gestione las licitaciones de su empresa minera desde acá. v1.1
           </WelcomeSubtitle>
           <CompanyName>{getCompanyName()}</CompanyName>
         </CompanyInfo>
