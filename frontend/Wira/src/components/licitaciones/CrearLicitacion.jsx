@@ -903,18 +903,21 @@ const CrearLicitacion = () => {
       try {
         setLoadingRubros(true);
         setRubrosError("");
-        const response = await fetch("http://localhost:5242/api/rubros");
-        if (response.ok) {
-          const data = await response.json();
-          setRubros(data);
-        } else {
-          // const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
-          setRubrosError("Error al cargar rubros desde el servidor.");
-          setRubros([]);
-        }
+        const response = await apiService.getRubros();
+        const data = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.value)
+          ? response.data.value
+          : [];
+        setRubros(data);
       } catch (error) {
         console.error("Error fetching rubros:", error);
-        setRubrosError("No se pudo conectar con el servidor.");
+        const message =
+          error.response?.data?.message ||
+          (typeof error.response?.data === "string"
+            ? error.response.data
+            : "No se pudo conectar con el servidor.");
+        setRubrosError(message);
         setRubros([]);
       } finally {
         setLoadingRubros(false);
@@ -936,23 +939,23 @@ const CrearLicitacion = () => {
           return;
         }
 
-        const response = await fetch(
-          `http://localhost:5242/api/proyectosmineros/minera/${mineraId}`
+        const response = await apiService.getProyectosMinerosByMinera(
+          mineraId
         );
-
-        if (response.ok) {
-          const data = await response.json();
-          setProyectosMineros(data);
-        } else {
-          // const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
-          setProyectosError(
-            "Error al cargar proyectos mineros desde el servidor."
-          );
-          setProyectosMineros([]);
-        }
+        const data = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.value)
+          ? response.data.value
+          : [];
+        setProyectosMineros(data);
       } catch (error) {
         console.error("Error fetching proyectos mineros:", error);
-        setProyectosError("No se pudo conectar con el servidor.");
+        const message =
+          error.response?.data?.message ||
+          (typeof error.response?.data === "string"
+            ? error.response.data
+            : "No se pudo conectar con el servidor.");
+        setProyectosError(message);
         setProyectosMineros([]);
       } finally {
         setLoadingProyectos(false);
@@ -1406,24 +1409,14 @@ const CrearLicitacion = () => {
         );
       }
 
-      const response = await fetch("http://localhost:5242/api/licitaciones", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(licitacionData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(
-          `Error al crear la licitación: ${response.status} - ${errorData}`
-        );
-      }
-
-      const result = await response.json();
-      const licitacionId = result.licitacionID || result.LicitacionID;
+      const response = await apiService.createLicitacion(licitacionData);
+      const result = response.data || {};
+      const licitacionId =
+        result.licitacionID ||
+        result.LicitacionID ||
+        result.id ||
+        result.Id ||
+        null;
 
       // Subir archivo si hay uno seleccionado
       if (selectedFile && licitacionId) {
@@ -1441,38 +1434,28 @@ const CrearLicitacion = () => {
         formDataFile.append("File", selectedFile);
         formDataFile.append("EntidadTipo", "LICITACION");
         formDataFile.append("EntidadID", licitacionId.toString());
-
-        const fileResponse = await fetch(
-          "http://localhost:5242/api/archivos/upload",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: formDataFile,
-          }
-        );
-
-        // Cerrar la notificación de subida
-        toast.dismiss("uploading");
-
-        if (!fileResponse.ok) {
-          const errorText = await fileResponse.text();
-          console.error("Error al subir archivo:", errorText);
-          throw new Error(`Error al subir el archivo: ${errorText}`);
+        try {
+          const uploadResponse = await apiService.uploadArchivo(formDataFile);
+          console.log("Archivo subido:", uploadResponse.data);
+          toast.success("✅ Archivo subido correctamente", {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        } catch (uploadError) {
+          console.error("Error al subir archivo:", uploadError);
+          const uploadMessage =
+            uploadError.response?.data?.message ||
+            (typeof uploadError.response?.data === "string"
+              ? uploadError.response.data
+              : uploadError.message || "Error al subir el archivo");
+          throw new Error(`Error al subir el archivo: ${uploadMessage}`);
+        } finally {
+          toast.dismiss("uploading");
         }
-
-        const fileResult = await fileResponse.json();
-        console.log("Archivo subido:", fileResult);
-
-        toast.success("✅ Archivo subido correctamente", {
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
       }
 
       toast.success(
@@ -1493,7 +1476,12 @@ const CrearLicitacion = () => {
       }, 3000);
     } catch (error) {
       console.error("Error al crear licitación:", error);
-      toast.error(`❌ Error al crear la licitación: ${error.message}`, {
+      const errorMessage =
+        error.response?.data?.message ||
+        (typeof error.response?.data === "string"
+          ? error.response.data
+          : error.message || "Ocurrió un error inesperado");
+      toast.error(`❌ Error al crear la licitación: ${errorMessage}`, {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,

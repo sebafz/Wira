@@ -83,6 +83,7 @@ export const apiService = {
   updateProveedor: (proveedorId, proveedor) =>
     apiClient.put(`/proveedores/${proveedorId}`, proveedor),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
+  getRubros: () => apiClient.get("/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
@@ -109,6 +110,22 @@ export const apiService = {
   testConnection: () => apiClient.get("/test/connection"),
   getRoles: () => apiClient.get("/test/roles"),
   getEstados: () => apiClient.get("/test/estados"),
+
+  // Licitaciones endpoints
+  createLicitacion: (payload) => apiClient.post("/licitaciones", payload),
+
+  getLicitacionById: (id) => apiClient.get(`/licitaciones/${id}`),
+  updateLicitacion: (id, payload) => apiClient.put(`/licitaciones/${id}`, payload),
+
+  // Archivos endpoints
+  uploadArchivo: (formData) =>
+    apiClient.post("/archivos/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  downloadArchivo: (archivoId) =>
+    apiClient.get(`/archivos/descargar/${archivoId}`, {
+      responseType: "blob",
+    }),
 
   // Notification endpoints
   getUserNotifications: (usuarioId, params = {}) =>

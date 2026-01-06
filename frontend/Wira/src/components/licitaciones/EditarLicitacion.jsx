@@ -857,7 +857,7 @@ const normalizeMoneda = (moneda) => ({
 });
 
 const EditarLicitacion = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -996,26 +996,8 @@ const EditarLicitacion = () => {
     try {
       setLoading(true);
       setError("");
-
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${id}`,
-        {
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
-        }
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Licitación no encontrada");
-        }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const licitacion = await response.json();
+      const resp = await apiService.getLicitacionById(id);
+      const licitacion = resp.data || {};
 
       // Verificar que la licitación pertenece al usuario
       const userMineraID =
@@ -1159,15 +1141,13 @@ const EditarLicitacion = () => {
     try {
       setLoadingRubros(true);
       setRubrosError("");
-
-      const response = await fetch("http://localhost:5242/api/rubros");
-
-      if (response.ok) {
-        const data = await response.json();
-        setRubros(data);
-      } else {
-        throw new Error("Error al cargar rubros");
-      }
+      const response = await apiService.getRubros();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.value)
+        ? response.data.value
+        : [];
+      setRubros(data);
     } catch (error) {
       console.error("Error fetching rubros:", error);
       setRubrosError(
@@ -1190,20 +1170,13 @@ const EditarLicitacion = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/proyectosmineros/minera/${mineraId}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setProyectosMineros(data);
-      } else {
-        // const errorMsg = `Error del servidor: ${response.status} ${response.statusText}`;
-        setProyectosError(
-          "Error al cargar proyectos mineros desde el servidor."
-        );
-        setProyectosMineros([]);
-      }
+      const response = await apiService.getProyectosMinerosByMinera(mineraId);
+      const data = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.value)
+        ? response.data.value
+        : [];
+      setProyectosMineros(data);
     } catch (error) {
       console.error("Error fetching proyectos mineros:", error);
       setProyectosError("No se pudo conectar con el servidor.");
@@ -1307,20 +1280,8 @@ const EditarLicitacion = () => {
 
   const downloadFile = async (archivoID, nombreArchivo) => {
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/descargar/${archivoID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      const blob = await response.blob();
+      const response = await apiService.downloadArchivo(archivoID);
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -1747,30 +1708,14 @@ const EditarLicitacion = () => {
       // Subir archivo si hay uno nuevo
       let archivoID = null;
       if (selectedFile && !selectedFile.isExisting) {
-        const formData = new FormData();
-        formData.append("File", selectedFile);
-        formData.append("EntidadTipo", "LICITACION");
-        formData.append("EntidadID", id);
+        const formDataFile = new FormData();
+        formDataFile.append("File", selectedFile);
+        formDataFile.append("EntidadTipo", "LICITACION");
+        formDataFile.append("EntidadID", id);
 
-        const uploadResponse = await fetch(
-          "http://localhost:5242/api/archivos/upload",
-          {
-            method: "POST",
-            headers: token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                }
-              : undefined,
-            body: formData,
-          }
-        );
-
-        if (!uploadResponse.ok) {
-          throw new Error("Error al subir el archivo");
-        }
-
-        const uploadResult = await uploadResponse.json();
-        archivoID = uploadResult.archivoID || uploadResult.ArchivoID;
+        const uploadResp = await apiService.uploadArchivo(formDataFile);
+        const uploadResult = uploadResp.data || {};
+        archivoID = uploadResult.archivoID || uploadResult.ArchivoID || null;
       }
 
       // Actualizar licitación
@@ -1781,24 +1726,7 @@ const EditarLicitacion = () => {
           (selectedFile?.isExisting ? selectedFile.archivoID : null),
       };
 
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(updateData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(
-          errorData || `Error ${response.status}: ${response.statusText}`
-        );
-      }
+      await apiService.updateLicitacion(id, updateData);
 
       toast.success("Licitación actualizada exitosamente");
 
