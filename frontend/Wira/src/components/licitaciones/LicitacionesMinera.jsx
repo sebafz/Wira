@@ -9,6 +9,7 @@ import Navbar from "../shared/Navbar";
 import CalificacionProveedorModal from "../calificaciones/CalificacionProveedorModal";
 import { registrarCalificacionPostLicitacion } from "../../services/calificacionesService";
 import { buttonBaseStyles } from "../shared/buttonStyles";
+import apiService from "../../services/apiService";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -1636,10 +1637,28 @@ const LicitacionesMinera = () => {
 
   // Funciones de API consolidadas
   const apiRequest = async (url, options = {}) => {
+    const API_BASE = (
+      import.meta.env.VITE_API_URL || "http://localhost:5242/api"
+    ).replace(/\/$/, "");
+
+    // Normalize URL: replace hardcoded localhost base or prefix /api paths
+    let finalUrl = url;
+    try {
+      if (typeof url === "string") {
+        if (url.includes("localhost:5242")) {
+          finalUrl = url.replace(/https?:\/\/localhost:5242\/api/, API_BASE);
+        } else if (url.startsWith("/api")) {
+          finalUrl = `${API_BASE}${url}`;
+        }
+      }
+    } catch (e) {
+      finalUrl = url;
+    }
+
     const defaultHeaders = { "Content-Type": "application/json" };
     if (token) defaultHeaders.Authorization = `Bearer ${token}`;
 
-    return fetch(url, {
+    return fetch(finalUrl, {
       headers: { ...defaultHeaders, ...options.headers },
       ...options,
     });
@@ -1647,12 +1666,8 @@ const LicitacionesMinera = () => {
 
   const handleDownloadArchivo = async (archivoID, nombreArchivo) => {
     try {
-      const response = await apiRequest(
-        `http://localhost:5242/api/archivos/${archivoID}/download`
-      );
-      if (!response.ok) throw new Error("Error al descargar el archivo");
-
-      const blob = await response.blob();
+      const resp = await apiService.downloadArchivo(archivoID);
+      const blob = resp.data;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -1669,11 +1684,13 @@ const LicitacionesMinera = () => {
 
   const fetchRubros = async () => {
     try {
-      const response = await apiRequest("http://localhost:5242/api/rubros");
-      if (response.ok) {
-        const data = await response.json();
-        setRubros(data);
-      }
+      const response = await apiService.getRubros();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.value)
+        ? response.data.value
+        : [];
+      setRubros(data);
     } catch (error) {
       console.error("Error al cargar rubros:", error);
     }

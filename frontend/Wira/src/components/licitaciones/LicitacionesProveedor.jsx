@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import { buttonBaseStyles } from "../shared/buttonStyles";
+import apiService from "../../services/apiService";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -1195,12 +1196,8 @@ const LicitacionesProveedor = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5242/api/licitaciones");
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const res = await apiService.getLicitaciones();
+      const data = res?.data ?? [];
 
       // Filtrar solo licitaciones activas (Publicada y En Evaluación)
       let licitacionesActivas = data.filter((licitacion) => {
@@ -1322,11 +1319,8 @@ const LicitacionesProveedor = () => {
 
   const fetchRubros = async () => {
     try {
-      const response = await fetch("http://localhost:5242/api/rubros");
-      if (response.ok) {
-        const data = await response.json();
-        setRubros(data);
-      }
+      const res = await apiService.getRubros();
+      setRubros(res?.data ?? []);
     } catch (error) {
       console.error("Error al cargar rubros:", error);
     }
@@ -1334,11 +1328,8 @@ const LicitacionesProveedor = () => {
 
   const fetchMineras = async () => {
     try {
-      const response = await fetch("http://localhost:5242/api/mineras");
-      if (response.ok) {
-        const data = await response.json();
-        setMineras(data);
-      }
+      const res = await apiService.getMineras();
+      setMineras(res?.data ?? []);
     } catch (error) {
       console.error("Error al cargar mineras:", error);
     }
@@ -1354,13 +1345,8 @@ const LicitacionesProveedor = () => {
 
       if (!proveedorID) return;
 
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/proveedor/${proveedorID}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUserPropuestas(data);
-      }
+      const res = await apiService.get(`/propuestas/proveedor/${proveedorID}`);
+      setUserPropuestas(res?.data ?? []);
     } catch (error) {
       console.error("Error al cargar propuestas del usuario:", error);
     }
@@ -1370,12 +1356,8 @@ const LicitacionesProveedor = () => {
     try {
       setLoadingCriterios(true);
 
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
+      const res = await apiService.getCriteriosLicitacion(licitacionId);
+      const data = res?.data ?? [];
         const normalized = data.map((criterio, index) =>
           normalizeCriterioResponse(criterio, index)
         );
@@ -1558,17 +1540,8 @@ const LicitacionesProveedor = () => {
   // Función para obtener archivos adjuntos de una licitación
   const fetchArchivosLicitacion = async (licitacionId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const archivos = await response.json();
+      const res = await apiService.getArchivosByLicitacion(licitacionId);
+      const archivos = res?.data ?? [];
 
         // Actualizar la licitación seleccionada con los archivos
         setSelectedLicitacion((prev) => {
@@ -1662,54 +1635,23 @@ const LicitacionesProveedor = () => {
         .map((criterio) => buildRespuestaPayload(criterio))
         .filter((respuesta) => respuesta !== null);
 
-      const response = await fetch("http://localhost:5242/api/propuestas", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          LicitacionID: licitacionId,
-          ProveedorID: proveedorID,
-          Descripcion: propuestaForm.descripcion,
-          PresupuestoOfrecido: parseFloat(propuestaForm.presupuestoOfrecido),
-          MonedaID:
-            selectedLicitacion.monedaID ||
-            selectedLicitacion.MonedaID ||
-            selectedLicitacion.moneda?.monedaID ||
-            selectedLicitacion.Moneda?.MonedaID,
-          FechaEntrega: propuestaForm.fechaEntrega
-            ? new Date(propuestaForm.fechaEntrega).toISOString()
-            : null,
-          RespuestasCriterios: respuestasCriteriosArray,
-        }),
+      const createRes = await apiService.post("/propuestas", {
+        LicitacionID: licitacionId,
+        ProveedorID: proveedorID,
+        Descripcion: propuestaForm.descripcion,
+        PresupuestoOfrecido: parseFloat(propuestaForm.presupuestoOfrecido),
+        MonedaID:
+          selectedLicitacion.monedaID ||
+          selectedLicitacion.MonedaID ||
+          selectedLicitacion.moneda?.monedaID ||
+          selectedLicitacion.Moneda?.MonedaID,
+        FechaEntrega: propuestaForm.fechaEntrega
+          ? new Date(propuestaForm.fechaEntrega).toISOString()
+          : null,
+        RespuestasCriterios: respuestasCriteriosArray,
       });
 
-      if (!response.ok) {
-        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-
-        try {
-          const contentType = response.headers.get("content-type");
-
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
-          } else {
-            // Si no es JSON, intentar leer como texto
-            const errorText = await response.text();
-            if (errorText) {
-              errorMessage = errorText;
-            }
-          }
-        } catch (parseError) {
-          // Usar el mensaje de error por defecto
-          console.error("Parse error:", parseError);
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      // Obtener la respuesta de la propuesta creada
-      const propuestaData = await response.json();
+      const propuestaData = createRes?.data;
 
       // Intentar múltiples variaciones del campo ID
       const propuestaId =
@@ -1720,31 +1662,13 @@ const LicitacionesProveedor = () => {
 
       // Crear registro en historial con ganador como null (vacío)
       try {
-        const historialResponse = await fetch(
-          "http://localhost:5242/api/historial-proveedor-licitacion",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              ProveedorID: proveedorID,
-              LicitacionID: licitacionId,
-              Resultado: "EN_PROCESO",
-              Observaciones: "Propuesta enviada - En proceso de evaluación",
-              FechaParticipacion: new Date().toISOString(),
-            }),
-          }
-        );
-
-        if (!historialResponse.ok) {
-          console.warn(
-            "Error al crear registro de historial:",
-            historialResponse.statusText
-          );
-          // No lanzamos error para no interrumpir el flujo principal
-        }
+        await apiService.post("/historial-proveedor-licitacion", {
+          ProveedorID: proveedorID,
+          LicitacionID: licitacionId,
+          Resultado: "EN_PROCESO",
+          Observaciones: "Propuesta enviada - En proceso de evaluación",
+          FechaParticipacion: new Date().toISOString(),
+        });
       } catch (historialError) {
         console.warn("Error al crear registro de historial:", historialError);
         // No lanzamos error para no interrumpir el flujo principal
@@ -1769,29 +1693,16 @@ const LicitacionesProveedor = () => {
           formData.append("EntidadTipo", "PROPUESTA");
           formData.append("EntidadID", propuestaId.toString());
 
-          const uploadResponse = await fetch(
-            "http://localhost:5242/api/archivos/upload",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-              body: formData,
-            }
-          );
+          const uploadRes = await apiService.uploadArchivo(formData);
 
           // Cerrar la notificación de subida
           toast.dismiss("uploading-propuesta");
 
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error("Upload error text:", errorText);
+          if (!uploadRes || !uploadRes.data) {
             toast.warn(
               "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
             );
           } else {
-            const fileResult = await uploadResponse.json();
-            console.log("File upload result:", fileResult);
             toast.success("✅ Propuesta y archivo enviados exitosamente!");
           }
         } catch (uploadError) {
@@ -2095,21 +2006,9 @@ const LicitacionesProveedor = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      // Crear blob con el contenido del archivo
-      const blob = await response.blob();
+      const res = await apiService.downloadArchivoById(ArchivoID);
+      if (!res || !res.data) throw new Error("Error al descargar el archivo");
+      const blob = res.data;
 
       // Crear URL temporal para el blob
       const url = window.URL.createObjectURL(blob);
