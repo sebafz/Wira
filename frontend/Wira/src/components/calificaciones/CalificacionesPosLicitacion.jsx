@@ -296,7 +296,7 @@ const CalificacionesPosLicitacion = () => {
     } finally {
       setLoading(false);
     }
-  }, [buildAuthHeaders, getUserMineraID]);
+  }, [getUserMineraID]);
 
   useEffect(() => {
     if (user && token) {

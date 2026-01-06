@@ -487,14 +487,10 @@ const HistorialProveedor = () => {
   });
 
   useEffect(() => {
-    console.log("HistorialProveedor useEffect called:", {
-      user: !!user,
-      token: !!token,
-    });
     if (user && token) {
       fetchHistorial();
     }
-  }, [user, token]); // Removemos fetchHistorial para evitar dependencia circular
+  }, [user, token]);
 
   const fetchHistorial = useCallback(async () => {
     try {
