@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthContext";
 // import { useNavigate } from "react-router-dom"; // Currently not used
@@ -1146,35 +1146,19 @@ const LicitacionesProveedor = () => {
   const [rubros, setRubros] = useState([]);
   const [mineras, setMineras] = useState([]);
 
-  const toUtcISOString = useCallback((value) => {
+  const toUtcDate = useCallback((value, { endOfDay = false } = {}) => {
     if (!value) return null;
-    const parsed =
-      value instanceof Date ? new Date(value.getTime()) : new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
-  }, []);
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+    }
 
-  const toUtcDate = useCallback(
-    (value) => {
-      const isoValue = toUtcISOString(value);
-      return isoValue ? new Date(isoValue) : null;
-    },
-    [toUtcISOString]
-  );
-
-  const dateInputToUtcDate = useCallback(
-    (value, { endOfDay = false } = {}) => {
-      if (!value) return null;
-      const match = DATE_INPUT_REGEX.exec(value);
-      if (!match) {
-        return toUtcDate(value);
-      }
-
+    const match = DATE_INPUT_REGEX.exec(value);
+    if (match) {
       const [, yearStr, monthStr, dayStr] = match;
       const year = Number(yearStr);
       const month = Number(monthStr);
       const day = Number(dayStr);
-
-      if ([year, month, day].some((num) => Number.isNaN(num))) {
+      if ([year, month, day].some((n) => Number.isNaN(n))) {
         return null;
       }
 
@@ -1186,8 +1170,31 @@ const LicitacionesProveedor = () => {
       return new Date(
         Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds)
       );
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : new Date(parsed.getTime());
+  }, []);
+
+  const toUtcISOString = useCallback(
+    (value, options = {}) => {
+      const date = toUtcDate(value, options);
+      return date ? date.toISOString() : null;
     },
     [toUtcDate]
+  );
+
+  const toDateInputValue = useCallback(
+    (value) => {
+      const iso = toUtcISOString(value);
+      return iso ? iso.split("T")[0] : "";
+    },
+    [toUtcISOString]
+  );
+
+  const todayInputValue = useMemo(
+    () => toDateInputValue(new Date()),
+    [toDateInputValue]
   );
 
   // Cargar datos iniciales
@@ -1243,8 +1250,8 @@ const LicitacionesProveedor = () => {
       });
 
       // Aplicar filtros adicionales
-      const fechaCierreDesdeUtc = dateInputToUtcDate(filters.fechaCierreDesde);
-      const fechaCierreHastaUtc = dateInputToUtcDate(filters.fechaCierreHasta, {
+      const fechaCierreDesdeUtc = toUtcDate(filters.fechaCierreDesde);
+      const fechaCierreHastaUtc = toUtcDate(filters.fechaCierreHasta, {
         endOfDay: true,
       });
       if (filters.titulo) {
@@ -2610,7 +2617,7 @@ const LicitacionesProveedor = () => {
                       fechaEntrega: e.target.value,
                     }))
                   }
-                  min={new Date().toISOString().split("T")[0]}
+                  min={todayInputValue}
                 />
                 <FormHint>
                   Fecha límite de la licitación:{" "}
