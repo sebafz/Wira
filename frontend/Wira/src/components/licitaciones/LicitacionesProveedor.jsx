@@ -407,6 +407,8 @@ const RetryButton = styled.button`
   }
 `;
 
+const DATE_INPUT_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -1144,6 +1146,50 @@ const LicitacionesProveedor = () => {
   const [rubros, setRubros] = useState([]);
   const [mineras, setMineras] = useState([]);
 
+  const toUtcISOString = useCallback((value) => {
+    if (!value) return null;
+    const parsed =
+      value instanceof Date ? new Date(value.getTime()) : new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }, []);
+
+  const toUtcDate = useCallback(
+    (value) => {
+      const isoValue = toUtcISOString(value);
+      return isoValue ? new Date(isoValue) : null;
+    },
+    [toUtcISOString]
+  );
+
+  const dateInputToUtcDate = useCallback(
+    (value, { endOfDay = false } = {}) => {
+      if (!value) return null;
+      const match = DATE_INPUT_REGEX.exec(value);
+      if (!match) {
+        return toUtcDate(value);
+      }
+
+      const [, yearStr, monthStr, dayStr] = match;
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      const day = Number(dayStr);
+
+      if ([year, month, day].some((num) => Number.isNaN(num))) {
+        return null;
+      }
+
+      const hours = endOfDay ? 23 : 0;
+      const minutes = endOfDay ? 59 : 0;
+      const seconds = endOfDay ? 59 : 0;
+      const milliseconds = endOfDay ? 999 : 0;
+
+      return new Date(
+        Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds)
+      );
+    },
+    [toUtcDate]
+  );
+
   // Cargar datos iniciales
   useEffect(() => {
     fetchLicitacionesActivas();
@@ -1197,6 +1243,10 @@ const LicitacionesProveedor = () => {
       });
 
       // Aplicar filtros adicionales
+      const fechaCierreDesdeUtc = dateInputToUtcDate(filters.fechaCierreDesde);
+      const fechaCierreHastaUtc = dateInputToUtcDate(filters.fechaCierreHasta, {
+        endOfDay: true,
+      });
       if (filters.titulo) {
         licitacionesActivas = licitacionesActivas.filter((l) =>
           (l.titulo || l.Titulo || "")
@@ -1227,20 +1277,18 @@ const LicitacionesProveedor = () => {
         );
       }
 
-      if (filters.fechaCierreDesde) {
-        licitacionesActivas = licitacionesActivas.filter(
-          (l) =>
-            new Date(l.fechaCierre || l.FechaCierre) >=
-            new Date(filters.fechaCierreDesde)
-        );
+      if (fechaCierreDesdeUtc) {
+        licitacionesActivas = licitacionesActivas.filter((l) => {
+          const cierreDate = toUtcDate(l.fechaCierre || l.FechaCierre);
+          return cierreDate ? cierreDate >= fechaCierreDesdeUtc : false;
+        });
       }
 
-      if (filters.fechaCierreHasta) {
-        licitacionesActivas = licitacionesActivas.filter(
-          (l) =>
-            new Date(l.fechaCierre || l.FechaCierre) <=
-            new Date(filters.fechaCierreHasta)
-        );
+      if (fechaCierreHastaUtc) {
+        licitacionesActivas = licitacionesActivas.filter((l) => {
+          const cierreDate = toUtcDate(l.fechaCierre || l.FechaCierre);
+          return cierreDate ? cierreDate <= fechaCierreHastaUtc : false;
+        });
       }
 
       if (filters.minera) {
@@ -1270,8 +1318,8 @@ const LicitacionesProveedor = () => {
             valueB = (b.titulo || b.Titulo || "").toLowerCase();
             break;
           case "fechaCierre":
-            valueA = new Date(a.fechaCierre || a.FechaCierre);
-            valueB = new Date(b.fechaCierre || b.FechaCierre);
+            valueA = toUtcDate(a.fechaCierre || a.FechaCierre)?.getTime() || 0;
+            valueB = toUtcDate(b.fechaCierre || b.FechaCierre)?.getTime() || 0;
             break;
           case "presupuesto":
             valueA = a.presupuestoEstimado || a.PresupuestoEstimado || 0;
@@ -1286,8 +1334,8 @@ const LicitacionesProveedor = () => {
             valueB = b.mineraNombre || b.MineraNombre || "";
             break;
           default:
-            valueA = new Date(a.fechaCierre || a.FechaCierre);
-            valueB = new Date(b.fechaCierre || b.FechaCierre);
+            valueA = toUtcDate(a.fechaCierre || a.FechaCierre)?.getTime() || 0;
+            valueB = toUtcDate(b.fechaCierre || b.FechaCierre)?.getTime() || 0;
             break;
         }
 
@@ -1397,18 +1445,14 @@ const LicitacionesProveedor = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "No especificada";
 
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "Fecha inválida";
+    const date = toUtcDate(dateString);
+    if (!date) return "Fecha inválida";
 
-      return date.toLocaleDateString("es-AR", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "Fecha inválida";
-    }
+    return date.toLocaleDateString("es-AR", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const formatCurrency = (amount, monedaInfo) => {
@@ -1472,9 +1516,10 @@ const LicitacionesProveedor = () => {
   const calculateTimeRemaining = (fechaCierre) => {
     if (!fechaCierre) return null;
 
-    const now = new Date();
-    const cierre = new Date(fechaCierre);
-    const diffTime = cierre - now;
+    const now = toUtcDate(new Date()) || new Date();
+    const cierre = toUtcDate(fechaCierre);
+    if (!cierre) return null;
+    const diffTime = cierre.getTime() - now.getTime();
 
     if (diffTime <= 0) return "Vencida";
 
@@ -1604,7 +1649,7 @@ const LicitacionesProveedor = () => {
           selectedLicitacion.moneda?.monedaID ||
           selectedLicitacion.Moneda?.MonedaID,
         FechaEntrega: propuestaForm.fechaEntrega
-          ? new Date(propuestaForm.fechaEntrega).toISOString()
+          ? toUtcISOString(propuestaForm.fechaEntrega)
           : null,
         RespuestasCriterios: respuestasCriteriosArray,
       });
@@ -1625,7 +1670,7 @@ const LicitacionesProveedor = () => {
           LicitacionID: licitacionId,
           Resultado: "EN_PROCESO",
           Observaciones: "Propuesta enviada - En proceso de evaluación",
-          FechaParticipacion: new Date().toISOString(),
+          FechaParticipacion: toUtcISOString(new Date()),
         });
       } catch (historialError) {
         console.warn("Error al crear registro de historial:", historialError);
