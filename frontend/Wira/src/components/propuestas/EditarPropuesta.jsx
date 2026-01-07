@@ -253,6 +253,49 @@ const RetryButton = styled.button`
   }
 `;
 
+const DATE_INPUT_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const toUtcDate = (value, { endOfDay = false } = {}) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+  }
+
+  const match = DATE_INPUT_REGEX.exec(value);
+  if (match) {
+    const [, yearStr, monthStr, dayStr] = match;
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    if ([year, month, day].some((n) => Number.isNaN(n))) {
+      return null;
+    }
+
+    const hours = endOfDay ? 23 : 0;
+    const minutes = endOfDay ? 59 : 0;
+    const seconds = endOfDay ? 59 : 0;
+    const milliseconds = endOfDay ? 999 : 0;
+
+    return new Date(
+      Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds)
+    );
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : new Date(parsed.getTime());
+};
+
+const toUtcISOString = (value) => {
+  const date = toUtcDate(value);
+  if (!date) return null;
+  return date.toISOString();
+};
+
+const toDateInputValue = (value) => {
+  const iso = toUtcISOString(value);
+  return iso ? iso.split("T")[0] : "";
+};
+
 const CriteriosSection = styled.div`
   margin-top: 30px;
   padding: 25px;
@@ -763,7 +806,7 @@ const EditarPropuesta = () => {
           descripcion: data.descripcion || "",
           presupuestoOfrecido: data.presupuestoOfrecido?.toString() || "",
           fechaEntrega: data.fechaEntrega
-            ? new Date(data.fechaEntrega).toISOString().split("T")[0]
+            ? toDateInputValue(data.fechaEntrega)
             : "",
         });
 
@@ -1112,7 +1155,7 @@ const EditarPropuesta = () => {
         descripcion: formData.descripcion,
         presupuestoOfrecido: parseFloat(formData.presupuestoOfrecido),
         fechaEntrega: formData.fechaEntrega
-          ? new Date(formData.fechaEntrega).toISOString()
+          ? toUtcISOString(formData.fechaEntrega)
           : null,
         respuestasCriterios: criteriosRespuestas.map((criterio) => ({
           criterioID: criterio.criterioID,
@@ -1150,6 +1193,8 @@ const EditarPropuesta = () => {
   const handleCancel = () => {
     navigate("/propuestas-proveedor");
   };
+
+  const todayInputValue = toDateInputValue(new Date());
 
   // Mostrar spinner de carga inicial
   if (loading) {
@@ -1247,7 +1292,7 @@ const EditarPropuesta = () => {
                   name="fechaEntrega"
                   value={formData.fechaEntrega}
                   onChange={handleInputChange}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={todayInputValue}
                 />
               </FormGroup>
             </FormRow>
