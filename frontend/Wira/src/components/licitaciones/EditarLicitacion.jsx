@@ -7,6 +7,10 @@ import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import apiService from "../../services/apiService";
+import {
+  getUserCompanyName,
+  getUserMineraId,
+} from "../../utils/userHelpers";
 
 const FormContainer = styled.div`
   min-height: 100vh;
@@ -860,6 +864,7 @@ const EditarLicitacion = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
+  const userMineraId = getUserMineraId(user);
 
   // Estados principales
   const [loading, setLoading] = useState(true);
@@ -934,14 +939,13 @@ const EditarLicitacion = () => {
     console.log("EditarLicitacion useEffect called:", {
       id,
       user,
-      userMineraID: user?.MineraID,
-      usermineraID: user?.mineraID,
+      resolvedUserMineraId: userMineraId,
     });
 
     const fetchData = async () => {
       const promises = [fetchLicitacion(), fetchRubros()];
 
-      if (user?.MineraID || user?.mineraID) {
+      if (userMineraId) {
         promises.push(fetchProyectosMineros());
       } else {
         setLoadingProyectos(false);
@@ -956,7 +960,7 @@ const EditarLicitacion = () => {
       setError("ID de licitación no proporcionado");
       setLoading(false);
     }
-  }, [id, user?.MineraID, user?.mineraID]);
+  }, [id, userMineraId]);
 
   useEffect(() => {
     const fetchMonedas = async () => {
@@ -1000,11 +1004,7 @@ const EditarLicitacion = () => {
       const licitacion = resp.data || {};
 
       // Verificar que la licitación pertenece al usuario
-      const userMineraID =
-        user?.MineraID ||
-        user?.Minera?.MineraID ||
-        user?.minera?.mineraID ||
-        user?.minera?.MineraID;
+      const userMineraID = userMineraId;
 
       const licitacionMineraID = licitacion.mineraID || licitacion.MineraID;
 
@@ -1135,7 +1135,7 @@ const EditarLicitacion = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]); // Agregamos id como dependencia porque lo usa
+  }, [id, userMineraId]);
 
   const fetchRubros = useCallback(async () => {
     try {
@@ -1163,9 +1163,11 @@ const EditarLicitacion = () => {
       setLoadingProyectos(true);
       setProyectosError("");
 
-      const mineraId = user?.MineraID || user?.mineraID;
+      const mineraId = userMineraId;
       if (!mineraId) {
-        setProyectosError("No se pudo obtener el ID de la minera del usuario.");
+        setProyectosError(
+          "No se pudo determinar la minera asociada al usuario."
+        );
         setProyectosMineros([]);
         return;
       }
@@ -1184,7 +1186,7 @@ const EditarLicitacion = () => {
     } finally {
       setLoadingProyectos(false);
     }
-  }, [user?.MineraID, user?.mineraID]); // Solo necesita user IDs
+  }, [userMineraId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1754,9 +1756,7 @@ const EditarLicitacion = () => {
     navigate("/mis-licitaciones");
   };
 
-  const getCompanyName = () => {
-    return user?.Minera?.Nombre || user?.minera?.nombre || "Empresa Minera";
-  };
+  const getCompanyName = () => getUserCompanyName(user);
 
   // Mostrar spinner de carga inicial
   if (loading) {

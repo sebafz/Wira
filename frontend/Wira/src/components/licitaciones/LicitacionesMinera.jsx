@@ -10,6 +10,10 @@ import CalificacionProveedorModal from "../calificaciones/CalificacionProveedorM
 import { registrarCalificacionPostLicitacion } from "../../services/calificacionesService";
 import { buttonBaseStyles } from "../shared/buttonStyles";
 import apiService from "../../services/apiService";
+import {
+  getUserCompanyName,
+  getUserMineraId,
+} from "../../utils/userHelpers";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:5242/api"
@@ -1444,6 +1448,8 @@ const GanadorCancelButton = styled.button`
 const LicitacionesMinera = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const userMineraId = getUserMineraId(user);
+  const companyName = getUserCompanyName(user);
 
   // Estados consolidados
   const [licitaciones, setLicitaciones] = useState([]);
@@ -1532,19 +1538,6 @@ const LicitacionesMinera = () => {
       setShowScoreInfo(false);
     }
   }, [showModal]);
-
-  // Utilidades consolidadas
-  const getUserMineraID = () =>
-    user?.MineraID ||
-    user?.Minera?.MineraID ||
-    user?.minera?.mineraID ||
-    user?.minera?.MineraID;
-
-  const getCompanyName = () =>
-    user?.Minera?.Nombre ||
-    user?.minera?.nombre ||
-    user?.minera?.Nombre ||
-    "Empresa Minera";
 
   const formatDate = (dateString) => {
     if (!dateString) return "No especificada";
@@ -1871,7 +1864,7 @@ const LicitacionesMinera = () => {
       setLoading(true);
       setError("");
 
-      const mineraID = getUserMineraID();
+      const mineraID = userMineraId;
       const response = await apiRequest(`${API_BASE_URL}/licitaciones`);
 
       if (!response.ok) {
@@ -2860,7 +2853,7 @@ const LicitacionesMinera = () => {
         <PageHeader>
           <PageTitle>Mis licitaciones</PageTitle>
           <PageSubtitle>
-            Gestione las licitaciones de {getCompanyName()}.
+            Gestione las licitaciones de {companyName}.
           </PageSubtitle>
         </PageHeader>
 
