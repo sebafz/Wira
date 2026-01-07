@@ -1137,6 +1137,12 @@ const EditarLicitacion = () => {
     }
   }, [id]); // Agregamos id como dependencia porque lo usa
 
+  const toUtcISOString = useCallback((value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }, []);
+
   const fetchRubros = useCallback(async () => {
     try {
       setLoadingRubros(true);
@@ -1677,13 +1683,21 @@ const EditarLicitacion = () => {
       };
     });
 
+    const fechaInicioUtc = toUtcISOString(formData.fechaInicio);
+    const fechaCierreUtc = toUtcISOString(formData.fechaCierre);
+
+    if (!fechaInicioUtc || !fechaCierreUtc) {
+      toast.error("No pudimos interpretar las fechas ingresadas.");
+      return;
+    }
+
     const dataToSend = {
       titulo: formData.titulo.trim(),
       descripcion: formData.descripcion.trim(),
       rubroID: parseInt(formData.rubroID),
       MonedaID: parseInt(formData.monedaID),
-      fechaInicio: new Date(formData.fechaInicio).toISOString(),
-      fechaCierre: new Date(formData.fechaCierre).toISOString(),
+      fechaInicio: fechaInicioUtc,
+      fechaCierre: fechaCierreUtc,
       presupuestoEstimado: formData.presupuestoEstimado
         ? parseFloat(formData.presupuestoEstimado)
         : null,
