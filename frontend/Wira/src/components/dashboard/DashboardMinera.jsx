@@ -228,7 +228,7 @@ const DashboardMinera = () => {
         <CompanyInfo>
           <WelcomeTitle>Bienvenido, {getUserName()}</WelcomeTitle>
           <WelcomeSubtitle>
-            Gestione las licitaciones de su empresa minera desde acá. v1.2
+            Gestione las licitaciones de su empresa minera desde acá.
           </WelcomeSubtitle>
           <CompanyName>{getCompanyName()}</CompanyName>
         </CompanyInfo>

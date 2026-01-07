@@ -1662,10 +1662,32 @@ const LicitacionesMinera = () => {
     const defaultHeaders = { "Content-Type": "application/json" };
     if (token) defaultHeaders.Authorization = `Bearer ${token}`;
 
-    return fetch(finalUrl, {
-      headers: { ...defaultHeaders, ...options.headers },
-      ...options,
-    });
+    // Use centralized apiService (axios) so interceptors and baseURL apply
+    try {
+      // Convert full URL to relative API path when possible
+      let path = finalUrl;
+      if (finalUrl.startsWith(API_BASE)) {
+        path = finalUrl.substring(API_BASE.length) || "/";
+      }
+      if (!path.startsWith("/")) path = `/${path}`;
+
+      const method = (options.method || "GET").toLowerCase();
+      if (method === "get" || method === "delete") {
+        const config = {
+          headers: { ...defaultHeaders, ...(options.headers || {}) },
+          params: options.params,
+        };
+        return await apiService[method](path, config);
+      }
+
+      // For POST/PUT/PATCH
+      const data = options.body !== undefined ? options.body : null;
+      const config = { headers: { ...defaultHeaders, ...(options.headers || {}) } };
+      return await apiService[method](path, data, config);
+    } catch (err) {
+      // Surface the error similarly to fetch's rejected promise
+      return Promise.reject(err);
+    }
   };
 
   const handleDownloadArchivo = async (archivoID, nombreArchivo) => {

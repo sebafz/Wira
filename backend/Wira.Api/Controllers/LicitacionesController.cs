@@ -298,12 +298,20 @@ namespace Wira.Api.Controllers
 
                 _logger.LogInformation($"Licitación creada exitosamente con ID: {licitacion.LicitacionID}");
 
-                // Crear notificación para proveedores
-                await _notificacionService.CrearNotificacionLicitacionPublicada(
-                    licitacion.LicitacionID,
-                    licitacion.Titulo,
-                    licitacion.MineraID
-                );
+                // Crear notificación para proveedores (no bloquear la creación si falla)
+                try
+                {
+                    await _notificacionService.CrearNotificacionLicitacionPublicada(
+                        licitacion.LicitacionID,
+                        licitacion.Titulo,
+                        licitacion.MineraID
+                    );
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogError(notifEx, "Error al crear notificaciones tras crear la licitación {LicitacionId}", licitacion.LicitacionID);
+                    // No rethrow: las notificaciones no deben impedir la creación de la licitación
+                }
 
                 // Retornar la licitación creada
                 return await GetLicitacion(licitacion.LicitacionID);
