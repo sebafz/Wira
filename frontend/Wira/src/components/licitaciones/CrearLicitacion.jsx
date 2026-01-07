@@ -7,10 +7,6 @@ import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import apiService from "../../services/apiService";
-import {
-  getUserCompanyName,
-  getUserMineraId,
-} from "../../utils/userHelpers";
 
 const FormContainer = styled.div`
   min-height: 100vh;
@@ -751,8 +747,6 @@ const CrearLicitacion = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
-  const userMineraId = getUserMineraId(user);
-
   const tipoCriterioOptions = [
     { value: "Numerico", label: "Valor numérico" },
     { value: "Booleano", label: "Sí / No" },
@@ -935,11 +929,11 @@ const CrearLicitacion = () => {
         setLoadingProyectos(true);
         setProyectosError("");
 
-        const mineraId = userMineraId;
+        const mineraId = user?.minera?.mineraID;
 
         if (!mineraId) {
           setProyectosError(
-            "No se pudo determinar la minera asociada al usuario."
+            "No se pudo obtener el ID de la minera del usuario."
           );
           setProyectosMineros([]);
           return;
@@ -969,8 +963,12 @@ const CrearLicitacion = () => {
     };
 
     fetchRubros();
-    fetchProyectosMineros();
-  }, [userMineraId]);
+    if (user?.minera?.mineraID) {
+      fetchProyectosMineros();
+    } else {
+      setLoadingProyectos(false);
+    }
+  }, [user?.minera?.mineraID]);
 
   useEffect(() => {
     const fetchMonedas = async () => {
@@ -1323,14 +1321,6 @@ const CrearLicitacion = () => {
     setLoading(true);
     setShowConfirmCreate(false);
 
-    if (!userMineraId) {
-      toast.error(
-        "No se pudo determinar la minera asociada a tu usuario. Inicia sesión nuevamente e inténtalo otra vez."
-      );
-      setLoading(false);
-      return;
-    }
-
     try {
       // Crear licitación primero
       const criteriosPayload = criterios.map((criterio) => {
@@ -1395,7 +1385,7 @@ const CrearLicitacion = () => {
       });
 
       const licitacionData = {
-        MineraID: userMineraId,
+        MineraID: user?.minera?.mineraID || 1, // Obtener el ID de la minera del usuario autenticado
         RubroID: parseInt(formData.rubroID),
         MonedaID: parseInt(formData.monedaID),
         ProyectoMineroID: formData.proyectoMineroID
@@ -1513,7 +1503,9 @@ const CrearLicitacion = () => {
     navigate("/dashboard-minera");
   };
 
-  const getCompanyName = () => getUserCompanyName(user);
+  const getCompanyName = () => {
+    return user?.Minera?.Nombre || user?.minera?.nombre || "Empresa Minera";
+  };
 
   const getTotalPeso = () => {
     return criterios.reduce(
