@@ -351,7 +351,7 @@ namespace Wira.Api.Controllers
                 {
                     LicitacionID = createDto.LicitacionID,
                     ProveedorID = createDto.ProveedorID,
-                    FechaEnvio = DateTime.Now,
+                    FechaEnvio = DateTime.UtcNow,
                     EstadoPropuestaID = 1, // Estado inicial - "Enviada"
                     Descripcion = createDto.Descripcion,
                     PresupuestoOfrecido = createDto.PresupuestoOfrecido,
