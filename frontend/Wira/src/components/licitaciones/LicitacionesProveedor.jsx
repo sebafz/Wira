@@ -2569,22 +2569,18 @@ const LicitacionesProveedor = () => {
 
                 return (
                   <>
-                    <PostularButton
-                      onClick={() => handlePostularse(selectedId)}
-                      disabled={postulando || !canSubmitSelectedLicitacion}
-                      title={
-                        !canSubmitSelectedLicitacion
-                          ? "Solo podés enviar propuestas cuando la licitación está publicada."
-                          : undefined
-                      }
-                    >
-                      📝 Enviar propuesta
-                    </PostularButton>
-                    {!canSubmitSelectedLicitacion && (
-                      <ActionRestrictionText>
-                        Solo podés enviar propuestas mientras la licitación
-                        está publicada.
-                      </ActionRestrictionText>
+                    {canSubmitSelectedLicitacion && (
+                      <PostularButton
+                        onClick={() => handlePostularse(selectedId)}
+                        disabled={postulando || !canSubmitSelectedLicitacion}
+                        title={
+                          !canSubmitSelectedLicitacion
+                            ? "Esta licitación está en evaluación. Ya no puede enviar propuestas."
+                            : undefined
+                        }
+                      >
+                        📝 Enviar propuesta
+                      </PostularButton>
                     )}
                   </>
                 );
