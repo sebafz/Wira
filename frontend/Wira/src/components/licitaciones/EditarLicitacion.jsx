@@ -941,7 +941,7 @@ const EditarLicitacion = () => {
     const fetchData = async () => {
       const promises = [fetchLicitacion(), fetchRubros()];
 
-      if (user?.MineraID || user?.mineraID) {
+      if (user?.minera?.mineraID) {
         promises.push(fetchProyectosMineros());
       } else {
         setLoadingProyectos(false);
@@ -956,7 +956,7 @@ const EditarLicitacion = () => {
       setError("ID de licitación no proporcionado");
       setLoading(false);
     }
-  }, [id, user?.MineraID, user?.mineraID]);
+  }, [id, user?.minera?.mineraID]);
 
   useEffect(() => {
     const fetchMonedas = async () => {
@@ -1169,9 +1169,12 @@ const EditarLicitacion = () => {
       setLoadingProyectos(true);
       setProyectosError("");
 
-      const mineraId = user?.MineraID || user?.mineraID;
+      const mineraId = user?.minera?.mineraID;
+
       if (!mineraId) {
-        setProyectosError("No se pudo obtener el ID de la minera del usuario.");
+        setProyectosError(
+          "No se pudo obtener el ID de la minera del usuario."
+        );
         setProyectosMineros([]);
         return;
       }
@@ -1185,12 +1188,17 @@ const EditarLicitacion = () => {
       setProyectosMineros(data);
     } catch (error) {
       console.error("Error fetching proyectos mineros:", error);
-      setProyectosError("No se pudo conectar con el servidor.");
+      const message =
+        error.response?.data?.message ||
+        (typeof error.response?.data === "string"
+          ? error.response.data
+          : "No se pudo conectar con el servidor.");
+      setProyectosError(message);
       setProyectosMineros([]);
     } finally {
       setLoadingProyectos(false);
     }
-  }, [user?.MineraID, user?.mineraID]); // Solo necesita user IDs
+  }, [user?.minera?.mineraID]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

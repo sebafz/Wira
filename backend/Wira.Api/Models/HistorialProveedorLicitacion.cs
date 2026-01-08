@@ -23,7 +23,7 @@ namespace Wira.Api.Models
         [Column(TypeName = "text")]
         public string? Observaciones { get; set; }
 
-        public DateTime FechaParticipacion { get; set; } = DateTime.Now;
+        public DateTime FechaParticipacion { get; set; } = DateTime.UtcNow;
 
         public DateTime? FechaGanador { get; set; }
 

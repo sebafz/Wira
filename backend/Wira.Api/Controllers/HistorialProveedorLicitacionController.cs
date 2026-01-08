@@ -129,11 +129,11 @@ namespace Wira.Api.Controllers
                     historialExistente.Resultado = request.Resultado;
                     historialExistente.Ganador = request.Ganador;
                     historialExistente.Observaciones = request.Observaciones;
-                    historialExistente.FechaParticipacion = DateTime.Now;
+                    historialExistente.FechaParticipacion = DateTime.UtcNow;
 
                     if (esNuevoGanador)
                     {
-                        historialExistente.FechaGanador = DateTime.Now;
+                        historialExistente.FechaGanador = DateTime.UtcNow;
                     }
                     else if (request.Ganador != true)
                     {
@@ -187,8 +187,8 @@ namespace Wira.Api.Controllers
                         Resultado = request.Resultado,
                         Ganador = request.Ganador,
                         Observaciones = request.Observaciones,
-                        FechaParticipacion = DateTime.Now,
-                        FechaGanador = request.Ganador == true ? DateTime.Now : null
+                        FechaParticipacion = DateTime.UtcNow,
+                        FechaGanador = request.Ganador == true ? DateTime.UtcNow : null
                     };
 
                     _context.HistorialProveedorLicitacion.Add(nuevoHistorial);
