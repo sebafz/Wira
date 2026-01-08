@@ -1750,10 +1750,22 @@ const LicitacionesProveedor = () => {
       // Recargar las propuestas del usuario
       await fetchUserPropuestas();
     } catch (error) {
-      toast.error(
+      const responseData = error?.response?.data;
+      const firstModelError = responseData?.errors
+        ? Object.values(responseData.errors)
+            .flat()
+            .find((msg) => typeof msg === "string")
+        : null;
+      const errorMessage =
+        responseData?.message ||
+        responseData?.title ||
+        responseData?.detail ||
+        firstModelError ||
         error.message ||
-          "Error al enviar la propuesta. Por favor, intente nuevamente."
-      );
+        "Error al enviar la propuesta. Por favor, intente nuevamente.";
+
+      console.error("Error al enviar la propuesta:", responseData || error);
+      toast.error(errorMessage);
     } finally {
       setPostulando(false);
     }
