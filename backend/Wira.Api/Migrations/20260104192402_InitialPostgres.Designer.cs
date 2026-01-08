@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wira.Api.Data;
@@ -11,9 +12,11 @@ using Wira.Api.Data;
 namespace Wira.Api.Migrations
 {
     [DbContext(typeof(WiraDbContext))]
-    partial class WiraDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104192402_InitialPostgres")]
+    partial class InitialPostgres
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,7 +44,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaSubida")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("NombreArchivo")
                         .IsRequired()
@@ -69,7 +72,7 @@ namespace Wira.Api.Migrations
 
                     b.ToTable("ArchivosAdjuntos", t =>
                         {
-                            t.HasCheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", "\"EntidadTipo\" IN ('LICITACION','PROPUESTA')");
+                            t.HasCheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", "[EntidadTipo] IN ('LICITACION', 'PROPUESTA')");
                         });
                 });
 
@@ -91,7 +94,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("Fecha")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("Operacion")
                         .IsRequired()
@@ -133,7 +136,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaCalificacion")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<int>("LicitacionID")
                         .HasColumnType("integer");
@@ -152,11 +155,11 @@ namespace Wira.Api.Migrations
 
                     b.ToTable("CalificacionesPostLicitacion", t =>
                         {
-                            t.HasCheckConstraint("CK_CalificacionPostLicitacion_Calidad", "\"Calidad\" BETWEEN 1 AND 5");
+                            t.HasCheckConstraint("CK_CalificacionPostLicitacion_Calidad", "[Calidad] BETWEEN 1 AND 5");
 
-                            t.HasCheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", "\"Comunicacion\" BETWEEN 1 AND 5");
+                            t.HasCheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", "[Comunicacion] BETWEEN 1 AND 5");
 
-                            t.HasCheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", "\"Puntualidad\" BETWEEN 1 AND 5");
+                            t.HasCheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", "[Puntualidad] BETWEEN 1 AND 5");
                         });
                 });
 
@@ -209,17 +212,17 @@ namespace Wira.Api.Migrations
 
                     b.ToTable("CriteriosLicitacion", t =>
                         {
-                            t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable", "\"Tipo\" = 1 OR \"MayorMejor\" IS NULL");
+                            t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable", "[Tipo] = 1 OR [MayorMejor] IS NULL");
 
-                            t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido", "\"Tipo\" <> 1 OR \"MayorMejor\" IS NOT NULL");
+                            t.HasCheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido", "[Tipo] <> 1 OR [MayorMejor] IS NOT NULL");
 
-                            t.HasCheckConstraint("CK_CriterioLicitacion_Tipo", "\"Tipo\" IN (1,2,3,4)");
+                            t.HasCheckConstraint("CK_CriterioLicitacion_Tipo", "[Tipo] IN (1,2,3,4)");
 
-                            t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable", "\"Tipo\" = 2 OR \"ValorRequeridoBooleano\" IS NULL");
+                            t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable", "[Tipo] = 2 OR [ValorRequeridoBooleano] IS NULL");
 
-                            t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido", "\"Tipo\" <> 2 OR \"EsPuntuable\" = FALSE OR \"ValorRequeridoBooleano\" IS NOT NULL");
+                            t.HasCheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido", "[Tipo] <> 2 OR [EsPuntuable] = 0 OR [ValorRequeridoBooleano] IS NOT NULL");
 
-                            t.HasCheckConstraint("CK_CriterioLicitacion_Valores", "\"ValorMinimo\" IS NULL OR \"ValorMaximo\" IS NULL OR \"ValorMinimo\" <= \"ValorMaximo\"");
+                            t.HasCheckConstraint("CK_CriterioLicitacion_Valores", "[ValorMinimo] IS NULL OR [ValorMaximo] IS NULL OR [ValorMinimo] <= [ValorMaximo]");
                         });
                 });
 
@@ -282,7 +285,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaAlta")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -316,7 +319,7 @@ namespace Wira.Api.Migrations
 
                     b.ToTable("Empresas", t =>
                         {
-                            t.HasCheckConstraint("CK_Empresas_TipoEmpresa", "\"TipoEmpresa\" IN ('MINERA','PROVEEDOR')");
+                            t.HasCheckConstraint("CK_Empresas_TipoEmpresa", "[TipoEmpresa] IN ('MINERA', 'PROVEEDOR')");
                         });
                 });
 
@@ -376,7 +379,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaParticipacion")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<bool?>("Ganador")
                         .HasColumnType("boolean");
@@ -434,7 +437,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("timestamp with time zone");
@@ -529,7 +532,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("Mensaje")
                         .IsRequired()
@@ -605,7 +608,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaEnvio")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<int>("LicitacionID")
                         .HasColumnType("integer");
@@ -802,7 +805,7 @@ namespace Wira.Api.Migrations
                     b.Property<DateTime>("FechaRegistro")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<DateTime?>("FechaVencimientoTokenRecuperacion")
                         .HasColumnType("timestamp with time zone");

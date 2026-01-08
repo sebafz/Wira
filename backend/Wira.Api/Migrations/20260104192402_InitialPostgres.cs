@@ -1,12 +1,13 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace Wira.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialPostgres : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,9 +16,9 @@ namespace Wira.Api.Migrations
                 name: "EstadosLicitacion",
                 columns: table => new
                 {
-                    EstadoLicitacionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    NombreEstado = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    EstadoLicitacionID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    NombreEstado = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -28,9 +29,9 @@ namespace Wira.Api.Migrations
                 name: "EstadosPropuesta",
                 columns: table => new
                 {
-                    EstadoPropuestaID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    NombreEstado = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    EstadoPropuestaID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    NombreEstado = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,12 +42,12 @@ namespace Wira.Api.Migrations
                 name: "Monedas",
                 columns: table => new
                 {
-                    MonedaID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Codigo = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
-                    Nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Simbolo = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    Activo = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
+                    MonedaID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Codigo = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    Nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Simbolo = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    Activo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -57,14 +58,14 @@ namespace Wira.Api.Migrations
                 name: "Notificaciones",
                 columns: table => new
                 {
-                    NotificacionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Titulo = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    NotificacionID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Titulo = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Mensaje = table.Column<string>(type: "text", nullable: false),
-                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    Tipo = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    EntidadTipo = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    EntidadID = table.Column<int>(type: "int", nullable: true)
+                    FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Tipo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    EntidadTipo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    EntidadID = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -75,10 +76,10 @@ namespace Wira.Api.Migrations
                 name: "Roles",
                 columns: table => new
                 {
-                    RolID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nombre = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Descripcion = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false)
+                    RolID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nombre = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Descripcion = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -89,10 +90,10 @@ namespace Wira.Api.Migrations
                 name: "Rubros",
                 columns: table => new
                 {
-                    RubroID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nombre = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Activo = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
+                    RubroID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nombre = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Activo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -103,22 +104,22 @@ namespace Wira.Api.Migrations
                 name: "Empresas",
                 columns: table => new
                 {
-                    EmpresaID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nombre = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    RazonSocial = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    CUIT = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    EmailContacto = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Telefono = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    TipoEmpresa = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    FechaAlta = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    Activo = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    RubroID = table.Column<int>(type: "int", nullable: true)
+                    EmpresaID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nombre = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    RazonSocial = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CUIT = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    EmailContacto = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Telefono = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    TipoEmpresa = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    FechaAlta = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Activo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    RubroID = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Empresas", x => x.EmpresaID);
-                    table.CheckConstraint("CK_Empresas_TipoEmpresa", "[TipoEmpresa] IN ('MINERA', 'PROVEEDOR')");
+                    table.CheckConstraint("CK_Empresas_TipoEmpresa", "\"TipoEmpresa\" IN ('MINERA','PROVEEDOR')");
                     table.ForeignKey(
                         name: "FK_Empresas_Rubros_RubroID",
                         column: x => x.RubroID,
@@ -131,14 +132,14 @@ namespace Wira.Api.Migrations
                 name: "ProyectosMineros",
                 columns: table => new
                 {
-                    ProyectoMineroID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MineraID = table.Column<int>(type: "int", nullable: false),
-                    Nombre = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Ubicacion = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FechaInicio = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Activo = table.Column<bool>(type: "bit", nullable: false)
+                    ProyectoMineroID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MineraID = table.Column<int>(type: "integer", nullable: false),
+                    Nombre = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Ubicacion = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Descripcion = table.Column<string>(type: "text", nullable: true),
+                    FechaInicio = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Activo = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -155,27 +156,27 @@ namespace Wira.Api.Migrations
                 name: "Usuarios",
                 columns: table => new
                 {
-                    UsuarioID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Apellido = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DNI = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Telefono = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    Activo = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    FechaRegistro = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    FechaBaja = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EstadoAprobacion = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    FechaAprobacion = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AprobadoPorUsuarioID = table.Column<int>(type: "int", nullable: true),
-                    MotivoRechazo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ValidadoEmail = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    TokenVerificacionEmail = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    FechaVencimientoTokenVerificacion = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TokenRecuperacionPassword = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    FechaVencimientoTokenRecuperacion = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EmpresaID = table.Column<int>(type: "int", nullable: true)
+                    UsuarioID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    PasswordHash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Apellido = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    DNI = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Telefono = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    Activo = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    FechaRegistro = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    FechaBaja = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EstadoAprobacion = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    FechaAprobacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    AprobadoPorUsuarioID = table.Column<int>(type: "integer", nullable: true),
+                    MotivoRechazo = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ValidadoEmail = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    TokenVerificacionEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FechaVencimientoTokenVerificacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TokenRecuperacionPassword = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FechaVencimientoTokenRecuperacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EmpresaID = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -192,13 +193,13 @@ namespace Wira.Api.Migrations
                 name: "Auditoria",
                 columns: table => new
                 {
-                    AuditoriaID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UsuarioID = table.Column<int>(type: "int", nullable: true),
-                    Fecha = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    Operacion = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    TablaAfectada = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ClaveRegistro = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    AuditoriaID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UsuarioID = table.Column<int>(type: "integer", nullable: true),
+                    Fecha = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Operacion = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    TablaAfectada = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ClaveRegistro = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Descripcion = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -215,10 +216,10 @@ namespace Wira.Api.Migrations
                 name: "NotificacionesUsuarios",
                 columns: table => new
                 {
-                    UsuarioID = table.Column<int>(type: "int", nullable: false),
-                    NotificacionID = table.Column<int>(type: "int", nullable: false),
-                    Leido = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    FechaLeido = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UsuarioID = table.Column<int>(type: "integer", nullable: false),
+                    NotificacionID = table.Column<int>(type: "integer", nullable: false),
+                    Leido = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    FechaLeido = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -241,8 +242,8 @@ namespace Wira.Api.Migrations
                 name: "UsuariosRoles",
                 columns: table => new
                 {
-                    UsuarioID = table.Column<int>(type: "int", nullable: false),
-                    RolID = table.Column<int>(type: "int", nullable: false)
+                    UsuarioID = table.Column<int>(type: "integer", nullable: false),
+                    RolID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -265,43 +266,43 @@ namespace Wira.Api.Migrations
                 name: "ArchivosAdjuntos",
                 columns: table => new
                 {
-                    ArchivoID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EntidadTipo = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    EntidadID = table.Column<int>(type: "int", nullable: false),
-                    PropuestaID = table.Column<int>(type: "int", nullable: true),
-                    NombreArchivo = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    RutaArchivo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    TipoMime = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    TamañoBytes = table.Column<int>(type: "int", nullable: true),
-                    FechaSubida = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                    ArchivoID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EntidadTipo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    EntidadID = table.Column<int>(type: "integer", nullable: false),
+                    PropuestaID = table.Column<int>(type: "integer", nullable: true),
+                    NombreArchivo = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    RutaArchivo = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    TipoMime = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    TamañoBytes = table.Column<int>(type: "integer", nullable: true),
+                    FechaSubida = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ArchivosAdjuntos", x => x.ArchivoID);
-                    table.CheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", "[EntidadTipo] IN ('LICITACION', 'PROPUESTA')");
+                    table.CheckConstraint("CK_ArchivosAdjuntos_EntidadTipo", "\"EntidadTipo\" IN ('LICITACION','PROPUESTA')");
                 });
 
             migrationBuilder.CreateTable(
                 name: "Licitaciones",
                 columns: table => new
                 {
-                    LicitacionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MineraID = table.Column<int>(type: "int", nullable: false),
-                    RubroID = table.Column<int>(type: "int", nullable: false),
-                    MonedaID = table.Column<int>(type: "int", nullable: false),
-                    Titulo = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    LicitacionID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MineraID = table.Column<int>(type: "integer", nullable: false),
+                    RubroID = table.Column<int>(type: "integer", nullable: false),
+                    MonedaID = table.Column<int>(type: "integer", nullable: false),
+                    Titulo = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Descripcion = table.Column<string>(type: "text", nullable: true),
-                    FechaInicio = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FechaCierre = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PresupuestoEstimado = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    FechaInicio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    FechaCierre = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    PresupuestoEstimado = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     Condiciones = table.Column<string>(type: "text", nullable: true),
-                    EstadoLicitacionID = table.Column<int>(type: "int", nullable: false),
-                    Eliminado = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    ArchivoID = table.Column<int>(type: "int", nullable: true),
-                    ProyectoMineroID = table.Column<int>(type: "int", nullable: true),
-                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                    EstadoLicitacionID = table.Column<int>(type: "integer", nullable: false),
+                    Eliminado = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    ArchivoID = table.Column<int>(type: "integer", nullable: true),
+                    ProyectoMineroID = table.Column<int>(type: "integer", nullable: true),
+                    FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -347,22 +348,22 @@ namespace Wira.Api.Migrations
                 name: "CalificacionesPostLicitacion",
                 columns: table => new
                 {
-                    CalificacionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProveedorID = table.Column<int>(type: "int", nullable: false),
-                    LicitacionID = table.Column<int>(type: "int", nullable: false),
-                    Puntualidad = table.Column<int>(type: "int", nullable: true),
-                    Calidad = table.Column<int>(type: "int", nullable: true),
-                    Comunicacion = table.Column<int>(type: "int", nullable: true),
+                    CalificacionID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProveedorID = table.Column<int>(type: "integer", nullable: false),
+                    LicitacionID = table.Column<int>(type: "integer", nullable: false),
+                    Puntualidad = table.Column<int>(type: "integer", nullable: true),
+                    Calidad = table.Column<int>(type: "integer", nullable: true),
+                    Comunicacion = table.Column<int>(type: "integer", nullable: true),
                     Comentarios = table.Column<string>(type: "text", nullable: true),
-                    FechaCalificacion = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                    FechaCalificacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CalificacionesPostLicitacion", x => x.CalificacionID);
-                    table.CheckConstraint("CK_CalificacionPostLicitacion_Calidad", "[Calidad] BETWEEN 1 AND 5");
-                    table.CheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", "[Comunicacion] BETWEEN 1 AND 5");
-                    table.CheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", "[Puntualidad] BETWEEN 1 AND 5");
+                    table.CheckConstraint("CK_CalificacionPostLicitacion_Calidad", "\"Calidad\" BETWEEN 1 AND 5");
+                    table.CheckConstraint("CK_CalificacionPostLicitacion_Comunicacion", "\"Comunicacion\" BETWEEN 1 AND 5");
+                    table.CheckConstraint("CK_CalificacionPostLicitacion_Puntualidad", "\"Puntualidad\" BETWEEN 1 AND 5");
                     table.ForeignKey(
                         name: "FK_CalificacionesPostLicitacion_Empresas_ProveedorID",
                         column: x => x.ProveedorID,
@@ -381,29 +382,29 @@ namespace Wira.Api.Migrations
                 name: "CriteriosLicitacion",
                 columns: table => new
                 {
-                    CriterioID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    LicitacionID = table.Column<int>(type: "int", nullable: false),
-                    Nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CriterioID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    LicitacionID = table.Column<int>(type: "integer", nullable: false),
+                    Nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Descripcion = table.Column<string>(type: "text", nullable: true),
-                    Peso = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
-                    Tipo = table.Column<int>(type: "int", nullable: false),
-                    EsExcluyente = table.Column<bool>(type: "bit", nullable: false),
-                    EsPuntuable = table.Column<bool>(type: "bit", nullable: false),
-                    ValorRequeridoBooleano = table.Column<bool>(type: "bit", nullable: true),
-                    ValorMinimo = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
-                    ValorMaximo = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
-                    MayorMejor = table.Column<bool>(type: "bit", nullable: true)
+                    Peso = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    Tipo = table.Column<int>(type: "integer", nullable: false),
+                    EsExcluyente = table.Column<bool>(type: "boolean", nullable: false),
+                    EsPuntuable = table.Column<bool>(type: "boolean", nullable: false),
+                    ValorRequeridoBooleano = table.Column<bool>(type: "boolean", nullable: true),
+                    ValorMinimo = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    ValorMaximo = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    MayorMejor = table.Column<bool>(type: "boolean", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CriteriosLicitacion", x => x.CriterioID);
-                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable", "[Tipo] = 1 OR [MayorMejor] IS NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido", "[Tipo] <> 1 OR [MayorMejor] IS NOT NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_Tipo", "[Tipo] IN (1,2,3,4)");
-                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable", "[Tipo] = 2 OR [ValorRequeridoBooleano] IS NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido", "[Tipo] <> 2 OR [EsPuntuable] = 0 OR [ValorRequeridoBooleano] IS NOT NULL");
-                    table.CheckConstraint("CK_CriterioLicitacion_Valores", "[ValorMinimo] IS NULL OR [ValorMaximo] IS NULL OR [ValorMinimo] <= [ValorMaximo]");
+                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorAplicable", "\"Tipo\" = 1 OR \"MayorMejor\" IS NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_MayorMejorRequerido", "\"Tipo\" <> 1 OR \"MayorMejor\" IS NOT NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_Tipo", "\"Tipo\" IN (1,2,3,4)");
+                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoAplicable", "\"Tipo\" = 2 OR \"ValorRequeridoBooleano\" IS NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_ValorBooleanoRequerido", "\"Tipo\" <> 2 OR \"EsPuntuable\" = FALSE OR \"ValorRequeridoBooleano\" IS NOT NULL");
+                    table.CheckConstraint("CK_CriterioLicitacion_Valores", "\"ValorMinimo\" IS NULL OR \"ValorMaximo\" IS NULL OR \"ValorMinimo\" <= \"ValorMaximo\"");
                     table.ForeignKey(
                         name: "FK_CriteriosLicitacion_Licitaciones_LicitacionID",
                         column: x => x.LicitacionID,
@@ -416,15 +417,15 @@ namespace Wira.Api.Migrations
                 name: "HistorialProveedorLicitacion",
                 columns: table => new
                 {
-                    HistorialID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProveedorID = table.Column<int>(type: "int", nullable: false),
-                    LicitacionID = table.Column<int>(type: "int", nullable: false),
-                    Resultado = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Ganador = table.Column<bool>(type: "bit", nullable: true),
+                    HistorialID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProveedorID = table.Column<int>(type: "integer", nullable: false),
+                    LicitacionID = table.Column<int>(type: "integer", nullable: false),
+                    Resultado = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Ganador = table.Column<bool>(type: "boolean", nullable: true),
                     Observaciones = table.Column<string>(type: "text", nullable: true),
-                    FechaParticipacion = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    FechaGanador = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    FechaParticipacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    FechaGanador = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -447,19 +448,19 @@ namespace Wira.Api.Migrations
                 name: "Propuestas",
                 columns: table => new
                 {
-                    PropuestaID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    LicitacionID = table.Column<int>(type: "int", nullable: false),
-                    ProveedorID = table.Column<int>(type: "int", nullable: false),
-                    FechaEnvio = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    EstadoPropuestaID = table.Column<int>(type: "int", nullable: false),
-                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PresupuestoOfrecido = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    MonedaID = table.Column<int>(type: "int", nullable: false),
-                    FechaEntrega = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CumpleRequisitos = table.Column<bool>(type: "bit", nullable: false),
-                    CalificacionFinal = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
-                    Eliminado = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    PropuestaID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    LicitacionID = table.Column<int>(type: "integer", nullable: false),
+                    ProveedorID = table.Column<int>(type: "integer", nullable: false),
+                    FechaEnvio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    EstadoPropuestaID = table.Column<int>(type: "integer", nullable: false),
+                    Descripcion = table.Column<string>(type: "text", nullable: true),
+                    PresupuestoOfrecido = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MonedaID = table.Column<int>(type: "integer", nullable: false),
+                    FechaEntrega = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CumpleRequisitos = table.Column<bool>(type: "boolean", nullable: false),
+                    CalificacionFinal = table.Column<decimal>(type: "numeric(5,2)", nullable: true),
+                    Eliminado = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -494,13 +495,13 @@ namespace Wira.Api.Migrations
                 name: "CriteriosOpciones",
                 columns: table => new
                 {
-                    OpcionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CriterioID = table.Column<int>(type: "int", nullable: false),
-                    Valor = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Descripcion = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
-                    Puntaje = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
-                    Orden = table.Column<int>(type: "int", nullable: false)
+                    OpcionID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CriterioID = table.Column<int>(type: "integer", nullable: false),
+                    Valor = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Descripcion = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    Puntaje = table.Column<decimal>(type: "numeric(5,2)", nullable: true),
+                    Orden = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -517,14 +518,14 @@ namespace Wira.Api.Migrations
                 name: "RespuestasCriteriosLicitacion",
                 columns: table => new
                 {
-                    RespuestaID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PropuestaID = table.Column<int>(type: "int", nullable: false),
-                    CriterioID = table.Column<int>(type: "int", nullable: false),
-                    ValorProveedor = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    ValorNumerico = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
-                    ValorBooleano = table.Column<bool>(type: "bit", nullable: true),
-                    CriterioOpcionID = table.Column<int>(type: "int", nullable: true)
+                    RespuestaID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PropuestaID = table.Column<int>(type: "integer", nullable: false),
+                    CriterioID = table.Column<int>(type: "integer", nullable: false),
+                    ValorProveedor = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    ValorNumerico = table.Column<decimal>(type: "numeric(18,4)", nullable: true),
+                    ValorBooleano = table.Column<bool>(type: "boolean", nullable: true),
+                    CriterioOpcionID = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -536,7 +537,7 @@ namespace Wira.Api.Migrations
                         principalColumn: "CriterioID",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_RespuestasCriteriosLicitacion_CriteriosOpciones_CriterioOpcionID",
+                        name: "FK_RespuestasCriteriosLicitacion_CriteriosOpciones_CriterioOpc~",
                         column: x => x.CriterioOpcionID,
                         principalTable: "CriteriosOpciones",
                         principalColumn: "OpcionID",

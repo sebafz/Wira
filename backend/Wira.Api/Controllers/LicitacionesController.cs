@@ -230,6 +230,9 @@ namespace Wira.Api.Controllers
                     return BadRequest("No se encontró el estado inicial para la licitación.");
                 }
 
+                var fechaInicioUtc = EnsureUtc(request.FechaInicio);
+                var fechaCierreUtc = EnsureUtc(request.FechaCierre);
+
                 // Crear la licitación
                 var licitacion = new Licitacion
                 {
@@ -238,14 +241,14 @@ namespace Wira.Api.Controllers
                     MonedaID = request.MonedaID,
                     Titulo = request.Titulo,
                     Descripcion = request.Descripcion,
-                    FechaInicio = request.FechaInicio,
-                    FechaCierre = request.FechaCierre,
+                    FechaInicio = fechaInicioUtc,
+                    FechaCierre = fechaCierreUtc,
                     PresupuestoEstimado = request.PresupuestoEstimado,
                     Condiciones = request.Condiciones,
                     EstadoLicitacionID = estadoInicial.EstadoLicitacionID,
                     ArchivoID = request.ArchivoID,
                     ProyectoMineroID = request.ProyectoMineroID,
-                    FechaCreacion = DateTime.Now
+                    FechaCreacion = DateTime.UtcNow
                 };
 
                 _context.Licitaciones.Add(licitacion);
@@ -361,8 +364,8 @@ namespace Wira.Api.Controllers
 
                 licitacion.Titulo = request.Titulo;
                 licitacion.Descripcion = request.Descripcion;
-                licitacion.FechaInicio = request.FechaInicio;
-                licitacion.FechaCierre = request.FechaCierre;
+                licitacion.FechaInicio = EnsureUtc(request.FechaInicio);
+                licitacion.FechaCierre = EnsureUtc(request.FechaCierre);
                 licitacion.PresupuestoEstimado = request.PresupuestoEstimado;
                 licitacion.Condiciones = request.Condiciones;
                 licitacion.ArchivoID = request.ArchivoID;
@@ -775,6 +778,16 @@ namespace Wira.Api.Controllers
             }
 
             return null;
+        }
+
+        private static DateTime EnsureUtc(DateTime value)
+        {
+            return value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            };
         }
     }
 

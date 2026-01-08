@@ -351,7 +351,7 @@ namespace Wira.Api.Controllers
                 {
                     LicitacionID = createDto.LicitacionID,
                     ProveedorID = createDto.ProveedorID,
-                    FechaEnvio = DateTime.Now,
+                    FechaEnvio = DateTime.UtcNow,
                     EstadoPropuestaID = 1, // Estado inicial - "Enviada"
                     Descripcion = createDto.Descripcion,
                     PresupuestoOfrecido = createDto.PresupuestoOfrecido,
@@ -412,7 +412,12 @@ namespace Wira.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear la propuesta");
-                return StatusCode(500, new { message = "Error al crear la propuesta" });
+                return StatusCode(500, new
+                {
+                    message = "Error al crear la propuesta",
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message
+                });
             }
         }
 

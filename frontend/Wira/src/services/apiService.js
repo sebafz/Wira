@@ -1,15 +1,8 @@
 import axios from "axios";
 
-const normalizeEnvApiUrl = (rawUrl) => rawUrl?.replace(/\/+$/, "");
-const rawEnvApiUrl = import.meta.env.VITE_API_URL;
-const normalizedEnvApiUrl = normalizeEnvApiUrl(rawEnvApiUrl);
-const envUrlIncludesApi = normalizedEnvApiUrl?.endsWith("/api");
-
-const API_BASE_URL = envUrlIncludesApi
-  ? normalizedEnvApiUrl
-  : normalizedEnvApiUrl
-  ? `${normalizedEnvApiUrl}/api`
-  : "http://localhost:5242/api";
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5242/api"
+).replace(/\/$/, "");
 
 // Configurar axios con la base URL
 const apiClient = axios.create({
@@ -56,6 +49,11 @@ apiClient.interceptors.response.use(
 
 // Servicios de la API
 export const apiService = {
+  // Generic helpers
+  get: (path, config) => apiClient.get(path, config),
+  post: (path, data, config) => apiClient.post(path, data, config),
+  put: (path, data, config) => apiClient.put(path, data, config),
+  delete: (path, config) => apiClient.delete(path, config),
   // Auth endpoints
   login: (credentials) => apiClient.post("/auth/login", credentials),
   register: (userData) => apiClient.post("/auth/register", userData),
@@ -90,6 +88,7 @@ export const apiService = {
   updateProveedor: (proveedorId, proveedor) =>
     apiClient.put(`/proveedores/${proveedorId}`, proveedor),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
+  getRubros: () => apiClient.get("/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
@@ -116,6 +115,42 @@ export const apiService = {
   testConnection: () => apiClient.get("/test/connection"),
   getRoles: () => apiClient.get("/test/roles"),
   getEstados: () => apiClient.get("/test/estados"),
+
+  // Licitaciones endpoints
+  getLicitaciones: (params = {}) => apiClient.get("/licitaciones", { params }),
+  createLicitacion: (payload) => apiClient.post("/licitaciones", payload),
+
+  getLicitacionById: (id) => apiClient.get(`/licitaciones/${id}`),
+  updateLicitacion: (id, payload) => apiClient.put(`/licitaciones/${id}`, payload),
+  getCriteriosLicitacion: (id) => apiClient.get(`/licitaciones/${id}/criterios`),
+
+  // Archivos endpoints
+  uploadArchivo: (formData) =>
+    apiClient.post("/archivos/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  downloadArchivo: (archivoId) =>
+    apiClient.get(`/archivos/descargar/${archivoId}`, {
+      responseType: "blob",
+    }),
+  downloadArchivoById: (archivoId) =>
+    apiClient.get(`/archivos/${archivoId}/download`, {
+      responseType: "blob",
+    }),
+  getArchivosByLicitacion: (licitacionId) =>
+    apiClient.get(`/archivos/entidad/LICITACION/${licitacionId}`),
+
+  // Notification endpoints
+  getUserNotifications: (usuarioId, params = {}) =>
+    apiClient.get(`/notificaciones/usuario/${usuarioId}`, { params }),
+  getUnreadNotificationsCount: (usuarioId) =>
+    apiClient.get(`/notificaciones/usuario/${usuarioId}/no-leidas/count`),
+  markNotificationAsRead: (notificacionId, usuarioId) =>
+    apiClient.put(
+      `/notificaciones/${notificacionId}/marcar-leida/${usuarioId}`
+    ),
+  markAllNotificationsAsRead: (usuarioId) =>
+    apiClient.put(`/notificaciones/usuario/${usuarioId}/marcar-todas-leidas`),
 };
 
 export default apiService;

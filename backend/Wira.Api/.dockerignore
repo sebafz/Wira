@@ -1,0 +1,15 @@
+bin/
+obj/
+*.user
+*.csproj.user
+*.suo
+*.sw?
+.vscode/
+.git/
+.gitignore
+**/node_modules/
+**/dist/
+**/dist-ssr/
+.env
+.env.*
+appsettings*.json

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../shared/Navbar";
 import { toast } from "react-toastify";
+import apiService from "../../services/apiService";
 
 const DashboardContainer = styled.div`
   min-height: 100vh;
@@ -166,19 +167,6 @@ const DashboardProveedor = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  const isEmpresaAdmin = useMemo(() => {
-    const rawRoles = Array.isArray(user?.roles)
-      ? user.roles
-      : Array.isArray(user?.Roles)
-      ? user.Roles
-      : [];
-
-    return rawRoles
-      .filter((role) => typeof role === "string")
-      .map((role) => role.trim().toUpperCase())
-      .includes("PROVEEDOR_ADMINISTRADOR");
-  }, [user]);
-
   const fetchKpis = useCallback(async () => {
     try {
       setLoading(true);
@@ -190,19 +178,13 @@ const DashboardProveedor = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/dashboard/proveedor/${proveedorId}/kpis`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setKpis(data);
-      } else {
+      try {
+        const res = await apiService.get(
+          `/dashboard/proveedor/${proveedorId}/kpis`
+        );
+        setKpis(res?.data ?? {});
+      } catch (e) {
+        console.error("Error al cargar estadísticas del dashboard:", e);
         toast.error("Error al cargar estadísticas del dashboard");
       }
     } catch (error) {

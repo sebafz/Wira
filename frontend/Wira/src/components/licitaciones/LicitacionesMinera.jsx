@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,13 @@ import Navbar from "../shared/Navbar";
 import CalificacionProveedorModal from "../calificaciones/CalificacionProveedorModal";
 import { registrarCalificacionPostLicitacion } from "../../services/calificacionesService";
 import { buttonBaseStyles } from "../shared/buttonStyles";
+import apiService from "../../services/apiService";
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5242/api"
+).replace(/\/$/, "");
+
+const DATE_INPUT_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 const Container = styled.div`
   min-height: 100vh;
@@ -1506,8 +1513,9 @@ const LicitacionesMinera = () => {
     selectedEstado === "Adjudicada" || selectedEstado === "Cerrada";
   const canViewSelectedPropuestas =
     Boolean(selectedEstado) && selectedEstado !== "Publicada";
+  const estadosConScoreInfo = ["En Evaluación", "Adjudicada", "Cerrada"];
   const shouldShowScoreInfoIcon =
-    selectedEstado === "En Evaluación" &&
+    estadosConScoreInfo.includes(selectedEstado) &&
     canViewSelectedPropuestas &&
     propuestas.length > 0;
 
@@ -1541,11 +1549,55 @@ const LicitacionesMinera = () => {
     user?.minera?.Nombre ||
     "Empresa Minera";
 
+  const toUtcISOString = useCallback((value) => {
+    if (!value) return null;
+    const parsed =
+      value instanceof Date ? new Date(value.getTime()) : new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }, []);
+
+  const toUtcDate = useCallback(
+    (value) => {
+      const isoValue = toUtcISOString(value);
+      return isoValue ? new Date(isoValue) : null;
+    },
+    [toUtcISOString]
+  );
+
+  const dateInputToUtcDate = useCallback(
+    (value, { endOfDay = false } = {}) => {
+      if (!value) return null;
+      const match = DATE_INPUT_REGEX.exec(value);
+      if (!match) {
+        return toUtcDate(value);
+      }
+
+      const [, yearStr, monthStr, dayStr] = match;
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      const day = Number(dayStr);
+
+      if ([year, month, day].some((num) => Number.isNaN(num))) {
+        return null;
+      }
+
+      const hours = endOfDay ? 23 : 0;
+      const minutes = endOfDay ? 59 : 0;
+      const seconds = endOfDay ? 59 : 0;
+      const milliseconds = endOfDay ? 999 : 0;
+
+      return new Date(
+        Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds)
+      );
+    },
+    [toUtcDate]
+  );
+
   const formatDate = (dateString) => {
     if (!dateString) return "No especificada";
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "Fecha inválida";
+      const date = toUtcDate(dateString);
+      if (!date) return "Fecha inválida";
       return date.toLocaleDateString("es-AR", {
         year: "numeric",
         month: "short",
@@ -1636,23 +1688,74 @@ const LicitacionesMinera = () => {
 
   // Funciones de API consolidadas
   const apiRequest = async (url, options = {}) => {
+    const API_BASE = (
+      import.meta.env.VITE_API_URL || "http://localhost:5242/api"
+    ).replace(/\/$/, "");
+
+    // Normalize URL: replace hardcoded localhost base or prefix /api paths
+    let finalUrl = url;
+    try {
+      if (typeof url === "string") {
+        if (url.includes("localhost:5242")) {
+          finalUrl = url.replace(/https?:\/\/localhost:5242\/api/, API_BASE);
+        } else if (url.startsWith("/api")) {
+          finalUrl = `${API_BASE}${url}`;
+        }
+      }
+    } catch {
+      finalUrl = url;
+    }
+
     const defaultHeaders = { "Content-Type": "application/json" };
     if (token) defaultHeaders.Authorization = `Bearer ${token}`;
 
-    return fetch(url, {
-      headers: { ...defaultHeaders, ...options.headers },
-      ...options,
-    });
+    // Use centralized apiService (axios) so interceptors and baseURL apply
+    try {
+      // Convert full URL to relative API path when possible
+      let path = finalUrl;
+      if (finalUrl.startsWith(API_BASE)) {
+        path = finalUrl.substring(API_BASE.length) || "/";
+      }
+      if (!path.startsWith("/")) path = `/${path}`;
+
+      const method = (options.method || "GET").toLowerCase();
+      let axiosResponse;
+
+      if (method === "get" || method === "delete") {
+        const config = {
+          headers: { ...defaultHeaders, ...(options.headers || {}) },
+          params: options.params,
+        };
+        axiosResponse = await apiService[method](path, config);
+      } else {
+        const data = options.body !== undefined ? options.body : null;
+        const config = {
+          headers: { ...defaultHeaders, ...(options.headers || {}) },
+        };
+        axiosResponse = await apiService[method](path, data, config);
+      }
+
+      const ok = axiosResponse.status >= 200 && axiosResponse.status < 300;
+
+      return {
+        ...axiosResponse,
+        ok,
+        json: async () => axiosResponse.data,
+        text: async () =>
+          typeof axiosResponse.data === "string"
+            ? axiosResponse.data
+            : JSON.stringify(axiosResponse.data),
+      };
+    } catch (err) {
+      // Surface the error similarly to fetch's rejected promise
+      return Promise.reject(err);
+    }
   };
 
   const handleDownloadArchivo = async (archivoID, nombreArchivo) => {
     try {
-      const response = await apiRequest(
-        `http://localhost:5242/api/archivos/${archivoID}/download`
-      );
-      if (!response.ok) throw new Error("Error al descargar el archivo");
-
-      const blob = await response.blob();
+      const resp = await apiService.downloadArchivo(archivoID);
+      const blob = resp.data;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -1669,11 +1772,13 @@ const LicitacionesMinera = () => {
 
   const fetchRubros = async () => {
     try {
-      const response = await apiRequest("http://localhost:5242/api/rubros");
-      if (response.ok) {
-        const data = await response.json();
-        setRubros(data);
-      }
+      const response = await apiService.getRubros();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.value)
+        ? response.data.value
+        : [];
+      setRubros(data);
     } catch (error) {
       console.error("Error al cargar rubros:", error);
     }
@@ -1685,7 +1790,7 @@ const LicitacionesMinera = () => {
       if (!proveedorId) return;
 
       const response = await apiRequest(
-        `http://localhost:5242/api/propuestas/proveedor/${proveedorId}`
+        `${API_BASE_URL}/propuestas/proveedor/${proveedorId}`
       );
 
       if (response.ok) {
@@ -1727,7 +1832,7 @@ const LicitacionesMinera = () => {
         const licitacionId = licitacion.licitacionID || licitacion.LicitacionID;
         try {
           const response = await apiRequest(
-            `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+            `${API_BASE_URL}/propuestas/licitacion/${licitacionId}`
           );
           if (response.ok) {
             const propuestas = await response.json();
@@ -1754,6 +1859,11 @@ const LicitacionesMinera = () => {
   const applyFiltersAndSorting = (data) => {
     let filtered = [...data];
 
+    const fechaDesdeUtc = dateInputToUtcDate(filters.fechaDesde);
+    const fechaHastaUtc = dateInputToUtcDate(filters.fechaHasta, {
+      endOfDay: true,
+    });
+
     // Aplicar filtros
     if (filters.titulo) {
       filtered = filtered.filter((l) =>
@@ -1767,19 +1877,17 @@ const LicitacionesMinera = () => {
         (l) => (l.estadoNombre || l.EstadoNombre) === filters.estado
       );
     }
-    if (filters.fechaDesde) {
-      filtered = filtered.filter(
-        (l) =>
-          new Date(l.fechaInicio || l.FechaInicio) >=
-          new Date(filters.fechaDesde)
-      );
+    if (fechaDesdeUtc) {
+      filtered = filtered.filter((l) => {
+        const inicioDate = toUtcDate(l.fechaInicio || l.FechaInicio);
+        return inicioDate ? inicioDate >= fechaDesdeUtc : false;
+      });
     }
-    if (filters.fechaHasta) {
-      filtered = filtered.filter(
-        (l) =>
-          new Date(l.fechaCierre || l.FechaCierre) <=
-          new Date(filters.fechaHasta)
-      );
+    if (fechaHastaUtc) {
+      filtered = filtered.filter((l) => {
+        const cierreDate = toUtcDate(l.fechaCierre || l.FechaCierre);
+        return cierreDate ? cierreDate <= fechaHastaUtc : false;
+      });
     }
     if (filters.rubro) {
       filtered = filtered.filter(
@@ -1796,12 +1904,12 @@ const LicitacionesMinera = () => {
           valueB = (b.titulo || b.Titulo || "").toLowerCase();
           break;
         case "fechaInicio":
-          valueA = new Date(a.fechaInicio || a.FechaInicio);
-          valueB = new Date(b.fechaInicio || b.FechaInicio);
+          valueA = toUtcDate(a.fechaInicio || a.FechaInicio)?.getTime() || 0;
+          valueB = toUtcDate(b.fechaInicio || b.FechaInicio)?.getTime() || 0;
           break;
         case "fechaCierre":
-          valueA = new Date(a.fechaCierre || a.FechaCierre);
-          valueB = new Date(b.fechaCierre || b.FechaCierre);
+          valueA = toUtcDate(a.fechaCierre || a.FechaCierre)?.getTime() || 0;
+          valueB = toUtcDate(b.fechaCierre || b.FechaCierre)?.getTime() || 0;
           break;
         case "estado":
           valueA = a.estadoNombre || a.EstadoNombre || "";
@@ -1812,8 +1920,10 @@ const LicitacionesMinera = () => {
           valueB = b.rubroNombre || b.RubroNombre || "";
           break;
         default:
-          valueA = new Date(a.fechaCreacion || a.FechaCreacion);
-          valueB = new Date(b.fechaCreacion || b.FechaCreacion);
+          valueA =
+            toUtcDate(a.fechaCreacion || a.FechaCreacion)?.getTime() || 0;
+          valueB =
+            toUtcDate(b.fechaCreacion || b.FechaCreacion)?.getTime() || 0;
       }
       if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
       if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
@@ -1829,9 +1939,7 @@ const LicitacionesMinera = () => {
       setError("");
 
       const mineraID = getUserMineraID();
-      const response = await apiRequest(
-        "http://localhost:5242/api/licitaciones"
-      );
+      const response = await apiRequest(`${API_BASE_URL}/licitaciones`);
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -1871,7 +1979,7 @@ const LicitacionesMinera = () => {
   const fetchArchivosLicitacion = async (licitacionId) => {
     try {
       const response = await apiRequest(
-        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`
+        `${API_BASE_URL}/archivos/entidad/LICITACION/${licitacionId}`
       );
 
       if (response.ok) {
@@ -2187,7 +2295,7 @@ const LicitacionesMinera = () => {
 
       if (estadoLicitacion === "Cerrada") {
         const propuestaGanadoraResponse = await apiRequest(
-          `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+          `${API_BASE_URL}/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
         );
 
         if (propuestaGanadoraResponse.ok) {
@@ -2205,11 +2313,9 @@ const LicitacionesMinera = () => {
       } else if (estadoLicitacion === "Adjudicada") {
         const [propuestasResponse, propuestaGanadoraResponse] =
           await Promise.all([
+            apiRequest(`${API_BASE_URL}/propuestas/licitacion/${licitacionId}`),
             apiRequest(
-              `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
-            ),
-            apiRequest(
-              `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
+              `${API_BASE_URL}/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
             ),
           ]);
 
@@ -2244,7 +2350,7 @@ const LicitacionesMinera = () => {
       } else {
         // Para otros estados, cargar todas las propuestas
         const response = await apiRequest(
-          `http://localhost:5242/api/propuestas/licitacion/${licitacionId}`
+          `${API_BASE_URL}/propuestas/licitacion/${licitacionId}`
         );
 
         if (response.ok) {
@@ -2320,7 +2426,7 @@ const LicitacionesMinera = () => {
     try {
       const propuestaId = propuesta.propuestaID || propuesta.PropuestaID;
       const response = await apiRequest(
-        `http://localhost:5242/api/propuestas/${propuestaId}`
+        `${API_BASE_URL}/propuestas/${propuestaId}`
       );
 
       if (response.ok) {
@@ -2521,8 +2627,8 @@ const LicitacionesMinera = () => {
     try {
       const isDelete = action === "delete";
       const url = isDelete
-        ? `http://localhost:5242/api/licitaciones/${licitacionId}`
-        : `http://localhost:5242/api/licitaciones/${licitacionId}/${action}`;
+        ? `${API_BASE_URL}/licitaciones/${licitacionId}`
+        : `${API_BASE_URL}/licitaciones/${licitacionId}/${action}`;
 
       const response = await apiRequest(url, {
         method: isDelete ? "DELETE" : "PUT",
@@ -2622,7 +2728,7 @@ const LicitacionesMinera = () => {
       };
 
       const historialResponse = await apiRequest(
-        "http://localhost:5242/api/historial-proveedor-licitacion",
+        `${API_BASE_URL}/historial-proveedor-licitacion`,
         {
           method: "POST",
           body: JSON.stringify(historialData),
@@ -2637,7 +2743,7 @@ const LicitacionesMinera = () => {
 
       // Cerrar licitación (pasar a "En Evaluación")
       const licitacionResponse = await apiRequest(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/cerrar`,
+        `${API_BASE_URL}/licitaciones/${licitacionId}/cerrar`,
         {
           method: "PUT",
         }
@@ -2687,7 +2793,7 @@ const LicitacionesMinera = () => {
       };
 
       const historialResponse = await apiRequest(
-        "http://localhost:5242/api/historial-proveedor-licitacion",
+        `${API_BASE_URL}/historial-proveedor-licitacion`,
         {
           method: "POST",
           body: JSON.stringify(historialData),
@@ -2702,7 +2808,7 @@ const LicitacionesMinera = () => {
 
       // Adjudicar licitación
       const licitacionResponse = await apiRequest(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/adjudicar`,
+        `${API_BASE_URL}/licitaciones/${licitacionId}/adjudicar`,
         {
           method: "PUT",
         }

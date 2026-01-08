@@ -110,6 +110,7 @@ Por defecto: `http://localhost:5173`
 - Workflow `render-deploy.yml`: al hacer push a `dev` o `main` se llama al deploy hook de Render. Añade en GitHub Secrets los hooks de cada servicio: `RENDER_HOOK_API_DEV`, `RENDER_HOOK_WEB_DEV`, `RENDER_HOOK_API_PROD`, `RENDER_HOOK_WEB_PROD`.
 - Flujo: commit a `dev` → Render despliega `wira-api-dev` y `wira-web-dev`; commit a `main` → Render despliega `wira-api-prod` y `wira-web-prod`.
 - Verificación rápida: en Render revisa logs de build/run, prueba `/swagger` de la API y la SPA ya publicada con la URL configurada en `VITE_API_URL`.
+- Para ver Swagger en Render: añade env var `Swagger__Enabled=true` en el servicio de la API. La ruta es `/swagger`.
 
 ## Seguridad y buenas prácticas
 

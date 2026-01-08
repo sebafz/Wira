@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../shared/Navbar";
 import { useAuth } from "../../contexts/AuthContext";
+import apiService from "../../services/apiService";
 import { buttonBaseStyles } from "../shared/buttonStyles";
 import CalificacionProveedorModal from "./CalificacionProveedorModal";
 import { registrarCalificacionPostLicitacion } from "../../services/calificacionesService";
@@ -244,11 +245,6 @@ const CalificacionesPosLicitacion = () => {
     return null;
   }, [user]);
 
-  const buildAuthHeaders = useCallback(() => {
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
-  }, [token]);
-
   const fetchPendientes = useCallback(async () => {
     try {
       setLoading(true);
@@ -258,16 +254,8 @@ const CalificacionesPosLicitacion = () => {
         setPendientes([]);
         return;
       }
-
-      const response = await fetch("http://localhost:5242/api/licitaciones", {
-        headers: buildAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error("No pudimos cargar las licitaciones adjudicadas");
-      }
-
-      const data = await response.json();
+      const licitacionesResp = await apiService.get("/licitaciones");
+      const data = licitacionesResp.data;
       const adjudicadas = data.filter((licitacion) => {
         const estado = licitacion.estadoNombre;
         const itemMineraId = licitacion.mineraID;
@@ -283,18 +271,10 @@ const CalificacionesPosLicitacion = () => {
           }
 
           try {
-            const ganadorResponse = await fetch(
-              `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`,
-              {
-                headers: buildAuthHeaders(),
-              }
+            const ganadorResponse = await apiService.get(
+              `/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
             );
-
-            if (!ganadorResponse.ok) {
-              return { licitacion, propuestaGanadora: null };
-            }
-
-            const propuestaGanadora = await ganadorResponse.json();
+            const propuestaGanadora = ganadorResponse.data;
             return { licitacion, propuestaGanadora };
           } catch (innerError) {
             return { licitacion, propuestaGanadora: null };
@@ -316,7 +296,7 @@ const CalificacionesPosLicitacion = () => {
     } finally {
       setLoading(false);
     }
-  }, [buildAuthHeaders, getUserMineraID]);
+  }, [getUserMineraID]);
 
   useEffect(() => {
     if (user && token) {
