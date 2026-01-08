@@ -594,6 +594,8 @@ const ModalActions = styled.div`
   display: flex;
   gap: 15px;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   padding: 20px 30px;
   background: #f8f9fa;
   border-top: 1px solid #e1e5e9;
@@ -629,6 +631,14 @@ const AlreadyAppliedButton = styled(ActionButton)`
     transform: none;
     box-shadow: none;
   }
+`;
+
+const ActionRestrictionText = styled.p`
+  width: 100%;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  text-align: right;
 `;
 
 const PropuestaModal = styled.div`
@@ -1598,6 +1608,28 @@ const LicitacionesProveedor = () => {
   };
 
   const handlePostularse = async (licitacionId) => {
+    const licitacionActual =
+      (selectedLicitacion &&
+        (selectedLicitacion.licitacionID ||
+          selectedLicitacion.LicitacionID) ===
+          licitacionId &&
+        selectedLicitacion) ||
+      licitaciones.find(
+        (l) => (l.licitacionID || l.LicitacionID) === licitacionId
+      );
+
+    const estadoActual =
+      licitacionActual?.estadoNombre ||
+      licitacionActual?.EstadoNombre ||
+      "";
+
+    if (estadoActual !== "Publicada") {
+      toast.info(
+        "Solo podés enviar propuestas cuando la licitación está publicada."
+      );
+      return;
+    }
+
     // Cargar criterios de la licitación
     await fetchCriteriosLicitacion(licitacionId);
     setShowPropuestaModal(true);
@@ -1782,6 +1814,11 @@ const LicitacionesProveedor = () => {
   const selectedPropuestaCurrencyAbbr = getCurrencyAbbreviation(
     selectedLicitacionCurrency
   );
+  const selectedLicitacionEstado = selectedLicitacion
+    ? selectedLicitacion.estadoNombre || selectedLicitacion.EstadoNombre || ""
+    : "";
+  const canSubmitSelectedLicitacion =
+    selectedLicitacionEstado === "Publicada";
 
   const updateRespuestaCriterio = (criterioId, updates) => {
     setRespuestasCriterios((prev) => ({
@@ -2516,26 +2553,42 @@ const LicitacionesProveedor = () => {
             </ModalBody>
 
             <ModalActions>
-              {hasUserApplied(
-                selectedLicitacion.licitacionID ||
-                  selectedLicitacion.LicitacionID
-              ) ? (
-                <AlreadyAppliedButton disabled>
-                  ✓ Ya enviaste tu propuesta
-                </AlreadyAppliedButton>
-              ) : (
-                <PostularButton
-                  onClick={() =>
-                    handlePostularse(
-                      selectedLicitacion.licitacionID ||
-                        selectedLicitacion.LicitacionID
-                    )
-                  }
-                  disabled={postulando}
-                >
-                  📝 Enviar propuesta
-                </PostularButton>
-              )}
+              {(() => {
+                const selectedId =
+                  selectedLicitacion.licitacionID ||
+                  selectedLicitacion.LicitacionID;
+                const alreadyApplied = hasUserApplied(selectedId);
+
+                if (alreadyApplied) {
+                  return (
+                    <AlreadyAppliedButton disabled>
+                      ✓ Ya enviaste tu propuesta
+                    </AlreadyAppliedButton>
+                  );
+                }
+
+                return (
+                  <>
+                    <PostularButton
+                      onClick={() => handlePostularse(selectedId)}
+                      disabled={postulando || !canSubmitSelectedLicitacion}
+                      title={
+                        !canSubmitSelectedLicitacion
+                          ? "Solo podés enviar propuestas cuando la licitación está publicada."
+                          : undefined
+                      }
+                    >
+                      📝 Enviar propuesta
+                    </PostularButton>
+                    {!canSubmitSelectedLicitacion && (
+                      <ActionRestrictionText>
+                        Solo podés enviar propuestas mientras la licitación
+                        está publicada.
+                      </ActionRestrictionText>
+                    )}
+                  </>
+                );
+              })()}
             </ModalActions>
           </ModalContent>
         </ModalOverlay>

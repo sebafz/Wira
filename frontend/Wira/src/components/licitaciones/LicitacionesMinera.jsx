@@ -1513,8 +1513,9 @@ const LicitacionesMinera = () => {
     selectedEstado === "Adjudicada" || selectedEstado === "Cerrada";
   const canViewSelectedPropuestas =
     Boolean(selectedEstado) && selectedEstado !== "Publicada";
+  const estadosConScoreInfo = ["En Evaluación", "Adjudicada", "Cerrada"];
   const shouldShowScoreInfoIcon =
-    selectedEstado === "En Evaluación" &&
+    estadosConScoreInfo.includes(selectedEstado) &&
     canViewSelectedPropuestas &&
     propuestas.length > 0;
 
