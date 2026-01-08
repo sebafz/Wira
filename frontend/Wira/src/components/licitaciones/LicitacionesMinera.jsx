@@ -1718,20 +1718,33 @@ const LicitacionesMinera = () => {
       if (!path.startsWith("/")) path = `/${path}`;
 
       const method = (options.method || "GET").toLowerCase();
+      let axiosResponse;
+
       if (method === "get" || method === "delete") {
         const config = {
           headers: { ...defaultHeaders, ...(options.headers || {}) },
           params: options.params,
         };
-        return await apiService[method](path, config);
+        axiosResponse = await apiService[method](path, config);
+      } else {
+        const data = options.body !== undefined ? options.body : null;
+        const config = {
+          headers: { ...defaultHeaders, ...(options.headers || {}) },
+        };
+        axiosResponse = await apiService[method](path, data, config);
       }
 
-      // For POST/PUT/PATCH
-      const data = options.body !== undefined ? options.body : null;
-      const config = {
-        headers: { ...defaultHeaders, ...(options.headers || {}) },
+      const ok = axiosResponse.status >= 200 && axiosResponse.status < 300;
+
+      return {
+        ...axiosResponse,
+        ok,
+        json: async () => axiosResponse.data,
+        text: async () =>
+          typeof axiosResponse.data === "string"
+            ? axiosResponse.data
+            : JSON.stringify(axiosResponse.data),
       };
-      return await apiService[method](path, data, config);
     } catch (err) {
       // Surface the error similarly to fetch's rejected promise
       return Promise.reject(err);
