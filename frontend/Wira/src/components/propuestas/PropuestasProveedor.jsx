@@ -863,6 +863,23 @@ const PropuestasProveedor = () => {
     return user?.proveedor?.nombre || "Empresa Proveedora";
   };
 
+  const getPropuestaDisplayName = (propuesta) => {
+    if (!propuesta) {
+      return "esta propuesta";
+    }
+
+    const descripcion = propuesta.descripcion || propuesta.Descripcion;
+    if (descripcion && descripcion.trim().length > 0) {
+      return descripcion.trim();
+    }
+
+    return (
+      propuesta.licitacionTitulo ||
+      propuesta.LicitacionTitulo ||
+      "esta propuesta"
+    );
+  };
+
   const handlePropuestaClick = async (propuestaId) => {
     try {
       // Primero mostrar la propuesta básica
@@ -1376,14 +1393,11 @@ const PropuestasProveedor = () => {
         variant="red"
         description={
           <>
-            ¿Está seguro que desea eliminar la propuesta para
-            <strong>
-              {" "}
-              "{deletingPropuesta?.licitacionTitulo || "esta licitación"}"
-            </strong>
-            ?
+            ¿Está seguro de que desea eliminar la propuesta{" "}
+            <strong>"{getPropuestaDisplayName(deletingPropuesta)}"</strong>?
             <br />
-            Esta acción no se puede deshacer.
+            Esta acción no se puede deshacer: la minera dejará de ver tu
+            propuesta y será notificada inmediatamente sobre la eliminación.
           </>
         }
         confirmText="Eliminar"
