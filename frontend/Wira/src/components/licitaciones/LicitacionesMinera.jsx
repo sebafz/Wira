@@ -1754,12 +1754,26 @@ const LicitacionesMinera = () => {
 
   const handleDownloadArchivo = async (archivoID, nombreArchivo) => {
     try {
-      const resp = await apiService.downloadArchivo(archivoID);
-      const blob = resp.data;
+      if (!archivoID) {
+        toast.error("ID de archivo no disponible - descarga no posible");
+        return;
+      }
+
+      if (!token) {
+        toast.error("Sesión expirada: inicie sesión nuevamente");
+        return;
+      }
+
+      const res = await apiService.downloadArchivoById(archivoID);
+      if (!res?.data) {
+        throw new Error("No se recibió el archivo desde el servidor");
+      }
+
+      const blob = res.data;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = nombreArchivo;
+      link.download = nombreArchivo || "archivo_descargado";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1984,12 +1998,19 @@ const LicitacionesMinera = () => {
 
       if (response.ok) {
         const archivos = await response.json();
+        // Marcar explícitamente que estos archivos provienen de la LICITACION
+        const archivosConTipo = (archivos || []).map((a) => ({
+          ...(a || {}),
+          entidadTipo: "LICITACION",
+          EntidadTipo: "LICITACION",
+        }));
+
         setSelectedLicitacion((prev) => {
           if (prev) {
-            const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
+            const archivoAdjunto = archivosConTipo.length > 0 ? archivosConTipo[0] : null;
             return {
               ...prev,
-              archivosAdjuntos: archivos,
+              archivosAdjuntos: archivosConTipo,
               archivoNombre:
                 archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
               ArchivoNombre:
@@ -3180,7 +3201,7 @@ const LicitacionesMinera = () => {
               <ModalBody>
                 {/* Información general */}
                 <DetailSection>
-                  <SectionTitle>Información General</SectionTitle>
+                  <SectionTitle>Información general</SectionTitle>
                   <DetailGrid>
                     <BudgetCard>
                       <BudgetLabel>Presupuesto máximo</BudgetLabel>
@@ -3254,35 +3275,37 @@ const LicitacionesMinera = () => {
                   )}
 
                   {/* Archivos adjuntos */}
-                  {selectedLicitacion.archivosAdjuntos &&
-                    selectedLicitacion.archivosAdjuntos.length > 0 && (
+                  {(() => {
+                    const archivos =
+                      (selectedLicitacion.archivosAdjuntos || []).filter(
+                        (a) => (a.entidadTipo || a.EntidadTipo) === "LICITACION"
+                      );
+
+                    return archivos.length > 0 ? (
                       <>
-                        <SectionTitle>Archivos Adjuntos</SectionTitle>
+                        <SectionTitle>Archivos adjuntos</SectionTitle>
                         <PropuestaArchivos>
-                          {selectedLicitacion.archivosAdjuntos.map(
-                            (archivo) => (
-                              <ArchivoItem
-                                key={archivo.archivoID || archivo.ArchivoID}
+                          {archivos.map((archivo) => (
+                            <ArchivoItem
+                              key={archivo.archivoID || archivo.ArchivoID}
+                            >
+                              <ArchivoIcon>📎</ArchivoIcon>
+                              <ArchivoName
+                                onClick={() =>
+                                  handleDownloadArchivo(
+                                    archivo.archivoID || archivo.ArchivoID,
+                                    archivo.nombreArchivo || archivo.NombreArchivo
+                                  )
+                                }
                               >
-                                <ArchivoIcon>📎</ArchivoIcon>
-                                <ArchivoName
-                                  onClick={() =>
-                                    handleDownloadArchivo(
-                                      archivo.archivoID || archivo.ArchivoID,
-                                      archivo.nombreArchivo ||
-                                        archivo.NombreArchivo
-                                    )
-                                  }
-                                >
-                                  {archivo.nombreArchivo ||
-                                    archivo.NombreArchivo}
-                                </ArchivoName>
-                              </ArchivoItem>
-                            )
-                          )}
+                                {archivo.nombreArchivo || archivo.NombreArchivo}
+                              </ArchivoName>
+                            </ArchivoItem>
+                          ))}
                         </PropuestaArchivos>
                       </>
-                    )}
+                    ) : null;
+                  })()}
                 </DetailSection>
 
                 {/* Propuestas */}
