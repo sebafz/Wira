@@ -233,7 +233,7 @@ const formatDate = (value) => {
       month: "short",
       day: "numeric",
     });
-  } catch (error) {
+  } catch {
     return value;
   }
 };
@@ -272,7 +272,6 @@ const AdminMineras = () => {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [togglingId, setTogglingId] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("create");
   const [formState, setFormState] = useState(() => buildEmptyFormState());

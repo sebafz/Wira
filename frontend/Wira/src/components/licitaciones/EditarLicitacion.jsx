@@ -2510,7 +2510,7 @@ const EditarLicitacion = () => {
                         </DownloadFileButton>
                       )}
                       <RemoveFileButton onClick={removeFile}>
-                        Quitar
+                        Eliminar
                       </RemoveFileButton>
                     </FileActions>
                   </SelectedFileContainer>
