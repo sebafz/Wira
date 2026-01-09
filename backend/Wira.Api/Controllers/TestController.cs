@@ -63,5 +63,32 @@ namespace Wira.Api.Controllers
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
+
+        public class MigrateRequest
+        {
+            public string? Key { get; set; }
+        }
+
+        [HttpPost("migrate")]
+        public async Task<IActionResult> RunMigrations([FromBody] MigrateRequest request)
+        {
+            // Simple protection: require a secret key set in env `MIGRATE_KEY`
+            var expected = Environment.GetEnvironmentVariable("MIGRATE_KEY");
+            if (string.IsNullOrWhiteSpace(expected) || request?.Key != expected)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                await _context.Database.MigrateAsync();
+                return Ok(new { success = true, message = "Migrations applied" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Migration failed");
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
     }
 }
