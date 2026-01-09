@@ -21,7 +21,13 @@ namespace Wira.Api.Services
             try
             {
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Wira Sistema", _configuration["Email:FromEmail"]));
+                var fromEmail = _configuration["Email:FromEmail"] ?? _configuration["Email:Username"];
+                if (string.IsNullOrWhiteSpace(fromEmail))
+                {
+                    _logger.LogError("Email From address is not configured. Set Email:FromEmail or Email:Username in configuration.");
+                    throw new InvalidOperationException("Email From address is not configured. Set Email:FromEmail or Email:Username in configuration.");
+                }
+                message.From.Add(new MailboxAddress("Wira Sistema", fromEmail));
                 message.To.Add(new MailboxAddress("", toEmail));
                 message.Subject = subject;
 
