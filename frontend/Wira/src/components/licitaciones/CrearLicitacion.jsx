@@ -1437,14 +1437,6 @@ const CrearLicitacion = () => {
         try {
           const uploadResponse = await apiService.uploadArchivo(formDataFile);
           console.log("Archivo subido:", uploadResponse.data);
-          toast.success("✅ Archivo subido correctamente", {
-            position: "top-right",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
         } catch (uploadError) {
           console.error("Error al subir archivo:", uploadError);
           const uploadMessage =
@@ -1459,7 +1451,7 @@ const CrearLicitacion = () => {
       }
 
       toast.success(
-        "🎉 ¡Licitación creada exitosamente! Será redirigido al inicio en unos segundos...",
+        "Licitación creada exitosamente. Será redirigido al inicio...",
         {
           position: "top-right",
           autoClose: 3000,

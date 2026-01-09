@@ -1745,7 +1745,7 @@ const LicitacionesProveedor = () => {
               "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
             );
           } else {
-            toast.success("✅ Propuesta y archivo enviados exitosamente!");
+            toast.success("Propuesta enviada exitosamente");
           }
         } catch (uploadError) {
           console.error("Upload error:", uploadError);
@@ -1817,8 +1817,7 @@ const LicitacionesProveedor = () => {
   const selectedLicitacionEstado = selectedLicitacion
     ? selectedLicitacion.estadoNombre || selectedLicitacion.EstadoNombre || ""
     : "";
-  const canSubmitSelectedLicitacion =
-    selectedLicitacionEstado === "Publicada";
+  const canSubmitSelectedLicitacion = selectedLicitacionEstado === "Publicada";
 
   const updateRespuestaCriterio = (criterioId, updates) => {
     setRespuestasCriterios((prev) => ({
@@ -2946,7 +2945,7 @@ const LicitacionesProveedor = () => {
                         </FileDetails>
                       </FileInfo>
                       <RemoveFileButton onClick={removeFile}>
-                        Quitar
+                        Eliminar
                       </RemoveFileButton>
                     </SelectedFileContainer>
                   )}
