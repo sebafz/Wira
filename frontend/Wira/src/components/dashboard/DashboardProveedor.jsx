@@ -223,6 +223,19 @@ const DashboardProveedor = () => {
     );
   };
 
+  const rawRoles = Array.isArray(user?.roles)
+    ? user.roles
+    : Array.isArray(user?.Roles)
+    ? user.Roles
+    : [];
+
+  const normalizedRoles = rawRoles
+    .filter((r) => typeof r === "string")
+    .map((r) => r.trim().toUpperCase());
+
+  const isSystemAdmin = normalizedRoles.includes("ADMIN_SISTEMA");
+  const isProveedorAdmin = normalizedRoles.includes("PROVEEDOR_ADMINISTRADOR");
+
   // const getCompanyCUIT = () => {
   //   return user?.Proveedor?.CUIT || user?.proveedor?.cuit || "";
   // };
@@ -315,6 +328,30 @@ const DashboardProveedor = () => {
               Ver mi historial
             </ActionButton>
           </ActionCard>
+
+          {(isSystemAdmin || isProveedorAdmin) && (
+            <>
+              <ActionCard>
+                <ActionIcon>🛠️</ActionIcon>
+                <ActionTitle>Gestión de usuarios</ActionTitle>
+                <ActionDescription>
+                  Alta, baja y asignación de roles para los usuarios de su
+                  empresa.
+                </ActionDescription>
+                <ActionButton onClick={() => navigate("/admin/usuarios")}>Ir a gestión de usuarios</ActionButton>
+              </ActionCard>
+
+              <ActionCard>
+                <ActionIcon>✅</ActionIcon>
+                <ActionTitle>Aprobaciones de cuentas</ActionTitle>
+                <ActionDescription>
+                  Revisá y aprobá las cuentas que ya validaron su email y
+                  esperan tu visto bueno.
+                </ActionDescription>
+                <ActionButton onClick={() => navigate("/admin/aprobaciones")}>Ir a aprobaciones</ActionButton>
+              </ActionCard>
+            </>
+          )}
         </ActionsSection>
       </MainContent>
     </DashboardContainer>

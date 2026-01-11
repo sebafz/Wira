@@ -216,6 +216,19 @@ const DashboardMinera = () => {
     return user?.Minera?.Nombre || user?.minera?.nombre || "Empresa Minera";
   };
 
+  const rawRoles = Array.isArray(user?.roles)
+    ? user.roles
+    : Array.isArray(user?.Roles)
+    ? user.Roles
+    : [];
+
+  const normalizedRoles = rawRoles
+    .filter((r) => typeof r === "string")
+    .map((r) => r.trim().toUpperCase());
+
+  const isSystemAdmin = normalizedRoles.includes("ADMIN_SISTEMA");
+  const isMineraAdmin = normalizedRoles.includes("MINERA_ADMINISTRADOR");
+
   // const getCompanyCUIT = () => {
   //   return user?.Minera?.CUIT || user?.minera?.cuit || "";
   // };
@@ -296,6 +309,30 @@ const DashboardMinera = () => {
               Ver calificaciones
             </ActionButton>
           </ActionCard>
+
+          {(isSystemAdmin || isMineraAdmin) && (
+            <>
+              <ActionCard>
+                <ActionIcon>🛠️</ActionIcon>
+                <ActionTitle>Gestión de usuarios</ActionTitle>
+                <ActionDescription>
+                  Alta, baja y asignación de roles para los usuarios de su
+                  empresa.
+                </ActionDescription>
+                <ActionButton onClick={() => navigate("/admin/usuarios")}>Ir a gestión de usuarios</ActionButton>
+              </ActionCard>
+
+              <ActionCard>
+                <ActionIcon>✅</ActionIcon>
+                <ActionTitle>Aprobaciones de cuentas</ActionTitle>
+                <ActionDescription>
+                  Revisá y aprobá las cuentas que ya validaron su email y
+                  esperan tu visto bueno.
+                </ActionDescription>
+                <ActionButton onClick={() => navigate("/admin/aprobaciones")}>Ir a aprobaciones</ActionButton>
+              </ActionCard>
+            </>
+          )}
         </ActionsSection>
       </MainContent>
     </DashboardContainer>

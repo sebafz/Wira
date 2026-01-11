@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import Navbar from "../shared/Navbar";
+import { useAuth } from "../../contexts/AuthContext";
 import { apiService } from "../../services/apiService";
 import { toast } from "react-toastify";
 import { buttonBaseStyles } from "../shared/buttonStyles";
@@ -389,6 +390,7 @@ const buildEmptyFormState = () => ({
 });
 
 const AdminUsuarios = () => {
+  const { user: currentUser } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
@@ -496,6 +498,31 @@ const AdminUsuarios = () => {
   const filteredUsuarios = useMemo(() => {
     const term = search.trim().toLowerCase();
 
+    const currentRoles = getUserRoles(currentUser || {});
+    const isMineraAdmin = currentRoles.includes("MINERA_ADMINISTRADOR");
+    const isProveedorAdmin = currentRoles.includes("PROVEEDOR_ADMINISTRADOR");
+
+    const getCompanyIdFromUser = (usr) => {
+      if (!usr) return null;
+      // Prefer explicit Empresa/Minera/Proveedor objects
+      const empresaObj = usr.Empresa || usr.empresa || usr.Minera || usr.minera || usr.Proveedor || usr.proveedor || null;
+      const id =
+        empresaObj?.EmpresaID ??
+        empresaObj?.empresaID ??
+        empresaObj?.MineraID ??
+        empresaObj?.mineraID ??
+        empresaObj?.ProveedorID ??
+        empresaObj?.proveedorID ??
+        usr.EmpresaID ??
+        usr.empresaID ??
+        usr.MineraID ??
+        usr.mineraID ??
+        null;
+      return id !== null && id !== undefined ? String(id) : null;
+    };
+
+    const currentEmpresaId = getCompanyIdFromUser(currentUser);
+
     return usuarios.filter((usuario) => {
       const roleValues = getUserRoles(usuario);
       const roleLabels = roleValues.map((role) => getRoleLabel(role));
@@ -516,6 +543,16 @@ const AdminUsuarios = () => {
         statusFilter === "todos" ||
         (statusFilter === "activos" && isUserActive(usuario)) ||
         (statusFilter === "inactivos" && !isUserActive(usuario));
+
+      // If the current admin belongs to a Minera/Proveedor admin role,
+      // restrict visible users to those assigned to the same company.
+      if (isMineraAdmin || isProveedorAdmin) {
+        const usuarioEmpresaId = getCompanyIdFromUser(usuario);
+        // if user's company id is missing or doesn't match, exclude
+        if (!usuarioEmpresaId || !currentEmpresaId) return false;
+        const sameCompany = String(usuarioEmpresaId) === String(currentEmpresaId);
+        return matchesTerm && matchesStatus && sameCompany;
+      }
 
       return matchesTerm && matchesStatus;
     });
