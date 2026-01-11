@@ -275,11 +275,23 @@ const UserInfo = styled.div`
     font-weight: 600;
     color: #333;
     font-size: 0.9rem;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .role {
     font-size: 0.8rem;
     color: #666;
+  }
+
+  @media (max-width: 768px) {
+    align-items: flex-start;
+
+    .name {
+      max-width: 110px;
+    }
   }
 `;
 
@@ -297,6 +309,12 @@ const ProfileButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* Ensure it stays a perfect circle and doesn't shrink on small screens */
+  flex: 0 0 40px;
+  min-width: 40px;
+  min-height: 40px;
+  overflow: hidden;
 
   &:hover {
     transform: scale(1.05);

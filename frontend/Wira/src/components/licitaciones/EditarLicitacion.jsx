@@ -328,7 +328,13 @@ const CriterioHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 15px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const CriterioName = styled.input`
@@ -338,6 +344,11 @@ const CriterioName = styled.input`
   border-radius: 6px;
   font-size: 0.9rem;
   margin-right: 10px;
+
+  @media (max-width: 768px) {
+    margin-right: 0;
+    width: 100%;
+  }
 `;
 
 const CriterioWeight = styled.input`
@@ -348,6 +359,11 @@ const CriterioWeight = styled.input`
   font-size: 0.9rem;
   text-align: center;
   margin-right: 10px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    margin-right: 0;
+  }
 `;
 
 const CriterioSelect = styled.select`
@@ -357,6 +373,11 @@ const CriterioSelect = styled.select`
   border-radius: 6px;
   font-size: 0.9rem;
   margin-right: 10px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    margin-right: 0;
+  }
 `;
 
 const RemoveButton = styled.button`
@@ -371,6 +392,14 @@ const RemoveButton = styled.button`
 
   &:hover {
     background: #c82333;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: auto;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-top: 6px;
   }
 `;
 
@@ -586,6 +615,10 @@ const OpcionRow = styled.div`
   gap: 10px;
   align-items: flex-start;
   margin-bottom: 10px;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const OpcionInput = styled.input`
@@ -595,6 +628,9 @@ const OpcionInput = styled.input`
   border: 1px solid #e1e5e9;
   border-radius: 6px;
   font-size: 0.95rem;
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const OpcionPuntajeInput = styled.input`
@@ -603,6 +639,9 @@ const OpcionPuntajeInput = styled.input`
   border: 1px solid #e1e5e9;
   border-radius: 6px;
   font-size: 0.95rem;
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const RemoveOptionButton = styled.button`
@@ -615,6 +654,11 @@ const RemoveOptionButton = styled.button`
 
   &:hover {
     background: #c82333;
+  }
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 6px;
   }
 `;
 
