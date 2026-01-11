@@ -62,7 +62,8 @@ const TableSubtitle = styled.p`
 `;
 
 const TableWrapper = styled.div`
-  overflow-x: auto;
+  /* Allow table to adapt; on small screens we stack rows */
+  overflow-x: visible;
 `;
 
 const Table = styled.table`
@@ -74,6 +75,9 @@ const Table = styled.table`
     padding: 14px;
     text-align: left;
     border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+    word-break: break-word;
+    white-space: normal;
   }
 
   tbody tr:last-child td {
@@ -90,45 +94,34 @@ const Table = styled.table`
     background: #f8fafc;
   }
 
-  /* Responsive: convert table to card-like rows on small screens */
+  /* Responsive: stack rows and show labels */
   @media (max-width: 768px) {
-    width: 100%;
-
     thead {
       display: none;
     }
 
     tbody tr {
       display: block;
-      border: 1px solid #e6eef7;
-      border-radius: 8px;
       margin-bottom: 12px;
-      padding: 8px;
+      border: 1px solid #e6eef8;
+      border-radius: 8px;
+      padding: 10px 12px;
       background: white;
     }
 
-    tbody tr td {
+    tbody td {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 8px 10px;
+      padding: 8px 0;
       border-bottom: none;
     }
 
-    tbody tr td::before {
-      content: attr(data-label) " ";
-      font-weight: 700;
-      color: #64748b;
-      flex: 0 0 45%;
-      max-width: 45%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    tbody tr td > * {
-      flex: 1 1 auto;
-      text-align: right;
+    tbody td::before {
+      content: attr(data-label);
+      flex: 0 0 auto;
+      color: #475569;
+      font-weight: 600;
+      margin-right: 12px;
     }
   }
 `;
