@@ -166,8 +166,21 @@ namespace Wira.Api.Services
         {
             try
             {
-                // Verificar si el email ya existe
-                if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
+                var normalizedEmail = request.Email?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(normalizedEmail))
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "El email es obligatorio"
+                    };
+                }
+
+                var normalizedEmailLower = normalizedEmail.ToLowerInvariant();
+                var emailExists = await _context.Usuarios
+                    .AnyAsync(u => u.Email.ToLower() == normalizedEmailLower);
+
+                if (emailExists)
                 {
                     return new AuthResponse
                     {
@@ -186,7 +199,10 @@ namespace Wira.Api.Services
                     };
                 }
 
-                if (await _context.Usuarios.AnyAsync(u => u.DNI == dniNormalizado))
+                var dniExists = await _context.Usuarios
+                    .AnyAsync(u => u.DNI == dniNormalizado);
+
+                if (dniExists)
                 {
                     return new AuthResponse
                     {
@@ -196,6 +212,7 @@ namespace Wira.Api.Services
                 }
 
                 var tipoCuentaNormalizado = EmpresaTipos.Normalizar(request.TipoCuenta);
+                int? empresaId = null;
 
                 // Validar que el tipo de cuenta sea válido
                 if (!EmpresaTipos.EsValido(tipoCuentaNormalizado))
@@ -208,8 +225,17 @@ namespace Wira.Api.Services
                 }
 
                 // Validar que la empresa existe según el tipo
-                if (tipoCuentaNormalizado == EmpresaTipos.Minera && request.MineraID.HasValue)
+                if (tipoCuentaNormalizado == EmpresaTipos.Minera)
                 {
+                    if (!request.MineraID.HasValue)
+                    {
+                        return new AuthResponse
+                        {
+                            Success = false,
+                            Message = "Debe seleccionar una minera"
+                        };
+                    }
+
                     var mineraExiste = await _context.Empresas.AnyAsync(m =>
                         m.EmpresaID == request.MineraID &&
                         m.TipoEmpresa == EmpresaTipos.Minera &&
@@ -223,9 +249,20 @@ namespace Wira.Api.Services
                             Message = "La minera seleccionada no existe o está inactiva"
                         };
                     }
+
+                    empresaId = request.MineraID;
                 }
-                else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor && request.ProveedorID.HasValue)
+                else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor)
                 {
+                    if (!request.ProveedorID.HasValue)
+                    {
+                        return new AuthResponse
+                        {
+                            Success = false,
+                            Message = "Debe seleccionar un proveedor"
+                        };
+                    }
+
                     var proveedorExiste = await _context.Empresas.AnyAsync(p =>
                         p.EmpresaID == request.ProveedorID &&
                         p.TipoEmpresa == EmpresaTipos.Proveedor &&
@@ -239,31 +276,29 @@ namespace Wira.Api.Services
                             Message = "El proveedor seleccionado no existe o está inactivo"
                         };
                     }
+
+                    empresaId = request.ProveedorID;
                 }
 
                 // Crear el usuario
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
                 var user = new Usuario
                 {
-                    Email = request.Email,
+                    Email = normalizedEmail,
                     PasswordHash = hashedPassword,
-                    Nombre = request.Nombre?.Trim(),
+                    Nombre = string.IsNullOrWhiteSpace(request.Nombre) ? null : request.Nombre.Trim(),
                     Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim(),
                     DNI = dniNormalizado,
                     Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim(),
                     Activo = true,
                     ValidadoEmail = false,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     FechaBaja = null,
                     EstadoAprobacion = AprobacionEstados.Pendiente,
                     FechaAprobacion = null,
                     AprobadoPorUsuarioID = null,
                     MotivoRechazo = null,
-                    EmpresaID = tipoCuentaNormalizado == EmpresaTipos.Minera
-                        ? request.MineraID
-                        : tipoCuentaNormalizado == EmpresaTipos.Proveedor
-                            ? request.ProveedorID
-                            : null
+                    EmpresaID = empresaId
                 };
 
                 _context.Usuarios.Add(user);
