@@ -323,6 +323,18 @@ const CreateButton = styled.button`
   &:hover:not(:disabled) {
     background: #e55a09;
   }
+  @media (max-width: 768px) {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 16px;
+    z-index: 1300;
+    width: calc(100% - 32px);
+    max-width: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
 `;
 
 const LoadingContainer = styled.div`

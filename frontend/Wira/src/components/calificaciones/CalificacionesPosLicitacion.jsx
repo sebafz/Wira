@@ -89,6 +89,48 @@ const Table = styled.table`
   tr:hover td {
     background: #f8fafc;
   }
+
+  /* Responsive: convert table to card-like rows on small screens */
+  @media (max-width: 768px) {
+    width: 100%;
+
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      display: block;
+      border: 1px solid #e6eef7;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: white;
+    }
+
+    tbody tr td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: none;
+    }
+
+    tbody tr td::before {
+      content: attr(data-label) " ";
+      font-weight: 700;
+      color: #64748b;
+      flex: 0 0 45%;
+      max-width: 45%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tbody tr td > * {
+      flex: 1 1 auto;
+      text-align: right;
+    }
+  }
 `;
 
 const Badge = styled.span`
@@ -450,21 +492,21 @@ const CalificacionesPosLicitacion = () => {
 
                     return (
                       <tr key={rowKey}>
-                        <td>
+                        <td data-label="Licitación">
                           <LicitacionCell>
                             <LicitacionTitle>{titulo}</LicitacionTitle>
                           </LicitacionCell>
                         </td>
-                        <td>
+                        <td data-label="Proveedor adjudicado">
                           <ProveedorCell>
                             <ProveedorName>{proveedorNombre}</ProveedorName>
                             <ProveedorMeta>{proveedorEmail}</ProveedorMeta>
                           </ProveedorCell>
                         </td>
-                        <td>
+                        <td data-label="Adjudicada el">
                           <ValueText>{formatDate(fechaAdjudicacion)}</ValueText>
                         </td>
-                        <td>
+                        <td data-label="Presupuesto máximo">
                           <ValueText>
                             {formatCurrencyWithSymbol(
                               presupuestoParaMostrar,
@@ -484,7 +526,7 @@ const CalificacionesPosLicitacion = () => {
                             </LicitacionMeta>
                           )}
                         </td>
-                        <td>
+                        <td data-label="Acción">
                           <PrimaryButton onClick={() => handleOpenModal(item)}>
                             Calificar
                           </PrimaryButton>

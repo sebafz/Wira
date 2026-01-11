@@ -117,11 +117,36 @@ const NotificationDropdown = styled.div`
   width: 350px;
   max-height: 500px;
   margin-top: 8px;
+  z-index: 1002;
   opacity: ${(props) => (props.show ? 1 : 0)};
   visibility: ${(props) => (props.show ? "visible" : "hidden")};
   transform: ${(props) => (props.show ? "translateY(0)" : "translateY(-10px)")};
   transition: all 0.2s ease;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    width: calc(100% - 40px);
+    max-height: 80vh;
+    margin-top: 0;
+    border-radius: 12px;
+    transform: ${(props) => (props.show ? "translate(-50%, -50%)" : "translate(-50%, -60%)")};
+    overflow: auto;
+  }
+`;
+
+const Backdrop = styled.div`
+  display: none;
+  @media (max-width: 768px) {
+    display: ${(props) => (props.show ? "block" : "none")};
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+  }
 `;
 
 const NotificationHeader = styled.div`
@@ -250,11 +275,23 @@ const UserInfo = styled.div`
     font-weight: 600;
     color: #333;
     font-size: 0.9rem;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .role {
     font-size: 0.8rem;
     color: #666;
+  }
+
+  @media (max-width: 768px) {
+    align-items: flex-start;
+
+    .name {
+      max-width: 110px;
+    }
   }
 `;
 
@@ -272,6 +309,12 @@ const ProfileButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* Ensure it stays a perfect circle and doesn't shrink on small screens */
+  flex: 0 0 40px;
+  min-width: 40px;
+  min-height: 40px;
+  overflow: hidden;
 
   &:hover {
     transform: scale(1.05);
@@ -649,6 +692,8 @@ const Navbar = () => {
                 </NotificationBadge>
               )}
             </NotificationButton>
+
+            <Backdrop show={showNotifications} onClick={() => setShowNotifications(false)} />
 
             <NotificationDropdown show={showNotifications}>
               <NotificationHeader>
