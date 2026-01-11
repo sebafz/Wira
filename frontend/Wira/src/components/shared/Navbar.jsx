@@ -117,11 +117,36 @@ const NotificationDropdown = styled.div`
   width: 350px;
   max-height: 500px;
   margin-top: 8px;
+  z-index: 1002;
   opacity: ${(props) => (props.show ? 1 : 0)};
   visibility: ${(props) => (props.show ? "visible" : "hidden")};
   transform: ${(props) => (props.show ? "translateY(0)" : "translateY(-10px)")};
   transition: all 0.2s ease;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    width: calc(100% - 40px);
+    max-height: 80vh;
+    margin-top: 0;
+    border-radius: 12px;
+    transform: ${(props) => (props.show ? "translate(-50%, -50%)" : "translate(-50%, -60%)")};
+    overflow: auto;
+  }
+`;
+
+const Backdrop = styled.div`
+  display: none;
+  @media (max-width: 768px) {
+    display: ${(props) => (props.show ? "block" : "none")};
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+  }
 `;
 
 const NotificationHeader = styled.div`
@@ -649,6 +674,8 @@ const Navbar = () => {
                 </NotificationBadge>
               )}
             </NotificationButton>
+
+            <Backdrop show={showNotifications} onClick={() => setShowNotifications(false)} />
 
             <NotificationDropdown show={showNotifications}>
               <NotificationHeader>

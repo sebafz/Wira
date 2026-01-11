@@ -41,6 +41,15 @@ const DialogContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    padding: 20px;
+    border-radius: 12px;
+    max-height: 80vh;
+  }
 `;
 
 const DialogTitle = styled.h3`
@@ -64,6 +73,11 @@ const DialogBody = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: auto;
+  /* Allow body to scroll when dialog reaches max-height */
+  @media (max-width: 768px) {
+    max-height: calc(80vh - 140px);
+  }
 `;
 
 const DialogActions = styled.div`
