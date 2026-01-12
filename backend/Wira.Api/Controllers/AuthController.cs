@@ -924,6 +924,21 @@ namespace Wira.Api.Controllers
             }
         }
 
+        // Backwards-compatible overload: accept role names and resolve to Rol entities
+        private async Task ReplaceUserRolesAsync(int usuarioId, List<string> roleNames)
+        {
+            if (roleNames == null || roleNames.Count == 0)
+            {
+                // remove existing roles
+                var existing = await _context.UsuariosRoles.Where(ur => ur.UsuarioID == usuarioId).ToListAsync();
+                _context.UsuariosRoles.RemoveRange(existing);
+                return;
+            }
+
+            var roles = await _context.Roles.Where(r => roleNames.Contains(r.Nombre)).ToListAsync();
+            await ReplaceUserRolesAsync(usuarioId, roles);
+        }
+
         private IQueryable<Usuario> AdminUsersQuery()
         {
             return _context.Usuarios
