@@ -275,19 +275,50 @@ namespace Wira.Api.Services
                     }
                     else if (request.ProveedorNuevo != null)
                     {
-                        // Create new provider company and assign to user
+                        // Validate CUIT uniqueness
+                        var newCuit = request.ProveedorNuevo.CUIT?.Trim() ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(newCuit))
+                        {
+                            return new AuthResponse { Success = false, Message = "CUIT de la empresa es obligatorio" };
+                        }
+
+                        var cuitExists = await _context.Empresas.AnyAsync(e => e.CUIT == newCuit);
+                        if (cuitExists)
+                        {
+                            return new AuthResponse { Success = false, Message = "El CUIT ya está registrado" };
+                        }
+
+                        // Validate rubro if provided
+                        if (request.ProveedorNuevo.RubroID.HasValue)
+                        {
+                            var rubroExiste = await _context.Rubros.AnyAsync(r => r.RubroID == request.ProveedorNuevo.RubroID && r.Activo);
+                            if (!rubroExiste)
+                            {
+                                return new AuthResponse { Success = false, Message = "Rubro inválido" };
+                            }
+                        }
+
+                        // Create new provider company as inactive (will activate on email verification)
                         var newProv = new Models.Empresa
                         {
                             Nombre = request.ProveedorNuevo.Nombre.Trim(),
                             RazonSocial = request.ProveedorNuevo.RazonSocial.Trim(),
-                            CUIT = request.ProveedorNuevo.CUIT.Trim(),
+                            CUIT = newCuit,
                             TipoEmpresa = EmpresaTipos.Proveedor,
-                            Activo = false, // Will be activated after provider verifies email
+                            Activo = false,
                             RubroID = request.ProveedorNuevo.RubroID
                         };
 
                         _context.Empresas.Add(newProv);
-                        await _context.SaveChangesAsync();
+                        try
+                        {
+                            await _context.SaveChangesAsync();
+                        }
+                        catch (DbUpdateException dbEx)
+                        {
+                            _logger.LogError(dbEx, "DB error creating Empresa for CUIT {CUIT}", newCuit);
+                            return new AuthResponse { Success = false, Message = "Error al crear la empresa (restricción de BD)" };
+                        }
 
                         empresaId = newProv.EmpresaID;
                     }
