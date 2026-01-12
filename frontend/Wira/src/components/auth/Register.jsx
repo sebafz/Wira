@@ -278,6 +278,7 @@ const Register = () => {
   const [success, setSuccess] = useState("");
   const [mineras, setMineras] = useState([]);
   const [proveedores, setProveedores] = useState([]);
+  const [rubros, setRubros] = useState([]);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -290,6 +291,11 @@ const Register = () => {
     mineraId: "",
     // Campos para Proveedor
     proveedorId: "",
+    // Campos para crear nuevo proveedor
+    proveedorNuevoNombre: "",
+    proveedorNuevoRazonSocial: "",
+    proveedorNuevoCUIT: "",
+    proveedorNuevoRubroId: "",
   });
 
   const navigate = useNavigate();
@@ -298,12 +304,19 @@ const Register = () => {
   React.useEffect(() => {
     const loadData = async () => {
       try {
-        const [minerasRes, proveedoresRes] = await Promise.all([
+        const [minerasRes, proveedoresRes, rubrosRes] = await Promise.all([
           apiService.getMineras(),
           apiService.getProveedores(),
+          apiService.getRubros(),
         ]);
         setMineras(minerasRes.data);
         setProveedores(proveedoresRes.data);
+        const rubrosData = Array.isArray(rubrosRes.data)
+          ? rubrosRes.data
+          : Array.isArray(rubrosRes.data?.value)
+          ? rubrosRes.data.value
+          : [];
+        setRubros(rubrosData);
       } catch (error) {
         console.error("Error loading data:", error);
       }
@@ -343,6 +356,11 @@ const Register = () => {
   const handlePrevStep = () => {
     setStep(step - 1);
     setError("");
+  };
+
+  const handleNextFromPersonal = () => {
+    // Move to company creation step for proveedores
+    setStep(3);
   };
 
   const handleSubmit = async (e) => {
@@ -388,10 +406,25 @@ const Register = () => {
         return;
       }
 
-      if (userType === "proveedor" && !formData.proveedorId) {
-        setError("Por favor seleccione un proveedor");
-        setLoading(false);
-        return;
+      if (userType === "proveedor") {
+        // If proveedorId not provided, validate proveedorNuevo fields
+        if (!formData.proveedorId) {
+          if (!formData.proveedorNuevoNombre.trim()) {
+            setError("Por favor ingrese el nombre de la empresa");
+            setLoading(false);
+            return;
+          }
+          if (!formData.proveedorNuevoRazonSocial.trim()) {
+            setError("Por favor ingrese la razón social de la empresa");
+            setLoading(false);
+            return;
+          }
+          if (!formData.proveedorNuevoCUIT.trim()) {
+            setError("Por favor ingrese el CUIT de la empresa");
+            setLoading(false);
+            return;
+          }
+        }
       }
 
       // Preparar datos para envío
@@ -406,8 +439,20 @@ const Register = () => {
         ...(userType === "minera"
           ? { mineraID: parseInt(formData.mineraId) }
           : {}),
-        ...(userType === "proveedor"
+        ...(userType === "proveedor" && formData.proveedorId
           ? { proveedorID: parseInt(formData.proveedorId) }
+          : {}),
+        ...(userType === "proveedor" && !formData.proveedorId
+          ? {
+              ProveedorNuevo: {
+                Nombre: formData.proveedorNuevoNombre,
+                RazonSocial: formData.proveedorNuevoRazonSocial,
+                CUIT: formData.proveedorNuevoCUIT,
+                RubroID: formData.proveedorNuevoRubroId
+                  ? parseInt(formData.proveedorNuevoRubroId)
+                  : null,
+              },
+            }
           : {}),
       };
 
@@ -567,26 +612,92 @@ const Register = () => {
           </Select>
         </InputGroup>
       )}
-
-      {userType === "proveedor" && (
-        <InputGroup>
-          <Label htmlFor="proveedorId">Seleccione su empresa</Label>
-          <Select
-            id="proveedorId"
-            name="proveedorId"
-            value={formData.proveedorId}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Seleccione un proveedor...</option>
-            {proveedores.map((proveedor) => (
-              <option key={proveedor.proveedorID} value={proveedor.proveedorID}>
-                {proveedor.nombre}
-              </option>
-            ))}
-          </Select>
-        </InputGroup>
+      {userType === "proveedor" ? (
+        <ButtonGroup>
+          <SecondaryButton type="button" onClick={handlePrevStep}>
+            Atrás
+          </SecondaryButton>
+          <Button type="button" onClick={handleNextFromPersonal}>
+            Continuar
+          </Button>
+        </ButtonGroup>
+      ) : (
+        <ButtonGroup>
+          <SecondaryButton type="button" onClick={handlePrevStep}>
+            Atrás
+          </SecondaryButton>
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <LoadingSpinner />
+                <span style={{ marginLeft: "8px" }}>Creando cuenta...</span>
+              </>
+            ) : (
+              "Crear cuenta"
+            )}
+          </Button>
+        </ButtonGroup>
       )}
+    </>
+  );
+
+  const renderStep3 = () => (
+    <>
+      <InputGroup>
+        <Label htmlFor="proveedorNuevoNombre">Nombre de la empresa</Label>
+        <Input
+          type="text"
+          id="proveedorNuevoNombre"
+          name="proveedorNuevoNombre"
+          value={formData.proveedorNuevoNombre}
+          onChange={handleChange}
+          placeholder="Nombre comercial"
+          required
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <Label htmlFor="proveedorNuevoRazonSocial">Razón social</Label>
+        <Input
+          type="text"
+          id="proveedorNuevoRazonSocial"
+          name="proveedorNuevoRazonSocial"
+          value={formData.proveedorNuevoRazonSocial}
+          onChange={handleChange}
+          placeholder="Razón social"
+          required
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <Label htmlFor="proveedorNuevoCUIT">CUIT</Label>
+        <Input
+          type="text"
+          id="proveedorNuevoCUIT"
+          name="proveedorNuevoCUIT"
+          value={formData.proveedorNuevoCUIT}
+          onChange={handleChange}
+          placeholder="XX-XXXXXXXX-X"
+          required
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <Label htmlFor="proveedorNuevoRubroId">Rubro</Label>
+        <Select
+          id="proveedorNuevoRubroId"
+          name="proveedorNuevoRubroId"
+          value={formData.proveedorNuevoRubroId}
+          onChange={handleChange}
+        >
+          <option value="">Seleccione un rubro (opcional)...</option>
+          {rubros.map((r) => (
+            <option key={r.rubroID} value={r.rubroID}>
+              {r.nombre}
+            </option>
+          ))}
+        </Select>
+      </InputGroup>
 
       <ButtonGroup>
         <SecondaryButton type="button" onClick={handlePrevStep}>
@@ -618,6 +729,12 @@ const Register = () => {
           <div className={step >= 1 ? "step active" : "step pending"}>1</div>
           <div className={step >= 1 ? "line completed" : "line"}></div>
           <div className={step >= 2 ? "step active" : "step pending"}>2</div>
+          {userType === "proveedor" && (
+            <>
+              <div className={step >= 2 ? "line completed" : "line"}></div>
+              <div className={step >= 3 ? "step active" : "step pending"}>3</div>
+            </>
+          )}
         </StepIndicator>
 
         <Form onSubmit={handleSubmit}>
@@ -626,6 +743,7 @@ const Register = () => {
 
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
         </Form>
 
         <div style={{ textAlign: "center" }}>

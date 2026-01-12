@@ -254,30 +254,51 @@ namespace Wira.Api.Services
                 }
                 else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor)
                 {
-                    if (!request.ProveedorID.HasValue)
+                    // If ProveedorID provided, validate existing provider
+                    if (request.ProveedorID.HasValue)
+                    {
+                        var proveedorExiste = await _context.Empresas.AnyAsync(p =>
+                            p.EmpresaID == request.ProveedorID &&
+                            p.TipoEmpresa == EmpresaTipos.Proveedor &&
+                            p.Activo);
+
+                        if (!proveedorExiste)
+                        {
+                            return new AuthResponse
+                            {
+                                Success = false,
+                                Message = "El proveedor seleccionado no existe o está inactivo"
+                            };
+                        }
+
+                        empresaId = request.ProveedorID;
+                    }
+                    else if (request.ProveedorNuevo != null)
+                    {
+                        // Create new provider company and assign to user
+                        var newProv = new Models.Empresa
+                        {
+                            Nombre = request.ProveedorNuevo.Nombre.Trim(),
+                            RazonSocial = request.ProveedorNuevo.RazonSocial.Trim(),
+                            CUIT = request.ProveedorNuevo.CUIT.Trim(),
+                            TipoEmpresa = EmpresaTipos.Proveedor,
+                            Activo = true,
+                            RubroID = request.ProveedorNuevo.RubroID
+                        };
+
+                        _context.Empresas.Add(newProv);
+                        await _context.SaveChangesAsync();
+
+                        empresaId = newProv.EmpresaID;
+                    }
+                    else
                     {
                         return new AuthResponse
                         {
                             Success = false,
-                            Message = "Debe seleccionar un proveedor"
+                            Message = "Debe seleccionar un proveedor o completar los datos de su empresa"
                         };
                     }
-
-                    var proveedorExiste = await _context.Empresas.AnyAsync(p =>
-                        p.EmpresaID == request.ProveedorID &&
-                        p.TipoEmpresa == EmpresaTipos.Proveedor &&
-                        p.Activo);
-
-                    if (!proveedorExiste)
-                    {
-                        return new AuthResponse
-                        {
-                            Success = false,
-                            Message = "El proveedor seleccionado no existe o está inactivo"
-                        };
-                    }
-
-                    empresaId = request.ProveedorID;
                 }
 
                 // Crear el usuario
@@ -301,6 +322,16 @@ namespace Wira.Api.Services
                     EmpresaID = empresaId
                 };
 
+                // If a new provider was created, auto-approve the account and assign provider admin role
+                bool assignedProviderAdmin = false;
+                if (tipoCuentaNormalizado == EmpresaTipos.Proveedor && request.ProveedorNuevo != null)
+                {
+                    user.EstadoAprobacion = AprobacionEstados.Aprobado;
+                    user.FechaAprobacion = DateTime.UtcNow;
+                    user.AprobadoPorUsuarioID = null;
+                    assignedProviderAdmin = true;
+                }
+
                 _context.Usuarios.Add(user);
                 await _context.SaveChangesAsync();
 
@@ -320,6 +351,17 @@ namespace Wira.Api.Services
                 {
                     _logger.LogError(emailEx, "Error enviando email de verificación a: {Email}", user.Email);
                     // No fallar el registro por error de email
+                }
+
+                // Assign provider admin role if a new provider was created
+                if (assignedProviderAdmin)
+                {
+                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+                    if (rol != null)
+                    {
+                        await ReplaceUserRolesAsync(user.UsuarioID, new List<Rol> { rol });
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 return new AuthResponse
