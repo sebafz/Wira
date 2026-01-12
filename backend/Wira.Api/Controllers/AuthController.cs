@@ -417,7 +417,7 @@ namespace Wira.Api.Controllers
         }
 
         [HttpPatch("users/{usuarioId:int}/status")]
-        [Authorize(Roles = "{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> UpdateUserStatus(int usuarioId, [FromBody] UpdateUserStatusRequest request)
         {
             var usuario = await AdminUsersQuery()
