@@ -334,6 +334,25 @@ const Register = () => {
     setError("");
   };
 
+  const handleCuitChange = (e) => {
+    const raw = e.target.value || "";
+    const digits = raw.replace(/\D/g, "").slice(0, 11);
+    let formatted = digits;
+
+    if (digits.length > 2 && digits.length <= 10) {
+      formatted = digits.slice(0, 2) + "-" + digits.slice(2);
+    } else if (digits.length > 10) {
+      formatted =
+        digits.slice(0, 2) + "-" + digits.slice(2, 10) + "-" + digits.slice(10);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      proveedorNuevoCUIT: formatted,
+    }));
+    setError("");
+  };
+
   const handleUserTypeSelect = (type) => {
     setUserType(type);
     setError("");
@@ -676,8 +695,10 @@ const Register = () => {
           id="proveedorNuevoCUIT"
           name="proveedorNuevoCUIT"
           value={formData.proveedorNuevoCUIT}
-          onChange={handleChange}
-          placeholder="XX-XXXXXXXX-X"
+          onChange={handleCuitChange}
+          placeholder="20-12345678-1"
+          inputMode="numeric"
+          maxLength={13}
           required
         />
       </InputGroup>

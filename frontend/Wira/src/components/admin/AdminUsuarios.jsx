@@ -373,6 +373,31 @@ const isUserActive = (usuario) => {
   return !(usuario?.FechaBaja || usuario?.fechaBaja);
 };
 
+const getCompanyIdFromUser = (usr) => {
+  if (!usr) return null;
+  const empresaObj =
+    usr.Empresa ||
+    usr.empresa ||
+    usr.Minera ||
+    usr.minera ||
+    usr.Proveedor ||
+    usr.proveedor ||
+    null;
+  const id =
+    empresaObj?.EmpresaID ??
+    empresaObj?.empresaID ??
+    empresaObj?.MineraID ??
+    empresaObj?.mineraID ??
+    empresaObj?.ProveedorID ??
+    empresaObj?.proveedorID ??
+    usr.EmpresaID ??
+    usr.empresaID ??
+    usr.MineraID ??
+    usr.mineraID ??
+    null;
+  return id !== null && id !== undefined ? String(id) : null;
+};
+
 const buildEmptyFormState = () => ({
   usuarioId: null,
   nombre: "",
@@ -391,6 +416,44 @@ const buildEmptyFormState = () => ({
 
 const AdminUsuarios = () => {
   const { user: currentUser } = useAuth();
+  const currentUserRoles = getUserRoles(currentUser || {});
+  const isCurrentMineraAdmin = currentUserRoles.includes(
+    "MINERA_ADMINISTRADOR"
+  );
+  const isCurrentProveedorAdmin = currentUserRoles.includes(
+    "PROVEEDOR_ADMINISTRADOR"
+  );
+
+  const currentEmpresaObj =
+    currentUser?.Empresa ||
+    currentUser?.empresa ||
+    currentUser?.Minera ||
+    currentUser?.minera ||
+    currentUser?.Proveedor ||
+    currentUser?.proveedor ||
+    null;
+  const currentEmpresaIdRaw =
+    currentEmpresaObj?.EmpresaID ??
+    currentEmpresaObj?.empresaID ??
+    currentEmpresaObj?.MineraID ??
+    currentEmpresaObj?.mineraID ??
+    currentEmpresaObj?.ProveedorID ??
+    currentEmpresaObj?.proveedorID ??
+    currentUser?.EmpresaID ??
+    currentUser?.empresaID ??
+    currentUser?.MineraID ??
+    currentUser?.mineraID ??
+    null;
+  const currentEmpresaId =
+    currentEmpresaIdRaw !== null && currentEmpresaIdRaw !== undefined
+      ? String(currentEmpresaIdRaw)
+      : "";
+  const currentEmpresaNombre =
+    currentEmpresaObj?.Nombre ||
+    currentEmpresaObj?.nombre ||
+    currentEmpresaObj?.RazonSocial ||
+    currentEmpresaObj?.razonSocial ||
+    "";
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
@@ -505,7 +568,14 @@ const AdminUsuarios = () => {
     const getCompanyIdFromUser = (usr) => {
       if (!usr) return null;
       // Prefer explicit Empresa/Minera/Proveedor objects
-      const empresaObj = usr.Empresa || usr.empresa || usr.Minera || usr.minera || usr.Proveedor || usr.proveedor || null;
+      const empresaObj =
+        usr.Empresa ||
+        usr.empresa ||
+        usr.Minera ||
+        usr.minera ||
+        usr.Proveedor ||
+        usr.proveedor ||
+        null;
       const id =
         empresaObj?.EmpresaID ??
         empresaObj?.empresaID ??
@@ -550,7 +620,8 @@ const AdminUsuarios = () => {
         const usuarioEmpresaId = getCompanyIdFromUser(usuario);
         // if user's company id is missing or doesn't match, exclude
         if (!usuarioEmpresaId || !currentEmpresaId) return false;
-        const sameCompany = String(usuarioEmpresaId) === String(currentEmpresaId);
+        const sameCompany =
+          String(usuarioEmpresaId) === String(currentEmpresaId);
         return matchesTerm && matchesStatus && sameCompany;
       }
 
@@ -599,6 +670,26 @@ const AdminUsuarios = () => {
     proveedoresOptions,
   ]);
 
+  const availableRoleOptions = React.useMemo(() => {
+    if (isCurrentMineraAdmin) {
+      return ROLE_OPTIONS.filter(
+        (r) => !r.value || r.value.startsWith("MINERA")
+      );
+    }
+    if (isCurrentProveedorAdmin) {
+      return ROLE_OPTIONS.filter(
+        (r) => !r.value || r.value.startsWith("PROVEEDOR")
+      );
+    }
+    return ROLE_OPTIONS;
+  }, [isCurrentMineraAdmin, isCurrentProveedorAdmin]);
+
+  const hideCompanyFieldsForRole =
+    formMode === "create" &&
+    ((formState.role === "MINERA_ADMINISTRADOR" && isCurrentMineraAdmin) ||
+      (formState.role === "PROVEEDOR_ADMINISTRADOR" &&
+        isCurrentProveedorAdmin));
+
   const handleToggleStatus = async (usuario) => {
     try {
       setToggling(true);
@@ -631,7 +722,19 @@ const AdminUsuarios = () => {
 
   const openCreateForm = () => {
     setFormMode("create");
-    setFormState(buildEmptyFormState());
+    const base = buildEmptyFormState();
+    // If current user is a company admin, preassign the company for convenience
+    if (isCurrentMineraAdmin) {
+      base.empresaTipo = "MINERA";
+      base.empresaId = currentEmpresaId;
+      base.empresaNombre = currentEmpresaNombre || base.empresaNombre;
+    }
+    if (isCurrentProveedorAdmin) {
+      base.empresaTipo = "PROVEEDOR";
+      base.empresaId = currentEmpresaId;
+      base.empresaNombre = currentEmpresaNombre || base.empresaNombre;
+    }
+    setFormState(base);
     setLockedFields({ email: "", dni: "" });
     setFormError("");
     setFormOpen(true);
@@ -681,6 +784,27 @@ const AdminUsuarios = () => {
   };
 
   const handleFormChange = (field, value) => {
+    if (field === "role") {
+      // If creating a company-admin and current user is the same company admin,
+      // auto-assign and hide company fields
+      setFormState((prev) => {
+        const next = { ...prev, role: value };
+        if (value === "MINERA_ADMINISTRADOR" && isCurrentMineraAdmin) {
+          next.empresaTipo = "MINERA";
+          next.empresaId = currentEmpresaId;
+          next.empresaNombre = currentEmpresaNombre || next.empresaNombre;
+        } else if (
+          value === "PROVEEDOR_ADMINISTRADOR" &&
+          isCurrentProveedorAdmin
+        ) {
+          next.empresaTipo = "PROVEEDOR";
+          next.empresaId = currentEmpresaId;
+          next.empresaNombre = currentEmpresaNombre || next.empresaNombre;
+        }
+        return next;
+      });
+      return;
+    }
     if (field === "dni") {
       const numericValue = (value || "").replace(/[^0-9]/g, "");
       setFormState((prev) => ({ ...prev, dni: numericValue }));
@@ -798,6 +922,67 @@ const AdminUsuarios = () => {
     setSubmittingForm(true);
 
     try {
+      // Prevent removing the last admin of a given scope (minera/proveedor/system)
+      if (formMode === "edit") {
+        const originalUser = usuarios.find(
+          (u) => getUserId(u) === formState.usuarioId
+        );
+        if (originalUser) {
+          const oldRoles = getUserRoles(originalUser);
+          const newRoles = payload.roles || [];
+
+          const roleRemovalChecks = [
+            { role: "MINERA_ADMINISTRADOR", label: "minera administrador" },
+            {
+              role: "PROVEEDOR_ADMINISTRADOR",
+              label: "proveedor administrador",
+            },
+            { role: "ADMIN_SISTEMA", label: "administrador del sistema" },
+          ];
+
+          for (const check of roleRemovalChecks) {
+            if (
+              oldRoles.includes(check.role) &&
+              !newRoles.includes(check.role)
+            ) {
+              // count other users with this role in the same scope
+              if (check.role === "ADMIN_SISTEMA") {
+                const others = usuarios.filter(
+                  (u) =>
+                    getUserId(u) !== getUserId(originalUser) &&
+                    getUserRoles(u).includes(check.role)
+                );
+                if (others.length === 0) {
+                  const msg = `Debe existir al menos un usuario con rol de ${check.label}.`;
+                  setFormError(msg);
+                  toast.error(msg);
+                  setSubmittingForm(false);
+                  return;
+                }
+              } else {
+                const originalCompanyId = getCompanyIdFromUser(originalUser);
+                const others = usuarios.filter((u) => {
+                  if (getUserId(u) === getUserId(originalUser)) return false;
+                  if (!getUserRoles(u).includes(check.role)) return false;
+                  const otherCompanyId = getCompanyIdFromUser(u);
+                  return (
+                    otherCompanyId &&
+                    originalCompanyId &&
+                    otherCompanyId === originalCompanyId
+                  );
+                });
+                if (others.length === 0) {
+                  const msg = `Debe existir al menos un usuario con rol de ${check.label} para esta empresa.`;
+                  setFormError(msg);
+                  toast.error(msg);
+                  setSubmittingForm(false);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
       const response =
         formMode === "create"
           ? await apiService.createUsuario(payload)
@@ -1044,44 +1229,50 @@ const AdminUsuarios = () => {
                 </FormGroup>
               </FormRow>
               <FormRow>
-                <FormGroup>
-                  <FormLabel>Tipo de empresa</FormLabel>
-                  <FormSelect
-                    name="admin-user-company-type"
-                    value={formState.empresaTipo}
-                    onChange={(event) =>
-                      handleFormChange("empresaTipo", event.target.value)
-                    }
-                  >
-                    <option value="">Sin empresa</option>
-                    <option value="MINERA">Minera</option>
-                    <option value="PROVEEDOR">Proveedor</option>
-                  </FormSelect>
-                </FormGroup>
-                <FormGroup>
-                  <FormLabel>Empresa asignada</FormLabel>
-                  <FormSelect
-                    name="admin-user-company"
-                    value={formState.empresaId}
-                    onChange={(event) =>
-                      handleFormChange("empresaId", event.target.value)
-                    }
-                    disabled={!formState.empresaTipo || empresaOptionsLoading}
-                  >
-                    <option value="">
-                      {!formState.empresaTipo
-                        ? "Seleccione un tipo"
-                        : empresaOptionsLoading
-                        ? "Cargando opciones..."
-                        : "Seleccione una empresa"}
-                    </option>
-                    {empresaOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.nombre}
-                      </option>
-                    ))}
-                  </FormSelect>
-                </FormGroup>
+                {!hideCompanyFieldsForRole && (
+                  <>
+                    <FormGroup>
+                      <FormLabel>Tipo de empresa</FormLabel>
+                      <FormSelect
+                        name="admin-user-company-type"
+                        value={formState.empresaTipo}
+                        onChange={(event) =>
+                          handleFormChange("empresaTipo", event.target.value)
+                        }
+                      >
+                        <option value="">Sin empresa</option>
+                        <option value="MINERA">Minera</option>
+                        <option value="PROVEEDOR">Proveedor</option>
+                      </FormSelect>
+                    </FormGroup>
+                    <FormGroup>
+                      <FormLabel>Empresa asignada</FormLabel>
+                      <FormSelect
+                        name="admin-user-company"
+                        value={formState.empresaId}
+                        onChange={(event) =>
+                          handleFormChange("empresaId", event.target.value)
+                        }
+                        disabled={
+                          !formState.empresaTipo || empresaOptionsLoading
+                        }
+                      >
+                        <option value="">
+                          {!formState.empresaTipo
+                            ? "Seleccione un tipo"
+                            : empresaOptionsLoading
+                            ? "Cargando opciones..."
+                            : "Seleccione una empresa"}
+                        </option>
+                        {empresaOptions.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.nombre}
+                          </option>
+                        ))}
+                      </FormSelect>
+                    </FormGroup>
+                  </>
+                )}
               </FormRow>
               <FormRow>
                 <FormGroup>
@@ -1151,7 +1342,7 @@ const AdminUsuarios = () => {
               <div>
                 <FormLabel>Rol principal</FormLabel>
                 <RoleOptions>
-                  {ROLE_OPTIONS.map((role) => (
+                  {availableRoleOptions.map((role) => (
                     <RoleOption key={role.value || "none"}>
                       <input
                         type="radio"
