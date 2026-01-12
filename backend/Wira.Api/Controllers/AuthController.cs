@@ -266,7 +266,7 @@ namespace Wira.Api.Controllers
         }
 
         [HttpPost("users")]
-        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
         {
             if (!ModelState.IsValid)
@@ -303,6 +303,49 @@ namespace Wira.Api.Controllers
             if (!rolesResult.Success)
             {
                 return BadRequest(new { message = rolesResult.ErrorMessage });
+            }
+
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var (mineraId, proveedorId) = GetEmpresaContext();
+
+            // If creator is a company admin, ensure they create users only for their company
+            if (!isSystemAdmin)
+            {
+                if (mineraId.HasValue)
+                {
+                    if (!request.EmpresaID.HasValue || request.EmpresaID.Value != mineraId.Value)
+                    {
+                        return Forbid();
+                    }
+                }
+                else if (proveedorId.HasValue)
+                {
+                    if (!request.EmpresaID.HasValue || request.EmpresaID.Value != proveedorId.Value)
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+
+            // Validate company exists and roles allowed for its type
+            if (!request.EmpresaID.HasValue)
+            {
+                return BadRequest(new { message = "Debe especificar la empresa asociada al usuario." });
+            }
+
+            var empresa = await _context.Empresas.FindAsync(request.EmpresaID.Value);
+            if (empresa == null)
+            {
+                return BadRequest(new { message = "Empresa no encontrada" });
+            }
+
+            if (!AreRolesAllowedForEmpresa(empresa.TipoEmpresa, rolesResult.Roles, isSystemAdmin))
+            {
+                return BadRequest(new { message = "Los roles asignados no son válidos para el tipo de empresa." });
             }
 
             var password = request.Password?.Trim();
