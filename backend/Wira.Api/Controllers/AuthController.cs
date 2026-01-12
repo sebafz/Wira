@@ -305,22 +305,33 @@ namespace Wira.Api.Controllers
                 return BadRequest(new { message = rolesResult.ErrorMessage });
             }
 
+            var password = request.Password?.Trim();
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return BadRequest(new { message = "La contraseña es obligatoria" });
+            }
+
             var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var isMineraAdmin = User.IsInRole(RoleNames.MineraAdministrador);
+            var isProveedorAdmin = User.IsInRole(RoleNames.ProveedorAdministrador);
             var (mineraId, proveedorId) = GetEmpresaContext();
 
-            // If creator is a company admin, ensure they create users only for their company
+            int? empresaId = request.EmpresaID;
+
             if (!isSystemAdmin)
             {
-                if (mineraId.HasValue)
+                if (isMineraAdmin && mineraId.HasValue)
                 {
-                    if (!request.EmpresaID.HasValue || request.EmpresaID.Value != mineraId.Value)
+                    empresaId = mineraId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("MINERA", StringComparison.OrdinalIgnoreCase)))
                     {
                         return Forbid();
                     }
                 }
-                else if (proveedorId.HasValue)
+                else if (isProveedorAdmin && proveedorId.HasValue)
                 {
-                    if (!request.EmpresaID.HasValue || request.EmpresaID.Value != proveedorId.Value)
+                    empresaId = proveedorId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("PROVEEDOR", StringComparison.OrdinalIgnoreCase)))
                     {
                         return Forbid();
                     }
@@ -331,27 +342,9 @@ namespace Wira.Api.Controllers
                 }
             }
 
-            // Validate company exists and roles allowed for its type
-            if (!request.EmpresaID.HasValue)
+            if (!empresaId.HasValue)
             {
-                return BadRequest(new { message = "Debe especificar la empresa asociada al usuario." });
-            }
-
-            var empresa = await _context.Empresas.FindAsync(request.EmpresaID.Value);
-            if (empresa == null)
-            {
-                return BadRequest(new { message = "Empresa no encontrada" });
-            }
-
-            if (!AreRolesAllowedForEmpresa(empresa.TipoEmpresa, rolesResult.Roles, isSystemAdmin))
-            {
-                return BadRequest(new { message = "Los roles asignados no son válidos para el tipo de empresa." });
-            }
-
-            var password = request.Password?.Trim();
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                return BadRequest(new { message = "La contraseña es obligatoria" });
+                return BadRequest(new { message = "Debe indicar la empresa del usuario." });
             }
 
             var usuario = new Usuario
@@ -366,7 +359,7 @@ namespace Wira.Api.Controllers
                 FechaRegistro = DateTime.UtcNow,
                 FechaBaja = request.Activo ? null : DateTime.UtcNow,
                 ValidadoEmail = true,
-                EmpresaID = request.EmpresaID,
+                EmpresaID = empresaId.Value,
                 EstadoAprobacion = AprobacionEstados.Aprobado,
                 FechaAprobacion = DateTime.UtcNow,
                 AprobadoPorUsuarioID = currentUserId,
@@ -376,7 +369,7 @@ namespace Wira.Api.Controllers
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
             await _context.SaveChangesAsync();
 
             var usuarioCreado = await AdminUsersQuery()
@@ -446,7 +439,7 @@ namespace Wira.Api.Controllers
                 usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password.Trim());
             }
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -529,7 +522,7 @@ namespace Wira.Api.Controllers
                 return BadRequest(new { message = rolesResult.ErrorMessage });
             }
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -707,7 +700,7 @@ namespace Wira.Api.Controllers
             usuario.AprobadoPorUsuarioID = approverId;
             usuario.MotivoRechazo = null;
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -772,7 +765,7 @@ namespace Wira.Api.Controllers
             usuario.AprobadoPorUsuarioID = approverId;
             usuario.MotivoRechazo = string.IsNullOrWhiteSpace(request.Motivo) ? null : request.Motivo.Trim();
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, new List<string>());
+            await ReplaceUserRolesAsync(usuario.UsuarioID, new List<Rol>());
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -922,21 +915,6 @@ namespace Wira.Api.Controllers
                     RolID = rol.RolID
                 });
             }
-        }
-
-        // Backwards-compatible overload: accept role names and resolve to Rol entities
-        private async Task ReplaceUserRolesAsync(int usuarioId, List<string> roleNames)
-        {
-            if (roleNames == null || roleNames.Count == 0)
-            {
-                // remove existing roles
-                var existing = await _context.UsuariosRoles.Where(ur => ur.UsuarioID == usuarioId).ToListAsync();
-                _context.UsuariosRoles.RemoveRange(existing);
-                return;
-            }
-
-            var roles = await _context.Roles.Where(r => roleNames.Contains(r.Nombre)).ToListAsync();
-            await ReplaceUserRolesAsync(usuarioId, roles);
         }
 
         private IQueryable<Usuario> AdminUsersQuery()
