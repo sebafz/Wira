@@ -223,6 +223,48 @@ namespace Wira.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("users/by-empresa")]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
+        public async Task<IActionResult> GetUsersByEmpresa([FromQuery] int? empresaId = null)
+        {
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var (mineraId, proveedorId) = GetEmpresaContext();
+
+            var query = AdminUsersQuery();
+
+            if (isSystemAdmin)
+            {
+                if (empresaId.HasValue)
+                {
+                    query = query.Where(u => u.EmpresaID == empresaId.Value);
+                }
+            }
+            else
+            {
+                if (mineraId.HasValue)
+                {
+                    query = query.Where(u => u.EmpresaID == mineraId.Value && u.Empresa != null && u.Empresa.TipoEmpresa == EmpresaTipos.Minera);
+                }
+                else if (proveedorId.HasValue)
+                {
+                    query = query.Where(u => u.EmpresaID == proveedorId.Value && u.Empresa != null && u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor);
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+
+            var usuarios = await query
+                .OrderBy(u => u.Nombre ?? string.Empty)
+                .ThenBy(u => u.Apellido ?? string.Empty)
+                .ThenBy(u => u.Email)
+                .ToListAsync();
+
+            var result = usuarios.Select(MapAdminUserDto).ToList();
+            return Ok(result);
+        }
+
         [HttpPost("users")]
         [Authorize(Roles = RoleNames.AdministradorSistema)]
         public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
