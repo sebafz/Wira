@@ -376,7 +376,7 @@ namespace Wira.Api.Controllers
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
             await _context.SaveChangesAsync();
 
             var usuarioCreado = await AdminUsersQuery()
@@ -446,7 +446,7 @@ namespace Wira.Api.Controllers
                 usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password.Trim());
             }
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -529,7 +529,7 @@ namespace Wira.Api.Controllers
                 return BadRequest(new { message = rolesResult.ErrorMessage });
             }
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -707,7 +707,7 @@ namespace Wira.Api.Controllers
             usuario.AprobadoPorUsuarioID = approverId;
             usuario.MotivoRechazo = null;
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles);
+            await ReplaceUserRolesAsync(usuario.UsuarioID, rolesResult.Roles.Select(r => r.Nombre).ToList());
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
@@ -772,7 +772,7 @@ namespace Wira.Api.Controllers
             usuario.AprobadoPorUsuarioID = approverId;
             usuario.MotivoRechazo = string.IsNullOrWhiteSpace(request.Motivo) ? null : request.Motivo.Trim();
 
-            await ReplaceUserRolesAsync(usuario.UsuarioID, new List<Rol>());
+            await ReplaceUserRolesAsync(usuario.UsuarioID, new List<string>());
             await _context.SaveChangesAsync();
 
             var usuarioActualizado = await AdminUsersQuery()
