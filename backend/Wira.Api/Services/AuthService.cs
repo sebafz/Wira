@@ -306,6 +306,7 @@ namespace Wira.Api.Services
                             CUIT = newCuit,
                             TipoEmpresa = EmpresaTipos.Proveedor,
                             Activo = false,
+                            FechaAlta = DateTime.UtcNow,
                             RubroID = request.ProveedorNuevo.RubroID
                         };
 
