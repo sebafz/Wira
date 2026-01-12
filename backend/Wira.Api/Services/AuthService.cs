@@ -282,7 +282,7 @@ namespace Wira.Api.Services
                             RazonSocial = request.ProveedorNuevo.RazonSocial.Trim(),
                             CUIT = request.ProveedorNuevo.CUIT.Trim(),
                             TipoEmpresa = EmpresaTipos.Proveedor,
-                            Activo = true,
+                            Activo = false, // Will be activated after provider verifies email
                             RubroID = request.ProveedorNuevo.RubroID
                         };
 
@@ -322,15 +322,8 @@ namespace Wira.Api.Services
                     EmpresaID = empresaId
                 };
 
-                // If a new provider was created, auto-approve the account and assign provider admin role
-                bool assignedProviderAdmin = false;
-                if (tipoCuentaNormalizado == EmpresaTipos.Proveedor && request.ProveedorNuevo != null)
-                {
-                    user.EstadoAprobacion = AprobacionEstados.Aprobado;
-                    user.FechaAprobacion = DateTime.UtcNow;
-                    user.AprobadoPorUsuarioID = null;
-                    assignedProviderAdmin = true;
-                }
+                // If a new provider was created, keep account pending verification.
+                // The company will be activated and the provider admin role assigned after email verification.
 
                 _context.Usuarios.Add(user);
                 await _context.SaveChangesAsync();
@@ -353,16 +346,7 @@ namespace Wira.Api.Services
                     // No fallar el registro por error de email
                 }
 
-                // Assign provider admin role if a new provider was created
-                if (assignedProviderAdmin)
-                {
-                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
-                    if (rol != null)
-                    {
-                        await ReplaceUserRolesAsync(user.UsuarioID, new List<Rol> { rol });
-                        await _context.SaveChangesAsync();
-                    }
-                }
+                // Note: role assignment and company activation happen upon email verification.
 
                 return new AuthResponse
                 {
@@ -477,10 +461,14 @@ namespace Wira.Api.Services
         {
             try
             {
-                var user = await _context.Usuarios.FirstOrDefaultAsync(u =>
-                    u.Email == request.Email &&
-                    u.TokenVerificacionEmail == request.Code &&
-                    u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
+                var user = await _context.Usuarios
+                    .Include(u => u.Empresa)
+                    .Include(u => u.UsuariosRoles)
+                        .ThenInclude(ur => ur.Rol)
+                    .FirstOrDefaultAsync(u =>
+                        u.Email == request.Email &&
+                        u.TokenVerificacionEmail == request.Code &&
+                        u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
 
                 if (user == null)
                 {
@@ -504,6 +492,21 @@ namespace Wira.Api.Services
                 user.ValidadoEmail = true;
                 user.TokenVerificacionEmail = null;
                 user.FechaVencimientoTokenVerificacion = null;
+
+                // If the user belongs to a provider company that was created during registration and is inactive,
+                // activate the company and assign provider admin role to this user.
+                if (user.Empresa != null && user.Empresa.TipoEmpresa == EmpresaTipos.Proveedor && !user.Empresa.Activo)
+                {
+                    user.Empresa.Activo = true;
+                    user.EstadoAprobacion = AprobacionEstados.Aprobado;
+                    user.FechaAprobacion = DateTime.UtcNow;
+
+                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+                    if (rol != null)
+                    {
+                        await ReplaceUserRolesAsync(user.UsuarioID, new List<Rol> { rol });
+                    }
+                }
 
                 await _context.SaveChangesAsync();
 
