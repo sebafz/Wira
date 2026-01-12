@@ -383,7 +383,7 @@ namespace Wira.Api.Controllers
         }
 
         [HttpPut("users/{usuarioId:int}")]
-        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> UpdateUser(int usuarioId, [FromBody] UpdateAdminUserRequest request)
         {
             if (!ModelState.IsValid)
@@ -398,6 +398,11 @@ namespace Wira.Api.Controllers
             {
                 return NotFound(new { message = "Usuario no encontrado" });
             }
+
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var isMineraAdmin = User.IsInRole(RoleNames.MineraAdministrador);
+            var isProveedorAdmin = User.IsInRole(RoleNames.ProveedorAdministrador);
+            var (mineraId, proveedorId) = GetEmpresaContext();
 
             var normalizedEmail = request.Email.Trim();
             var normalizedEmailLower = normalizedEmail.ToLower();
@@ -425,12 +430,52 @@ namespace Wira.Api.Controllers
                 return BadRequest(new { message = rolesResult.ErrorMessage });
             }
 
+            int? empresaId = request.EmpresaID;
+            if (!isSystemAdmin)
+            {
+                if (isMineraAdmin && mineraId.HasValue)
+                {
+                    if (usuario.EmpresaID != mineraId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Minera)
+                    {
+                        return Forbid();
+                    }
+
+                    empresaId = mineraId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("MINERA", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return Forbid();
+                    }
+                }
+                else if (isProveedorAdmin && proveedorId.HasValue)
+                {
+                    if (usuario.EmpresaID != proveedorId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Proveedor)
+                    {
+                        return Forbid();
+                    }
+
+                    empresaId = proveedorId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("PROVEEDOR", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+
+            if (!empresaId.HasValue)
+            {
+                return BadRequest(new { message = "Debe indicar la empresa del usuario." });
+            }
+
             usuario.Email = normalizedEmail;
             usuario.Nombre = string.IsNullOrWhiteSpace(request.Nombre) ? null : request.Nombre.Trim();
             usuario.Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim();
             usuario.DNI = normalizedDni;
             usuario.Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim();
-            usuario.EmpresaID = request.EmpresaID;
+            usuario.EmpresaID = empresaId.Value;
             usuario.Activo = request.Activo;
             usuario.FechaBaja = request.Activo ? null : DateTime.UtcNow;
 
