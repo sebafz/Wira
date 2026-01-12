@@ -257,5 +257,81 @@ namespace Wira.Api.Services
 
             await SendEmailAsync(toEmail, subject, body, true);
         }
+
+        public async Task SendLicitacionCanceladaAsync(string toEmail, string userName, string licitacionTitulo)
+        {
+            var subject = $"Licitación cancelada: {licitacionTitulo}";
+            var body = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #ef4444 0%, #d63636 100%); color: white; padding: 24px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .content {{ background: #f8f9fa; padding: 28px; border-radius: 0 0 8px 8px; }}
+                        .footer {{ text-align: center; margin-top: 22px; color: #666; font-size: 13px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>Licitación cancelada</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Hola {userName},</p>
+                            <p>Le informamos que la licitación <strong>{licitacionTitulo}</strong> ha sido cancelada por la minera. Su propuesta asociada a esta licitación ya no será considerada.</p>
+                            <p>Si tiene preguntas o necesita más detalles, por favor contacte a la minera responsable desde la plataforma.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
+
+        public async Task SendLicitacionAdjudicadaAsync(string toEmail, string userName, string licitacionTitulo, string adjudicadoNombre)
+        {
+            var subject = $"Licitación adjudicada: {licitacionTitulo}";
+            var body = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 24px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .content {{ background: #f8f9fa; padding: 28px; border-radius: 0 0 8px 8px; }}
+                        .highlight {{ font-weight: bold; color: #0b5e1a; }}
+                        .footer {{ text-align: center; margin-top: 22px; color: #666; font-size: 13px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>Licitación adjudicada</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Hola {userName},</p>
+                            <p>La licitación <strong>{licitacionTitulo}</strong> ha sido adjudicada.</p>
+                            <p>Proveedor adjudicado: <span class='highlight'>{adjudicadoNombre}</span></p>
+                            <p>Para más detalles, ingrese a la plataforma o contacte a la minera responsable.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
     }
 }

@@ -4,6 +4,7 @@ using Wira.Api.Data;
 using Wira.Api.Models;
 using Wira.Api.DTOs;
 using Wira.Api.Services;
+using Wira.Api.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace Wira.Api.Controllers
@@ -15,12 +16,14 @@ namespace Wira.Api.Controllers
         private readonly WiraDbContext _context;
         private readonly ILogger<LicitacionesController> _logger;
         private readonly INotificacionService _notificacionService;
+        private readonly IEmailService _emailService;
 
-        public LicitacionesController(WiraDbContext context, ILogger<LicitacionesController> logger, INotificacionService notificacionService)
+        public LicitacionesController(WiraDbContext context, ILogger<LicitacionesController> logger, INotificacionService notificacionService, IEmailService emailService)
         {
             _context = context;
             _logger = logger;
             _notificacionService = notificacionService;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -461,6 +464,50 @@ namespace Wira.Api.Controllers
 
                 _logger.LogInformation($"Licitación marcada como Cancelada con ID: {id}");
 
+                // Enviar emails a proveedores con propuestas vinculadas
+                try
+                {
+                    var proveedorIds = await _context.Propuestas
+                        .Where(p => p.LicitacionID == id && !p.Eliminado)
+                        .Select(p => p.ProveedorID)
+                        .Distinct()
+                        .ToListAsync();
+
+                    var proveedores = await _context.Empresas
+                        .Where(e => proveedorIds.Contains(e.EmpresaID))
+                        .Include(e => e.Usuarios)
+                        .ToListAsync();
+
+                    foreach (var prov in proveedores)
+                    {
+                        var recipients = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(prov.EmailContacto))
+                        {
+                            recipients.Add(prov.EmailContacto);
+                        }
+                        else
+                        {
+                            recipients.AddRange(prov.Usuarios.Where(u => !string.IsNullOrWhiteSpace(u.Email)).Select(u => u.Email));
+                        }
+
+                        foreach (var to in recipients.Distinct())
+                        {
+                            try
+                            {
+                                await _emailService.SendLicitacionCanceladaAsync(to, prov.Nombre, licitacion.Titulo);
+                            }
+                            catch (Exception mailEx)
+                            {
+                                _logger.LogError(mailEx, "Error enviando email de cancelación a {Email} para licitación {LicitacionId}", to, id);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al notificar por email la cancelación de la licitación {LicitacionId}", id);
+                }
+
                 return NoContent();
             }
             catch (Exception ex)
@@ -646,6 +693,58 @@ namespace Wira.Api.Controllers
                     licitacion.Titulo,
                     licitacion.MineraID
                 );
+
+                // Enviar emails a proveedores con propuestas informando la adjudicación
+                try
+                {
+                    var proveedorIds = await _context.Propuestas
+                        .Where(p => p.LicitacionID == id && !p.Eliminado)
+                        .Select(p => p.ProveedorID)
+                        .Distinct()
+                        .ToListAsync();
+
+                    var proveedores = await _context.Empresas
+                        .Where(e => proveedorIds.Contains(e.EmpresaID))
+                        .Include(e => e.Usuarios)
+                        .ToListAsync();
+
+                    // Nombre del proveedor adjudicado: buscar propuesta con estado adjudicada o similar
+                    var adjudicadoProveedor = await _context.Propuestas
+                        .Where(p => p.LicitacionID == id && p.EstadoPropuesta.NombreEstado == "Adjudicada")
+                        .Select(p => p.Proveedor.Nombre)
+                        .FirstOrDefaultAsync();
+
+                    var adjudicadoNombre = adjudicadoProveedor ?? "(Proveedor adjudicado)";
+
+                    foreach (var prov in proveedores)
+                    {
+                        var recipients = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(prov.EmailContacto))
+                        {
+                            recipients.Add(prov.EmailContacto);
+                        }
+                        else
+                        {
+                            recipients.AddRange(prov.Usuarios.Where(u => !string.IsNullOrWhiteSpace(u.Email)).Select(u => u.Email));
+                        }
+
+                        foreach (var to in recipients.Distinct())
+                        {
+                            try
+                            {
+                                await _emailService.SendLicitacionAdjudicadaAsync(to, prov.Nombre, licitacion.Titulo, adjudicadoNombre);
+                            }
+                            catch (Exception mailEx)
+                            {
+                                _logger.LogError(mailEx, "Error enviando email de adjudicación a {Email} para licitación {LicitacionId}", to, id);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al notificar por email la adjudicación de la licitación {LicitacionId}", id);
+                }
 
                 return Ok(new { message = "Licitación adjudicada exitosamente" });
             }
