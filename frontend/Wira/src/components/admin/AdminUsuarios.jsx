@@ -684,16 +684,41 @@ const AdminUsuarios = () => {
     return ROLE_OPTIONS;
   }, [isCurrentMineraAdmin, isCurrentProveedorAdmin]);
 
+  // If the current user is a company admin, they manage users for their own company.
+  // When creating a user, keep company fields hidden (they remain prefilled).
   const hideCompanyFieldsForRole =
-    formMode === "create" &&
-    ((formState.role === "MINERA_ADMINISTRADOR" && isCurrentMineraAdmin) ||
-      (formState.role === "PROVEEDOR_ADMINISTRADOR" &&
-        isCurrentProveedorAdmin));
+    formMode === "create" && (isCurrentMineraAdmin || isCurrentProveedorAdmin);
 
   const handleToggleStatus = async (usuario) => {
     try {
       setToggling(true);
       const newStatus = !isUserActive(usuario);
+
+      // Prevent deactivating the last remaining active user in the same company
+      if (!newStatus) {
+        // newStatus === false means we're trying to deactivate
+        const targetCompanyId = getCompanyIdFromUser(usuario);
+        const currentIsCompanyAdmin =
+          isCurrentMineraAdmin || isCurrentProveedorAdmin;
+        if (currentIsCompanyAdmin && targetCompanyId) {
+          const activeOthers = usuarios.filter((u) => {
+            if (getUserId(u) === getUserId(usuario)) return false;
+            if (!isUserActive(u)) return false;
+            const otherCompanyId = getCompanyIdFromUser(u);
+            return (
+              otherCompanyId &&
+              String(otherCompanyId) === String(targetCompanyId)
+            );
+          });
+          if (activeOthers.length === 0) {
+            const msg =
+              "No puede dar de baja al único usuario activo de la empresa.";
+            toast.error(msg);
+            setToggling(false);
+            return;
+          }
+        }
+      }
       const response = await apiService.updateUsuarioStatus(
         getUserId(usuario),
         newStatus
