@@ -417,7 +417,7 @@ namespace Wira.Api.Controllers
         }
 
         [HttpPatch("users/{usuarioId:int}/status")]
-        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        [Authorize(Roles = "{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> UpdateUserStatus(int usuarioId, [FromBody] UpdateUserStatusRequest request)
         {
             var usuario = await AdminUsersQuery()
@@ -426,6 +426,32 @@ namespace Wira.Api.Controllers
             if (usuario == null)
             {
                 return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var (mineraId, proveedorId) = GetEmpresaContext();
+
+            if (!isSystemAdmin)
+            {
+                // Company admins can only modify users from their own company of the matching type
+                if (mineraId.HasValue)
+                {
+                    if (usuario.EmpresaID != mineraId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Minera)
+                    {
+                        return Forbid();
+                    }
+                }
+                else if (proveedorId.HasValue)
+                {
+                    if (usuario.EmpresaID != proveedorId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Proveedor)
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    return Forbid();
+                }
             }
 
             usuario.Activo = request.Activo;
