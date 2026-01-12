@@ -316,8 +316,9 @@ namespace Wira.Api.Services
                         }
                         catch (DbUpdateException dbEx)
                         {
-                            _logger.LogError(dbEx, "DB error creating Empresa for CUIT {CUIT}", newCuit);
-                            return new AuthResponse { Success = false, Message = "Error al crear la empresa (restricción de BD)" };
+                            var baseMsg = dbEx.GetBaseException()?.Message ?? dbEx.Message;
+                            _logger.LogError(dbEx, "DB error creating Empresa for CUIT {CUIT}: {BaseMessage}", newCuit, baseMsg);
+                            return new AuthResponse { Success = false, Message = $"Error al crear la empresa (BD): {baseMsg}" };
                         }
 
                         empresaId = newProv.EmpresaID;
