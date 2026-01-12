@@ -578,6 +578,29 @@ namespace Wira.Api.Services
             }
         }
 
+        private async Task ReplaceUserRolesAsync(int usuarioId, List<Rol> roles)
+        {
+            var existingRoles = await _context.UsuariosRoles
+                .Where(ur => ur.UsuarioID == usuarioId)
+                .ToListAsync();
+
+            _context.UsuariosRoles.RemoveRange(existingRoles);
+
+            if (roles == null || roles.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var rol in roles)
+            {
+                _context.UsuariosRoles.Add(new UsuarioRol
+                {
+                    UsuarioID = usuarioId,
+                    RolID = rol.RolID
+                });
+            }
+        }
+
         public string GenerateJwtToken(UserInfo user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "default-secret-key"));
