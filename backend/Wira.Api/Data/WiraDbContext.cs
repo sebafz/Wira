@@ -311,6 +311,8 @@ namespace Wira.Api.Data
             {
                 return saveFunc();
             }
+            // Normalizar todas las fechas a UTC antes de guardar para evitar excepciones de Kind
+            EnsureDateTimePropertiesAreUtc();
 
             var auditoriasPendientes = PrepararEntradasAuditoria();
             var result = saveFunc();
@@ -343,6 +345,8 @@ namespace Wira.Api.Data
             {
                 return await saveFunc();
             }
+            // Normalizar todas las fechas a UTC antes de guardar para evitar excepciones de Kind
+            EnsureDateTimePropertiesAreUtc();
 
             var auditoriasPendientes = PrepararEntradasAuditoria();
             var result = await saveFunc();
@@ -405,6 +409,58 @@ namespace Wira.Api.Data
         {
             var userIdClaim = _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+        }
+
+        private void EnsureDateTimePropertiesAreUtc()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .ToList();
+
+            foreach (var entry in entries)
+            {
+                foreach (var prop in entry.Properties)
+                {
+                    if (prop.CurrentValue == null)
+                        continue;
+
+                    try
+                    {
+                        if (prop.Metadata.ClrType == typeof(DateTime))
+                        {
+                            var dt = (DateTime)prop.CurrentValue!;
+                            DateTime utc = dt.Kind switch
+                            {
+                                DateTimeKind.Utc => dt,
+                                DateTimeKind.Local => dt.ToUniversalTime(),
+                                _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+                            };
+
+                            prop.CurrentValue = utc;
+                        }
+                        else if (prop.Metadata.ClrType == typeof(DateTime?))
+                        {
+                            var nullable = (DateTime?)prop.CurrentValue;
+                            if (nullable.HasValue)
+                            {
+                                var dt = nullable.Value;
+                                DateTime utc = dt.Kind switch
+                                {
+                                    DateTimeKind.Utc => dt,
+                                    DateTimeKind.Local => dt.ToUniversalTime(),
+                                    _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+                                };
+
+                                prop.CurrentValue = (DateTime?)utc;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // No propagar errores de conversión de tipos; continuar con otras propiedades
+                    }
+                }
+            }
         }
 
         private static string ObtenerOperacion(EntityState state) => state switch

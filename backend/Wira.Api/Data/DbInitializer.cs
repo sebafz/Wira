@@ -95,7 +95,7 @@ namespace Wira.Api.Data
                 new Empresa { Nombre = "Mansfield", RazonSocial = "Mansfield Minera SA", CUIT = "30-87654321-2", EmailContacto = "info@mansfield.com", Telefono = "+54 9 387 4001 0002", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
                 new Empresa { Nombre = "Posco", RazonSocial = "Posco Argentina SAU", CUIT = "30-11223344-5", EmailContacto = "contacto@posco.com", Telefono = "+54 9 387 4109 8553", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
                 new Empresa { Nombre = "Río Tinto", RazonSocial = "Río Tinto Argentina SAU", CUIT = "30-87659939-5", EmailContacto = "info@riotinto.com", Telefono = "+54 9 387 8799 2341", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
-                new Empresa { Nombre = "Andes Minerales", RazonSocial = "Andes Minerales SA", CUIT = "30-55664433-6", EmailContacto = "contacto@andesminerales.com", Telefono = "+54 9 387 5000 5500", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow }
+                new Empresa { Nombre = "Exar", RazonSocial = "Exar S.A.", CUIT = "30-55664433-7", EmailContacto = "contacto@exar.com", Telefono = "+54 9 387 5000 5500", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow }
             };
 
             await context.Empresas.AddRangeAsync(mineras);
@@ -136,7 +136,7 @@ namespace Wira.Api.Data
             var mineraMansfield = await context.Empresas.FirstAsync(e => e.Nombre == "Mansfield" && e.TipoEmpresa == EmpresaTipos.Minera);
             var mineraPosco = await context.Empresas.FirstAsync(e => e.Nombre == "Posco" && e.TipoEmpresa == EmpresaTipos.Minera);
             var mineraRioTinto = await context.Empresas.FirstAsync(e => e.Nombre == "Río Tinto" && e.TipoEmpresa == EmpresaTipos.Minera);
-            var mineraAndes = await context.Empresas.FirstAsync(e => e.Nombre == "Andes Minerales" && e.TipoEmpresa == EmpresaTipos.Minera);
+            var mineraExar = await context.Empresas.FirstAsync(e => e.Nombre == "Exar" && e.TipoEmpresa == EmpresaTipos.Minera);
             var proveedorTransporte = await context.Empresas.FirstAsync(e => e.Nombre == "Transportes del Norte" && e.TipoEmpresa == EmpresaTipos.Proveedor);
             var proveedorEquipos = await context.Empresas.FirstAsync(e => e.Nombre == "Equipos Mineros" && e.TipoEmpresa == EmpresaTipos.Proveedor);
             var proveedorServiciosNorte = await context.Empresas.FirstAsync(e => e.Nombre == "Servicios Norte SRL" && e.TipoEmpresa == EmpresaTipos.Proveedor);
@@ -230,7 +230,7 @@ namespace Wira.Api.Data
                 ,
                 new Usuario
                 {
-                    Email = "contacto@andesminerales.com",
+                    Email = "contacto@exar.com",
                     PasswordHash = passwordHash,
                     Nombre = "Fernando",
                     Apellido = "Ruiz",
@@ -239,7 +239,7 @@ namespace Wira.Api.Data
                     Activo = true,
                     ValidadoEmail = true,
                     FechaBaja = null,
-                    EmpresaID = mineraAndes.EmpresaID,
+                    EmpresaID = mineraExar.EmpresaID,
                     FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
                     FechaAprobacion = DateTime.UtcNow
@@ -271,7 +271,7 @@ namespace Wira.Api.Data
             var usuarioAdminSistema = await context.Usuarios.FirstAsync(u => u.Email == "admin@wira.com");
             var usuarioEquipos = await context.Usuarios.FirstAsync(u => u.Email == "proveedor@equiposmineros.com");
             var usuarioAdminEquipos = await context.Usuarios.FirstAsync(u => u.Email == "proveedoradmin@equiposmineros.com");
-            var usuarioAndes = await context.Usuarios.FirstAsync(u => u.Email == "contacto@andesminerales.com");
+            var usuarioAndes = await context.Usuarios.FirstAsync(u => u.Email == "contacto@exar.com");
             var usuarioServiciosNorte = await context.Usuarios.FirstAsync(u => u.Email == "contacto@serviciosnorte.com");
             // Asignar roles a usuarios
             var usuarioRoles = new[]
