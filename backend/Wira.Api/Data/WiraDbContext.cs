@@ -436,21 +436,11 @@ namespace Wira.Api.Data
                                 _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
                             };
 
-                            if (dt.Kind != DateTimeKind.Utc)
-                            {
-                                LogDateTimeNormalization(prop, dt);
-                            }
-
                             prop.CurrentValue = utc;
                         }
                         else if (prop.Metadata.ClrType == typeof(DateTimeOffset))
                         {
                             var dto = (DateTimeOffset)prop.CurrentValue!;
-                            if (dto.Offset != TimeSpan.Zero)
-                            {
-                                LogDateTimeNormalization(prop, dto.DateTime);
-                            }
-
                             prop.CurrentValue = dto.ToUniversalTime();
                         }
                         else if (prop.Metadata.ClrType.IsArray)
@@ -462,10 +452,6 @@ namespace Wira.Api.Data
                                 for (int i = 0; i < arr.Length; i++)
                                 {
                                     var d = arr[i];
-                                    if (d.Kind != DateTimeKind.Utc)
-                                    {
-                                        LogDateTimeNormalization(prop, d);
-                                    }
                                     arr[i] = d.Kind switch
                                     {
                                         DateTimeKind.Utc => d,
@@ -496,10 +482,6 @@ namespace Wira.Api.Data
                                                 DateTimeKind.Local => d.ToUniversalTime(),
                                                 _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
                                             };
-                                            if (d.Kind != DateTimeKind.Utc)
-                                            {
-                                                LogDateTimeNormalization(prop, d);
-                                            }
                                             list.Add(utc);
                                         }
                                     }
@@ -523,10 +505,6 @@ namespace Wira.Api.Data
                                                 DateTimeKind.Local => d.ToUniversalTime(),
                                                 _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
                                             };
-                                            if (d.Kind != DateTimeKind.Utc)
-                                            {
-                                                LogDateTimeNormalization(prop, d);
-                                            }
                                             list.Add(utc);
                                         }
                                         else
@@ -560,21 +538,6 @@ namespace Wira.Api.Data
                         // No propagar errores de conversión de tipos; continuar con otras propiedades
                     }
                 }
-            }
-        }
-
-        private void LogDateTimeNormalization(Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry propertyEntry, DateTime originalValue)
-        {
-            try
-            {
-                var entityType = propertyEntry.EntityEntry.Metadata.ClrType.Name;
-                var propertyName = propertyEntry.Metadata.Name;
-                var key = ObtenerClave(propertyEntry.EntityEntry, includeTemporary: true) ?? "(sin clave)";
-                Console.WriteLine($"[UTC-Normalizer] Entity={entityType}, Key={key}, Property={propertyName}, OriginalKind={originalValue.Kind}, OriginalValue={originalValue:o}");
-            }
-            catch
-            {
-                // No bloquear flujo si el log falla
             }
         }
 

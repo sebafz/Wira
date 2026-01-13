@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Wira.Api.Models;
 
 namespace Wira.Api.Data
@@ -95,7 +96,7 @@ namespace Wira.Api.Data
                 new Empresa { Nombre = "Mansfield", RazonSocial = "Mansfield Minera SA", CUIT = "30-87654321-2", EmailContacto = "info@mansfield.com", Telefono = "+54 9 387 4001 0002", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
                 new Empresa { Nombre = "Posco", RazonSocial = "Posco Argentina SAU", CUIT = "30-11223344-5", EmailContacto = "contacto@posco.com", Telefono = "+54 9 387 4109 8553", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
                 new Empresa { Nombre = "Río Tinto", RazonSocial = "Río Tinto Argentina SAU", CUIT = "30-87659939-5", EmailContacto = "info@riotinto.com", Telefono = "+54 9 387 8799 2341", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow },
-                new Empresa { Nombre = "Exar", RazonSocial = "Exar S.A.", CUIT = "30-55664433-7", EmailContacto = "contacto@exar.com", Telefono = "+54 9 387 5000 5500", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow }
+                new Empresa { Nombre = "Exar", RazonSocial = "Exar S.A.", CUIT = "30-55664433-7", EmailContacto = "contacto@exar.com", Telefono = "+54 9 388 67823 5500", TipoEmpresa = EmpresaTipos.Minera, Activo = true, FechaAlta = DateTime.UtcNow }
             };
 
             await context.Empresas.AddRangeAsync(mineras);
@@ -112,11 +113,11 @@ namespace Wira.Api.Data
             // Agregar proveedores de ejemplo con rubros asignados
             var proveedores = new[]
             {
-                new Empresa { Nombre = "Transportes del Norte", RazonSocial = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0001", FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Transportes del Norte", RazonSocial = "Transportes del Norte SA", CUIT = "30-55667788-1", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 387 200 0001", FechaAlta = DateTime.UtcNow },
                 new Empresa { Nombre = "Equipos Mineros", RazonSocial = "Equipos Mineros SRL", CUIT = "30-99887766-4", RubroID = rubroEquipos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0002", FechaAlta = DateTime.UtcNow },
-                new Empresa { Nombre = "Servicios Técnicos TekSla", RazonSocial = "Servicios Técnicos TekSla SA", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0003", FechaAlta = DateTime.UtcNow },
-                new Empresa { Nombre = "Químicos Industriales", RazonSocial = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0004", FechaAlta = DateTime.UtcNow },
-                new Empresa { Nombre = "Servicios Norte SRL", RazonSocial = "Servicios Norte SRL", CUIT = "30-66778899-0", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 381 200 0100", FechaAlta = DateTime.UtcNow }
+                new Empresa { Nombre = "Servicios Técnicos TekSla", RazonSocial = "Servicios Técnicos TekSla SA", CUIT = "30-44556677-7", RubroID = rubroMantenimiento.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 387 200 0003", FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Químicos Industriales", RazonSocial = "Químicos Industriales SA", CUIT = "30-33445566-9", RubroID = rubroQuimicos.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 387 200 0004", FechaAlta = DateTime.UtcNow },
+                new Empresa { Nombre = "Servicios Puna SRL", RazonSocial = "Servicios Puna SRL", CUIT = "30-66778899-0", RubroID = rubroTransporte.RubroID, TipoEmpresa = EmpresaTipos.Proveedor, Activo = true, Telefono = "+54 9 388 200 0100", FechaAlta = DateTime.UtcNow }
             };
 
             await context.Empresas.AddRangeAsync(proveedores);
@@ -152,7 +153,7 @@ namespace Wira.Api.Data
                     Email = "minera@borax.com",
                     PasswordHash = passwordHash,
                     Nombre = "Valeria",
-                    Apellido = "Gimenez",
+                    Apellido = "Giménez",
                     DNI = "27841365",
                     Telefono = "+54 9 387 440 1020",
                     Activo = true,
@@ -184,7 +185,7 @@ namespace Wira.Api.Data
                     Email = "admin@wira.com",
                     PasswordHash = passwordHash,
                     Nombre = "Martina",
-                    Apellido = "Roldan",
+                    Apellido = "Roldán",
                     DNI = "20998800",
                     Telefono = "+54 9 11 5200 8800",
                     Activo = true,
@@ -213,12 +214,12 @@ namespace Wira.Api.Data
                 },
                 new Usuario
                 {
-                    Email = "proveedoradmin@equiposmineros.com",
+                    Email = "sofimont@equiposmineros.com",
                     PasswordHash = passwordHash,
-                    Nombre = "Sofia",
+                    Nombre = "Sofía",
                     Apellido = "Montenegro",
                     DNI = "26654012",
-                    Telefono = "+54 9 381 245 3302",
+                    Telefono = "+54 9 387 245 3302",
                     Activo = true,
                     ValidadoEmail = true,
                     FechaBaja = null,
@@ -230,7 +231,7 @@ namespace Wira.Api.Data
                 ,
                 new Usuario
                 {
-                    Email = "contacto@exar.com",
+                    Email = "fernandoruiz@exar.com",
                     PasswordHash = passwordHash,
                     Nombre = "Fernando",
                     Apellido = "Ruiz",
@@ -424,7 +425,7 @@ namespace Wira.Api.Data
                     FechaCierre = DateTime.UtcNow.AddDays(21),
                     PresupuestoEstimado = 120000m,
                     Condiciones = "Equipo certificado; cronograma de trabajo aprobado por la minera.",
-                    EstadoLicitacionID = estadoBorrador.EstadoLicitacionID,
+                    EstadoLicitacionID = estadoEnEvaluacion.EstadoLicitacionID,
                     ProyectoMineroID = proyectoBorax?.ProyectoMineroID
                 },
                 new Licitacion
@@ -670,7 +671,7 @@ namespace Wira.Api.Data
                 new Propuesta { LicitacionID = licAdjudicada.LicitacionID, ProveedorID = proveedorTransporte.EmpresaID, PresupuestoOfrecido = 400000m, MonedaID = monedaARS.MonedaID, EstadoPropuestaID = estadoPropAdjudicada.EstadoPropuestaID, Descripcion = "Oferta servicio transporte - adjudicada." },
                 new Propuesta { LicitacionID = licAdjudicada.LicitacionID, ProveedorID = mineraBorax.EmpresaID, PresupuestoOfrecido = 420000m, MonedaID = monedaARS.MonedaID, EstadoPropuestaID = estadoPropEnviada.EstadoPropuestaID, Descripcion = "Propuesta interna de Borax (registro de prueba)." },
 
-                // Mantenimiento (borrador) - TekSla + Borax
+                // Mantenimiento (en evaluación) - TekSla + Borax
                 new Propuesta { LicitacionID = licBorrador.LicitacionID, ProveedorID = proveedorTekSla.EmpresaID, PresupuestoOfrecido = 115000m, MonedaID = monedaARS.MonedaID, EstadoPropuestaID = estadoPropEnviada.EstadoPropuestaID, Descripcion = "Propuesta mantenimiento por TekSla." },
                 new Propuesta { LicitacionID = licBorrador.LicitacionID, ProveedorID = mineraBorax.EmpresaID, PresupuestoOfrecido = 120000m, MonedaID = monedaARS.MonedaID, EstadoPropuestaID = estadoPropEnviada.EstadoPropuestaID, Descripcion = "Propuesta interna de Borax (control de calidad)." },
 
@@ -684,77 +685,109 @@ namespace Wira.Api.Data
             await context.Propuestas.AddRangeAsync(propuestas);
             await context.SaveChangesAsync();
 
-            // Crear respuestas por criterio para cada propuesta
-            var allPropuestas = await context.Propuestas.Where(p => p.Licitacion.MineraID == mineraBorax.EmpresaID).ToListAsync();
+            // Crear respuestas por criterio para cada propuesta asegurando cobertura completa
+            var propuestasConLicitacion = await context.Propuestas
+                .Include(p => p.Licitacion)
+                .ToListAsync();
+
+            var todosLosCriterios = await context.CriteriosLicitacion.ToListAsync();
+            var criteriosPorLicitacion = todosLosCriterios
+                .GroupBy(c => c.LicitacionID)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var opcionesPorCriterio = (await context.CriteriosOpciones.ToListAsync())
+                .GroupBy(o => o.CriterioID)
+                .ToDictionary(g => g.Key, g => g.OrderBy(o => o.Orden).ToList());
+
+            var respuestasExistentes = (await context.RespuestasCriteriosLicitacion
+                    .Select(r => new { r.PropuestaID, r.CriterioID })
+                    .ToListAsync())
+                .Select(rc => $"{rc.PropuestaID}:{rc.CriterioID}")
+                .ToHashSet();
+
+            RespuestaCriterioLicitacion CrearRespuesta(Propuesta propuesta, CriterioLicitacion criterio, bool esProveedorInterno)
+            {
+                var respuesta = new RespuestaCriterioLicitacion
+                {
+                    PropuestaID = propuesta.PropuestaID,
+                    CriterioID = criterio.CriterioID
+                };
+
+                var nombre = (criterio.Nombre ?? string.Empty).ToLowerInvariant();
+
+                switch (criterio.Tipo)
+                {
+                    case TipoCriterio.Numerico:
+                        if (nombre.Contains("precio") || nombre.Contains("oferta"))
+                        {
+                            respuesta.ValorNumerico = propuesta.PresupuestoOfrecido;
+                        }
+                        else if (nombre.Contains("plazo"))
+                        {
+                            respuesta.ValorNumerico = esProveedorInterno ? 30m : 45m;
+                        }
+                        else if (nombre.Contains("capacidad") || nombre.Contains("flota"))
+                        {
+                            respuesta.ValorNumerico = esProveedorInterno ? 500m : 150m;
+                        }
+                        else if (nombre.Contains("experiencia"))
+                        {
+                            respuesta.ValorNumerico = esProveedorInterno ? 8m : 2m;
+                        }
+                        else
+                        {
+                            respuesta.ValorNumerico = esProveedorInterno ? 5m : 3m;
+                        }
+                        break;
+                    case TipoCriterio.Booleano:
+                        respuesta.ValorBooleano = criterio.ValorRequeridoBooleano ?? esProveedorInterno;
+                        break;
+                    case TipoCriterio.Descriptivo:
+                        respuesta.ValorProveedor = esProveedorInterno
+                            ? "Plan detallado con cronograma y recursos asignados."
+                            : "Propuesta técnica con alcance y entregables.";
+                        break;
+                    case TipoCriterio.Escala:
+                        if (opcionesPorCriterio.TryGetValue(criterio.CriterioID, out var opciones) && opciones.Count > 0)
+                        {
+                            var opcion = opciones.FirstOrDefault(o => string.Equals(o.Valor, esProveedorInterno ? "Excelente" : "Bueno", StringComparison.OrdinalIgnoreCase))
+                                         ?? opciones.OrderByDescending(o => o.Puntaje).First();
+                            respuesta.CriterioOpcionID = opcion.OpcionID;
+                        }
+                        break;
+                }
+
+                return respuesta;
+            }
 
             var respuestas = new List<RespuestaCriterioLicitacion>();
 
-            foreach (var prop in allPropuestas)
+            foreach (var propuesta in propuestasConLicitacion)
             {
-                var esBoraxProveedor = prop.ProveedorID == mineraBorax.EmpresaID;
-                var criteriosPorLicitacion = await context.CriteriosLicitacion.Where(c => c.LicitacionID == prop.LicitacionID).ToListAsync();
-
-                foreach (var crit in criteriosPorLicitacion)
+                if (!criteriosPorLicitacion.TryGetValue(propuesta.LicitacionID, out var criteriosParaLicitacion))
                 {
-                    var resp = new RespuestaCriterioLicitacion
-                    {
-                        PropuestaID = prop.PropuestaID,
-                        CriterioID = crit.CriterioID
-                    };
+                    continue;
+                }
 
-                    switch (crit.Tipo)
+                var esProveedorInterno = propuesta.Licitacion != null && propuesta.ProveedorID == propuesta.Licitacion.MineraID;
+
+                foreach (var criterio in criteriosParaLicitacion)
+                {
+                    var key = $"{propuesta.PropuestaID}:{criterio.CriterioID}";
+                    if (respuestasExistentes.Contains(key))
                     {
-                        case TipoCriterio.Numerico:
-                            if (crit.Nombre.Contains("Precio") || crit.Nombre.Contains("Oferta"))
-                            {
-                                resp.ValorNumerico = prop.PresupuestoOfrecido;
-                            }
-                            else if (crit.Nombre.Contains("Plazo"))
-                            {
-                                resp.ValorNumerico = esBoraxProveedor ? 30m : 45m;
-                            }
-                            else if (crit.Nombre.Contains("Capacidad") || crit.Nombre.Contains("Flota"))
-                            {
-                                resp.ValorNumerico = esBoraxProveedor ? 500m : 150m;
-                            }
-                            else if (crit.Nombre.Contains("Experiencia"))
-                            {
-                                resp.ValorNumerico = esBoraxProveedor ? 8m : 2m;
-                            }
-                            else
-                            {
-                                resp.ValorNumerico = 1m;
-                            }
-                            break;
-                        case TipoCriterio.Booleano:
-                            resp.ValorBooleano = esBoraxProveedor ? true : true;
-                            break;
-                        case TipoCriterio.Descriptivo:
-                            resp.ValorProveedor = esBoraxProveedor ? "Plan detallado con cronograma y recursos asignados." : "Propuesta técnica con alcance y entregables.";
-                            break;
-                        case TipoCriterio.Escala:
-                            // seleccionar opción: Excelente para Borax, Bueno para otros
-                            var opcionValor = esBoraxProveedor ? "Excelente" : "Bueno";
-                            var opcion = await context.CriteriosOpciones.FirstOrDefaultAsync(o => o.CriterioID == crit.CriterioID && o.Valor == opcionValor);
-                            if (opcion != null)
-                            {
-                                resp.CriterioOpcionID = opcion.OpcionID;
-                            }
-                            else
-                            {
-                                // fallback: asignar la primera opción disponible
-                                var primera = await context.CriteriosOpciones.FirstOrDefaultAsync(o => o.CriterioID == crit.CriterioID);
-                                if (primera != null) resp.CriterioOpcionID = primera.OpcionID;
-                            }
-                            break;
+                        continue;
                     }
 
-                    respuestas.Add(resp);
+                    respuestas.Add(CrearRespuesta(propuesta, criterio, esProveedorInterno));
                 }
             }
 
-            await context.RespuestasCriteriosLicitacion.AddRangeAsync(respuestas);
-            await context.SaveChangesAsync();
+            if (respuestas.Count > 0)
+            {
+                await context.RespuestasCriteriosLicitacion.AddRangeAsync(respuestas);
+                await context.SaveChangesAsync();
+            }
 
             // --- Calificaciones post-licitación para propuestas adjudicadas ---
             var propuestasAdjudicadas = await context.Propuestas.Where(p => p.EstadoPropuestaID == estadoPropAdjudicada.EstadoPropuestaID).ToListAsync();
