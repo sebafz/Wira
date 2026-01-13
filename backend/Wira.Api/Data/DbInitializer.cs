@@ -105,10 +105,15 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Obtener IDs de rubros para asignar a proveedores
-            var rubroTransporte = await context.Rubros.FirstAsync(r => r.Nombre == "Transporte y logística");
-            var rubroEquipos = await context.Rubros.FirstAsync(r => r.Nombre == "Equipos y maquinarias");
-            var rubroMantenimiento = await context.Rubros.FirstAsync(r => r.Nombre == "Mantenimiento y reparaciones");
-            var rubroQuimicos = await context.Rubros.FirstAsync(r => r.Nombre == "Reactivos químicos");
+            var rubroTransporte = await context.Rubros.FirstOrDefaultAsync(r => r.Nombre == "Transporte y logística");
+            var rubroEquipos = await context.Rubros.FirstOrDefaultAsync(r => r.Nombre == "Equipos y maquinarias");
+            var rubroMantenimiento = await context.Rubros.FirstOrDefaultAsync(r => r.Nombre == "Mantenimiento y reparaciones");
+            var rubroQuimicos = await context.Rubros.FirstOrDefaultAsync(r => r.Nombre == "Reactivos químicos");
+
+            if (rubroTransporte == null || rubroEquipos == null || rubroMantenimiento == null || rubroQuimicos == null)
+            {
+                throw new InvalidOperationException("Faltan rubros esperados en la base de datos de seed. Asegúrese que la sección de rubros haya sido inicializada correctamente.");
+            }
 
             // Agregar proveedores de ejemplo con rubros asignados
             var proveedores = new[]
@@ -126,11 +131,16 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Obtener roles
-            var rolMineraUsuario = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.MineraUsuario);
-            var rolProveedorUsuario = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.ProveedorUsuario);
-            var rolMineraAdministrador = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.MineraAdministrador);
-            var rolProveedorAdministrador = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
-            var rolAdministradorSistema = await context.Roles.FirstAsync(r => r.Nombre == RoleNames.AdministradorSistema);
+            var rolMineraUsuario = await context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.MineraUsuario);
+            var rolProveedorUsuario = await context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorUsuario);
+            var rolMineraAdministrador = await context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.MineraAdministrador);
+            var rolProveedorAdministrador = await context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+            var rolAdministradorSistema = await context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.AdministradorSistema);
+
+            if (rolMineraUsuario == null || rolProveedorUsuario == null || rolMineraAdministrador == null || rolProveedorAdministrador == null || rolAdministradorSistema == null)
+            {
+                throw new InvalidOperationException("Faltan roles esperados en la base de datos de seed. Revisa la inserción de roles iniciales.");
+            }
 
             // Obtener empresas específicas para asignar a usuarios
             var mineraBorax = await context.Empresas.FirstAsync(e => e.Nombre == "Borax Argentina" && e.TipoEmpresa == EmpresaTipos.Minera);
@@ -138,9 +148,17 @@ namespace Wira.Api.Data
             var mineraPosco = await context.Empresas.FirstAsync(e => e.Nombre == "Posco" && e.TipoEmpresa == EmpresaTipos.Minera);
             var mineraRioTinto = await context.Empresas.FirstAsync(e => e.Nombre == "Río Tinto" && e.TipoEmpresa == EmpresaTipos.Minera);
             var mineraExar = await context.Empresas.FirstAsync(e => e.Nombre == "Exar" && e.TipoEmpresa == EmpresaTipos.Minera);
-            var proveedorTransporte = await context.Empresas.FirstAsync(e => e.Nombre == "Transportes del Norte" && e.TipoEmpresa == EmpresaTipos.Proveedor);
-            var proveedorEquipos = await context.Empresas.FirstAsync(e => e.Nombre == "Equipos Mineros" && e.TipoEmpresa == EmpresaTipos.Proveedor);
-            var proveedorServiciosNorte = await context.Empresas.FirstAsync(e => e.Nombre == "Servicios Norte SRL" && e.TipoEmpresa == EmpresaTipos.Proveedor);
+            var proveedorTransporte = await context.Empresas.FirstOrDefaultAsync(e => e.Nombre == "Transportes del Norte" && e.TipoEmpresa == EmpresaTipos.Proveedor);
+            var proveedorEquipos = await context.Empresas.FirstOrDefaultAsync(e => e.Nombre == "Equipos Mineros" && e.TipoEmpresa == EmpresaTipos.Proveedor);
+            // Intentar encontrar el proveedor por varios nombres posibles; algunos seeds usan "Servicios Puna SRL"
+            var proveedorServiciosNorte = await context.Empresas.FirstOrDefaultAsync(e => e.Nombre == "Servicios Norte SRL" && e.TipoEmpresa == EmpresaTipos.Proveedor)
+                                        ?? await context.Empresas.FirstOrDefaultAsync(e => e.Nombre == "Servicios Puna SRL" && e.TipoEmpresa == EmpresaTipos.Proveedor);
+
+            // Si aún no existe ningún proveedor con ese nombre, usar cualquier proveedor disponible para evitar excepciones
+            if (proveedorServiciosNorte == null)
+            {
+                proveedorServiciosNorte = await context.Empresas.FirstOrDefaultAsync(e => e.TipoEmpresa == EmpresaTipos.Proveedor);
+            }
 
             // Hash de la contraseña "123456"
             string passwordHash = BCrypt.Net.BCrypt.HashPassword("123456");
@@ -267,26 +285,28 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Obtener IDs de usuarios recién creados
-            var usuarioOperacionesBorax = await context.Usuarios.FirstAsync(u => u.Email == "minera@borax.com");
-            var usuarioAdminBorax = await context.Usuarios.FirstAsync(u => u.Email == "mineraadmin@borax.com");
-            var usuarioAdminSistema = await context.Usuarios.FirstAsync(u => u.Email == "admin@wira.com");
-            var usuarioEquipos = await context.Usuarios.FirstAsync(u => u.Email == "proveedor@equiposmineros.com");
-            var usuarioAdminEquipos = await context.Usuarios.FirstAsync(u => u.Email == "proveedoradmin@equiposmineros.com");
-            var usuarioAndes = await context.Usuarios.FirstAsync(u => u.Email == "contacto@exar.com");
-            var usuarioServiciosNorte = await context.Usuarios.FirstAsync(u => u.Email == "contacto@serviciosnorte.com");
-            // Asignar roles a usuarios
-            var usuarioRoles = new[]
-            {
-                new UsuarioRol { UsuarioID = usuarioOperacionesBorax.UsuarioID, RolID = rolMineraUsuario.RolID },
-                new UsuarioRol { UsuarioID = usuarioAdminBorax.UsuarioID, RolID = rolMineraAdministrador.RolID },
-                new UsuarioRol { UsuarioID = usuarioEquipos.UsuarioID, RolID = rolProveedorUsuario.RolID },
-                new UsuarioRol { UsuarioID = usuarioAdminEquipos.UsuarioID, RolID = rolProveedorAdministrador.RolID },
-                new UsuarioRol { UsuarioID = usuarioAdminSistema.UsuarioID, RolID = rolAdministradorSistema.RolID },
-                new UsuarioRol { UsuarioID = usuarioAndes.UsuarioID, RolID = rolMineraUsuario.RolID },
-                new UsuarioRol { UsuarioID = usuarioServiciosNorte.UsuarioID, RolID = rolProveedorUsuario.RolID }
-            };
+            var usuarioOperacionesBorax = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "minera@borax.com");
+            var usuarioAdminBorax = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "mineraadmin@borax.com");
+            var usuarioAdminSistema = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "admin@wira.com");
+            var usuarioEquipos = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "proveedor@equiposmineros.com");
+            var usuarioAdminEquipos = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "proveedoradmin@equiposmineros.com");
+            var usuarioAndes = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "contacto@exar.com");
+            var usuarioServiciosNorte = await context.Usuarios.FirstOrDefaultAsync(u => u.Email == "contacto@serviciosnorte.com");
 
-            await context.UsuariosRoles.AddRangeAsync(usuarioRoles);
+            // Asignar roles a usuarios solo si existen
+            var usuarioRolesList = new List<UsuarioRol>();
+            if (usuarioOperacionesBorax != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioOperacionesBorax.UsuarioID, RolID = rolMineraUsuario.RolID });
+            if (usuarioAdminBorax != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioAdminBorax.UsuarioID, RolID = rolMineraAdministrador.RolID });
+            if (usuarioEquipos != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioEquipos.UsuarioID, RolID = rolProveedorUsuario.RolID });
+            if (usuarioAdminEquipos != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioAdminEquipos.UsuarioID, RolID = rolProveedorAdministrador.RolID });
+            if (usuarioAdminSistema != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioAdminSistema.UsuarioID, RolID = rolAdministradorSistema.RolID });
+            if (usuarioAndes != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioAndes.UsuarioID, RolID = rolMineraUsuario.RolID });
+            if (usuarioServiciosNorte != null) usuarioRolesList.Add(new UsuarioRol { UsuarioID = usuarioServiciosNorte.UsuarioID, RolID = rolProveedorUsuario.RolID });
+
+            if (usuarioRolesList.Count > 0)
+            {
+                await context.UsuariosRoles.AddRangeAsync(usuarioRolesList);
+            }
 
             // Agregar proyectos mineros de ejemplo para Borax Argentina
             var proyectosMineros = new[]
@@ -355,17 +375,32 @@ namespace Wira.Api.Data
 
             // --- Seed: Licitaciones y criterios para Borax Argentina ---
             // Obtener estados, moneda y rubro
-            var estadoBorrador = await context.EstadosLicitacion.FirstAsync(e => e.NombreEstado == "Borrador");
-            var estadoPublicada = await context.EstadosLicitacion.FirstAsync(e => e.NombreEstado == "Publicada");
-            var estadoEnEvaluacion = await context.EstadosLicitacion.FirstAsync(e => e.NombreEstado == "En Evaluación");
-            var estadoAdjudicada = await context.EstadosLicitacion.FirstAsync(e => e.NombreEstado == "Adjudicada");
-            var estadoCancelada = await context.EstadosLicitacion.FirstAsync(e => e.NombreEstado == "Cancelada");
-            var estadoCerrada = await context.EstadosLicitacion.FirstAsync(e => e.NombreEstado == "Cerrada");
+            var estadoBorrador = await context.EstadosLicitacion.FirstOrDefaultAsync(e => e.NombreEstado == "Borrador");
+            var estadoPublicada = await context.EstadosLicitacion.FirstOrDefaultAsync(e => e.NombreEstado == "Publicada");
+            var estadoEnEvaluacion = await context.EstadosLicitacion.FirstOrDefaultAsync(e => e.NombreEstado == "En Evaluación");
+            var estadoAdjudicada = await context.EstadosLicitacion.FirstOrDefaultAsync(e => e.NombreEstado == "Adjudicada");
+            var estadoCancelada = await context.EstadosLicitacion.FirstOrDefaultAsync(e => e.NombreEstado == "Cancelada");
+            var estadoCerrada = await context.EstadosLicitacion.FirstOrDefaultAsync(e => e.NombreEstado == "Cerrada");
 
-            var monedaARS = await context.Monedas.FirstAsync(m => m.Codigo == "ARS");
-            var monedaUSD = await context.Monedas.FirstAsync(m => m.Codigo == "USD");
+            var monedaARS = await context.Monedas.FirstOrDefaultAsync(m => m.Codigo == "ARS");
+            var monedaUSD = await context.Monedas.FirstOrDefaultAsync(m => m.Codigo == "USD");
 
-            var rubroQuimicosDb = await context.Rubros.FirstAsync(r => r.Nombre == "Reactivos químicos");
+            var rubroQuimicosDb = await context.Rubros.FirstOrDefaultAsync(r => r.Nombre == "Reactivos químicos");
+
+            if (estadoBorrador == null || estadoPublicada == null || estadoEnEvaluacion == null || estadoAdjudicada == null || estadoCancelada == null || estadoCerrada == null)
+            {
+                throw new InvalidOperationException("Faltan estados de licitación esperados en el seed.");
+            }
+
+            if (monedaARS == null || monedaUSD == null)
+            {
+                throw new InvalidOperationException("Faltan monedas esperadas en el seed (ARS, USD).\n");
+            }
+
+            if (rubroQuimicosDb == null)
+            {
+                throw new InvalidOperationException("No se encontró el rubro 'Reactivos químicos' después de insertar rubros.");
+            }
 
             // Proyecto asociado (usar el primero de Borax si existe)
             var proyectoBorax = await context.ProyectosMineros.FirstOrDefaultAsync(p => p.MineraID == mineraBorax.EmpresaID);
@@ -463,12 +498,17 @@ namespace Wira.Api.Data
 
             // Crear criterios para cada licitación (ejemplos representativos)
             // Obtener licitaciones insertadas
-            var licPublicada = await context.Licitaciones.FirstAsync(l => l.Titulo.Contains("Lote A"));
-            var licEnEvaluacion = await context.Licitaciones.FirstAsync(l => l.Titulo.Contains("Contrato Marco"));
-            var licAdjudicada = await context.Licitaciones.FirstAsync(l => l.Titulo.Contains("Transporte"));
-            var licBorrador = await context.Licitaciones.FirstAsync(l => l.Titulo.Contains("Mantenimiento Planta"));
-            var licCancelada = await context.Licitaciones.FirstAsync(l => l.Titulo.Contains("Impacto Ambiental"));
-            var licCerrada = await context.Licitaciones.FirstAsync(l => l.Titulo.Contains("Post-Cierre"));
+            var licPublicada = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Lote A"));
+            var licEnEvaluacion = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Contrato Marco"));
+            var licAdjudicada = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Transporte"));
+            var licBorrador = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Mantenimiento Planta"));
+            var licCancelada = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Impacto Ambiental"));
+            var licCerrada = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Post-Cierre"));
+
+            if (licPublicada == null || licEnEvaluacion == null || licAdjudicada == null || licBorrador == null || licCancelada == null || licCerrada == null)
+            {
+                throw new InvalidOperationException("Faltan licitaciones insertadas correctamente en el seed; revisa los títulos esperados.");
+            }
 
             var criterios = new List<CriterioLicitacion>();
 
@@ -636,18 +676,21 @@ namespace Wira.Api.Data
             await context.SaveChangesAsync();
 
             // Crear opciones para criterios de escala (solo el criterio de evaluación técnica)
-            var criterioEscala = await context.CriteriosLicitacion.FirstAsync(c => c.LicitacionID == licPublicada.LicitacionID && c.Tipo == TipoCriterio.Escala);
+            var criterioEscala = await context.CriteriosLicitacion.FirstOrDefaultAsync(c => c.LicitacionID == licPublicada.LicitacionID && c.Tipo == TipoCriterio.Escala);
 
-            var opcionesEscala = new[]
+            if (criterioEscala != null)
             {
-                new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Excelente", Descripcion = "Propuesta técnica sobresaliente", Puntaje = 100m, Orden = 1 },
-                new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Bueno", Descripcion = "Propuesta técnica adecuada", Puntaje = 75m, Orden = 2 },
-                new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Regular", Descripcion = "Propuesta técnica con observaciones", Puntaje = 50m, Orden = 3 },
-                new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Insuficiente", Descripcion = "Propuesta técnica deficiente", Puntaje = 0m, Orden = 4 }
-            };
+                var opcionesEscala = new[]
+                {
+                    new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Excelente", Descripcion = "Propuesta técnica sobresaliente", Puntaje = 100m, Orden = 1 },
+                    new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Bueno", Descripcion = "Propuesta técnica adecuada", Puntaje = 75m, Orden = 2 },
+                    new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Regular", Descripcion = "Propuesta técnica con observaciones", Puntaje = 50m, Orden = 3 },
+                    new CriterioOpcion { CriterioID = criterioEscala.CriterioID, Valor = "Insuficiente", Descripcion = "Propuesta técnica deficiente", Puntaje = 0m, Orden = 4 }
+                };
 
-            await context.CriteriosOpciones.AddRangeAsync(opcionesEscala);
-            await context.SaveChangesAsync();
+                await context.CriteriosOpciones.AddRangeAsync(opcionesEscala);
+                await context.SaveChangesAsync();
+            }
 
             // --- Crear propuestas por licitación y respuestas a criterios ---
             var proveedorTekSla = await context.Empresas.FirstAsync(e => e.Nombre == "Servicios Técnicos TekSla");
