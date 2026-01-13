@@ -70,6 +70,25 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// Ejecución opcional: reset completo de la base de datos (dropear esquema, migrar y seed)
+if (args.Contains("--reset-db"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<WiraDbContext>();
+
+    var conn = db.Database.GetDbConnection();
+    await conn.OpenAsync();
+    using (var cmd = conn.CreateCommand())
+    {
+        cmd.CommandText = "DROP SCHEMA public CASCADE; CREATE SCHEMA public;";
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    await db.Database.MigrateAsync();
+    await DbInitializer.InitializeAsync(db);
+    return;
+}
+
 // Ejecución opcional de migraciones + seed manual al arrancar con --seed
 if (args.Contains("--seed"))
 {
