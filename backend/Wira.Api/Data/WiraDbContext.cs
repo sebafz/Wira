@@ -438,6 +438,84 @@ namespace Wira.Api.Data
 
                             prop.CurrentValue = utc;
                         }
+                        else if (prop.Metadata.ClrType == typeof(DateTimeOffset))
+                        {
+                            var dto = (DateTimeOffset)prop.CurrentValue!;
+                            prop.CurrentValue = dto.ToUniversalTime();
+                        }
+                        else if (prop.Metadata.ClrType.IsArray)
+                        {
+                            var elemType = prop.Metadata.ClrType.GetElementType();
+                            if (elemType == typeof(DateTime))
+                            {
+                                var arr = (DateTime[])prop.CurrentValue!;
+                                for (int i = 0; i < arr.Length; i++)
+                                {
+                                    var d = arr[i];
+                                    arr[i] = d.Kind switch
+                                    {
+                                        DateTimeKind.Utc => d,
+                                        DateTimeKind.Local => d.ToUniversalTime(),
+                                        _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                                    };
+                                }
+                                prop.CurrentValue = arr;
+                            }
+                        }
+                        else if (prop.Metadata.ClrType.IsGenericType)
+                        {
+                            var genDef = prop.Metadata.ClrType.GetGenericTypeDefinition();
+                            var genArg = prop.Metadata.ClrType.GetGenericArguments().FirstOrDefault();
+                            if (genArg == typeof(DateTime))
+                            {
+                                // Handle List<DateTime>, ICollection<DateTime>, IEnumerable<DateTime> etc.
+                                if (prop.CurrentValue is System.Collections.IEnumerable enumerable)
+                                {
+                                    var list = new System.Collections.Generic.List<DateTime>();
+                                    foreach (var item in enumerable)
+                                    {
+                                        if (item is DateTime d)
+                                        {
+                                            var utc = d.Kind switch
+                                            {
+                                                DateTimeKind.Utc => d,
+                                                DateTimeKind.Local => d.ToUniversalTime(),
+                                                _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                                            };
+                                            list.Add(utc);
+                                        }
+                                    }
+
+                                    // Try to assign back a List<DateTime> (compatible with most collection properties)
+                                    prop.CurrentValue = list;
+                                }
+                            }
+                            else if (genArg == typeof(DateTime?))
+                            {
+                                if (prop.CurrentValue is System.Collections.IEnumerable enumerable)
+                                {
+                                    var list = new System.Collections.Generic.List<DateTime?>();
+                                    foreach (var item in enumerable)
+                                    {
+                                        if (item is DateTime d)
+                                        {
+                                            var utc = d.Kind switch
+                                            {
+                                                DateTimeKind.Utc => d,
+                                                DateTimeKind.Local => d.ToUniversalTime(),
+                                                _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                                            };
+                                            list.Add(utc);
+                                        }
+                                        else
+                                        {
+                                            list.Add(null);
+                                        }
+                                    }
+                                    prop.CurrentValue = list;
+                                }
+                            }
+                        }
                         else if (prop.Metadata.ClrType == typeof(DateTime?))
                         {
                             var nullable = (DateTime?)prop.CurrentValue;
