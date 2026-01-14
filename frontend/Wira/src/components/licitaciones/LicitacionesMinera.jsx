@@ -3072,7 +3072,7 @@ const LicitacionesMinera = () => {
               <ResultsInfo>
                 {(() => {
                   const stats = getLicitacionesStats();
-                  return `${stats.total} licitaciones activas (${stats.postuladas} postuladas, ${stats.disponibles} disponibles)`;
+                  return `${stats.total} licitaciones activas`;
                 })()}
               </ResultsInfo>
             </div>

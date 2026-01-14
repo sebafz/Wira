@@ -212,8 +212,8 @@ namespace Wira.Api.Data
                 {
                     Email = "admin@wira.com",
                     PasswordHash = passwordHash,
-                    Nombre = "Martina",
-                    Apellido = "Roldán",
+                    Nombre = "Sebastián",
+                    Apellido = "Fernandez Zavalía",
                     DNI = "20998800",
                     Telefono = "+54 9 11 5200 8800",
                     Activo = true,
@@ -288,6 +288,23 @@ namespace Wira.Api.Data
                     FechaRegistro = DateTime.UtcNow,
                     EstadoAprobacion = AprobacionEstados.Aprobado,
                     FechaAprobacion = DateTime.UtcNow
+                },
+                // Cuenta pendiente de aprobación para Minera Borax
+                new Usuario
+                {
+                    Email = "pendiente@borax.com",
+                    PasswordHash = passwordHash,
+                    Nombre = "Carolina",
+                    Apellido = "López",
+                    DNI = "30123456",
+                    Telefono = "+54 9 387 555 1100",
+                    Activo = true,
+                    ValidadoEmail = true,
+                    FechaBaja = null,
+                    EmpresaID = mineraBorax.EmpresaID,
+                    FechaRegistro = DateTime.UtcNow,
+                    EstadoAprobacion = AprobacionEstados.Pendiente,
+                    FechaAprobacion = null
                 }
             };
 

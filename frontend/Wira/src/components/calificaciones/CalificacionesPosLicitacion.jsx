@@ -401,7 +401,7 @@ const CalificacionesPosLicitacion = () => {
         <PageHeader>
           <Title>Calificaciones post licitacion</Title>
           <Subtitle>
-            Registra la evaluacion final de tus proveedores adjudicados para
+            Registre la evaluacion final de sus proveedores adjudicados para
             cerrar sus licitaciones.
           </Subtitle>
         </PageHeader>
