@@ -292,7 +292,7 @@ namespace Wira.Api.Data
                 // Cuenta pendiente de aprobación para Minera Borax
                 new Usuario
                 {
-                    Email = "pendiente@borax.com",
+                    Email = "clopez@borax.com",
                     PasswordHash = passwordHash,
                     Nombre = "Carolina",
                     Apellido = "López",

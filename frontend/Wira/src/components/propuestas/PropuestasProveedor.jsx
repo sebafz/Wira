@@ -855,6 +855,11 @@ const PropuestasProveedor = () => {
     return statusMap[status] || status;
   };
 
+  const isFinalProposalState = (status) => {
+    const s = status || "";
+    return ["Adjudicada", "Aprobada", "Rechazada"].includes(s);
+  };
+
   const handleBrowseLicitaciones = () => {
     navigate("/licitaciones-activas");
   };
@@ -1390,18 +1395,22 @@ const PropuestasProveedor = () => {
             </ModalBody>
 
             <ModalActions>
-              <EditButton
-                onClick={() => {
-                  handleEditarPropuesta(selectedPropuesta.propuestaID);
-                }}
-              >
-                ✏️ Editar
-              </EditButton>
-              <DeleteButton
-                onClick={() => handleEliminarPropuesta(selectedPropuesta)}
-              >
-                🗑️ Eliminar
-              </DeleteButton>
+              {!isFinalProposalState(selectedPropuesta.estadoNombre) && (
+                <>
+                  <EditButton
+                    onClick={() => {
+                      handleEditarPropuesta(selectedPropuesta.propuestaID);
+                    }}
+                  >
+                    ✏️ Editar
+                  </EditButton>
+                  <DeleteButton
+                    onClick={() => handleEliminarPropuesta(selectedPropuesta)}
+                  >
+                    🗑️ Eliminar
+                  </DeleteButton>
+                </>
+              )}
             </ModalActions>
           </ModalContent>
         </ModalOverlay>
