@@ -1311,9 +1311,30 @@ const PropuestasProveedor = () => {
 
                           <InfoLabel>Valor ofrecido</InfoLabel>
                           <CriterioValue>
-                            {respuesta.valorProveedor ||
-                              respuesta.ValorProveedor ||
-                              "No especificado"}
+                            {(() => {
+                              const numeric =
+                                respuesta.valorNumerico ??
+                                respuesta.ValorNumerico;
+                              const booleano =
+                                respuesta.valorBooleano ??
+                                respuesta.ValorBooleano;
+                              const opcion =
+                                respuesta.opcionSeleccionada ??
+                                respuesta.OpcionSeleccionada ??
+                                null;
+                              const texto =
+                                respuesta.valorProveedor ??
+                                respuesta.ValorProveedor ??
+                                null;
+
+                              if (numeric !== undefined && numeric !== null)
+                                return numeric;
+                              if (booleano !== undefined && booleano !== null)
+                                return booleano ? "Sí" : "No";
+                              if (opcion) return opcion.Valor ?? opcion.valor;
+                              if (texto) return texto;
+                              return "No especificado";
+                            })()}
                           </CriterioValue>
                         </CriterioItem>
                       ))}

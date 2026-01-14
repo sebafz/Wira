@@ -121,10 +121,21 @@ namespace Wira.Api.Controllers
                         r.RespuestaID,
                         r.CriterioID,
                         r.ValorProveedor,
+                        r.ValorNumerico,
+                        r.ValorBooleano,
+                        r.CriterioOpcionID,
+                        OpcionSeleccionada = r.OpcionSeleccionada == null ? null : new
+                        {
+                            r.OpcionSeleccionada.OpcionID,
+                            r.OpcionSeleccionada.Valor,
+                            r.OpcionSeleccionada.Descripcion,
+                            r.OpcionSeleccionada.Puntaje
+                        },
                         CriterioNombre = r.Criterio?.Nombre,
                         CriterioDescripcion = r.Criterio?.Descripcion,
                         CriterioPeso = r.Criterio?.Peso,
-                        CriterioMayorMejor = r.Criterio?.MayorMejor
+                        CriterioMayorMejor = r.Criterio?.MayorMejor,
+                        CriterioTipo = r.Criterio?.Tipo
                     })
                     .ToList();
 

@@ -448,9 +448,20 @@ namespace Wira.Api.Controllers
                         {
                             rc.RespuestaID,
                             rc.CriterioID,
+                            rc.ValorProveedor,
+                            rc.ValorNumerico,
+                            rc.ValorBooleano,
+                            rc.CriterioOpcionID,
+                            OpcionSeleccionada = rc.OpcionSeleccionada == null ? null : new
+                            {
+                                rc.OpcionSeleccionada.OpcionID,
+                                rc.OpcionSeleccionada.Valor,
+                                rc.OpcionSeleccionada.Descripcion,
+                                rc.OpcionSeleccionada.Puntaje
+                            },
                             CriterioNombre = rc.Criterio.Nombre,
                             CriterioDescripcion = rc.Criterio.Descripcion,
-                            rc.ValorProveedor
+                            CriterioTipo = rc.Criterio.Tipo
                         }).ToList(),
                         // Información del historial
                         HistorialGanador = new

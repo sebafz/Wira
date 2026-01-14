@@ -844,6 +844,36 @@ namespace Wira.Api.Data
                 await context.SaveChangesAsync();
             }
 
+            // Marcar una propuesta como ganadora para la licitación adjudicada
+            try
+            {
+                var propuestaAdjudicada = await context.Propuestas
+                    .Where(p => p.LicitacionID == licAdjudicada.LicitacionID)
+                    .OrderBy(p => p.FechaEnvio)
+                    .FirstOrDefaultAsync();
+
+                if (propuestaAdjudicada != null)
+                {
+                    var historialGanador = new HistorialProveedorLicitacion
+                    {
+                        ProveedorID = propuestaAdjudicada.ProveedorID,
+                        LicitacionID = propuestaAdjudicada.LicitacionID,
+                        Resultado = "Adjudicada",
+                        Ganador = true,
+                        Observaciones = "Propuesta seleccionada automáticamente en seed como ganadora.",
+                        FechaParticipacion = propuestaAdjudicada.FechaEnvio,
+                        FechaGanador = DateTime.UtcNow
+                    };
+
+                    await context.HistorialProveedorLicitacion.AddAsync(historialGanador);
+                    await context.SaveChangesAsync();
+                }
+            }
+            catch
+            {
+                // No detener el seed si hay algún problema al marcar ganador
+            }
+
             // --- Calificaciones post-licitación para propuestas adjudicadas ---
             var propuestasAdjudicadas = await context.Propuestas.Where(p => p.EstadoPropuestaID == estadoPropAdjudicada.EstadoPropuestaID).ToListAsync();
 
@@ -888,6 +918,36 @@ namespace Wira.Api.Data
             {
                 await context.CalificacionesPostLicitacion.AddRangeAsync(calificaciones);
                 await context.SaveChangesAsync();
+            }
+
+            // Añadir calificación para la licitación cerrada (registro histórico)
+            try
+            {
+                var propuestaCerrada = await context.Propuestas
+                    .Where(p => p.LicitacionID == licCerrada.LicitacionID)
+                    .OrderBy(p => p.FechaEnvio)
+                    .FirstOrDefaultAsync();
+
+                if (propuestaCerrada != null)
+                {
+                    var calificacionHistorica = new CalificacionPostLicitacion
+                    {
+                        ProveedorID = propuestaCerrada.ProveedorID,
+                        LicitacionID = propuestaCerrada.LicitacionID,
+                        Puntualidad = 4,
+                        Calidad = 4,
+                        Comunicacion = 4,
+                        Comentarios = "Evaluación histórica agregada en seed.",
+                        FechaCalificacion = DateTime.UtcNow
+                    };
+
+                    await context.CalificacionesPostLicitacion.AddAsync(calificacionHistorica);
+                    await context.SaveChangesAsync();
+                }
+            }
+            catch
+            {
+                // Ignorar errores en esta sección del seed
             }
         }
     }

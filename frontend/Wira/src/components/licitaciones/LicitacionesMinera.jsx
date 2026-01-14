@@ -1669,16 +1669,25 @@ const LicitacionesMinera = () => {
   });
 
   const formatCriterioValor = (respuesta) => {
-    const rawValor =
+    // Prefer numeric -> boolean -> option -> text
+    const numeric = respuesta?.valorNumerico ?? respuesta?.ValorNumerico;
+    const booleano = respuesta?.valorBooleano ?? respuesta?.ValorBooleano;
+    const opcion =
+      respuesta?.opcionSeleccionada ?? respuesta?.OpcionSeleccionada ?? null;
+    const texto =
       respuesta?.valorProveedor ??
       respuesta?.ValorProveedor ??
-      respuesta?.valorBooleano ??
-      respuesta?.ValorBooleano ??
-      respuesta?.valorNumerico ??
-      respuesta?.ValorNumerico ??
       respuesta?.valorTexto ??
       respuesta?.ValorTexto ??
       null;
+
+    const rawValor =
+      numeric ??
+      (booleano !== undefined && booleano !== null
+        ? booleano
+        : opcion
+        ? opcion.Valor ?? opcion?.valor
+        : texto ?? null);
 
     if (rawValor === null || rawValor === undefined || rawValor === "") {
       return "No especificado";
