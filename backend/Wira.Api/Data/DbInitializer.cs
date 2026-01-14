@@ -523,7 +523,7 @@ namespace Wira.Api.Data
                 EsPuntuable = true,
                 MayorMejor = false,
                 ValorMinimo = 0m,
-                ValorMaximo = 100000m
+                ValorMaximo = 1000000m
             });
 
             criterios.Add(new CriterioLicitacion
@@ -535,8 +535,8 @@ namespace Wira.Api.Data
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
                 MayorMejor = false,
-                ValorMinimo = 1m,
-                ValorMaximo = 180m
+                ValorMinimo = 0m,
+                ValorMaximo = 365m
             });
 
             criterios.Add(new CriterioLicitacion
@@ -569,7 +569,9 @@ namespace Wira.Api.Data
                 Peso = 60m,
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
-                MayorMejor = false
+                MayorMejor = false,
+                ValorMinimo = 0m,
+                ValorMaximo = 100000000m
             });
 
             criterios.Add(new CriterioLicitacion
@@ -580,7 +582,9 @@ namespace Wira.Api.Data
                 Peso = 25m,
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
-                MayorMejor = true
+                MayorMejor = true,
+                ValorMinimo = 0m,
+                ValorMaximo = 100000m
             });
 
             criterios.Add(new CriterioLicitacion
@@ -591,7 +595,9 @@ namespace Wira.Api.Data
                 Peso = 15m,
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
-                MayorMejor = true
+                MayorMejor = true,
+                ValorMinimo = 0m,
+                ValorMaximo = 50m
             });
 
             // Criterios para Transporte (adjudicada)
@@ -603,7 +609,9 @@ namespace Wira.Api.Data
                 Peso = 50m,
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
-                MayorMejor = false
+                MayorMejor = false,
+                ValorMinimo = 0m,
+                ValorMaximo = 100000m
             });
 
             criterios.Add(new CriterioLicitacion
@@ -614,7 +622,9 @@ namespace Wira.Api.Data
                 Peso = 30m,
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
-                MayorMejor = true
+                MayorMejor = true,
+                ValorMinimo = 0m,
+                ValorMaximo = 10000m
             });
 
             criterios.Add(new CriterioLicitacion
@@ -669,7 +679,9 @@ namespace Wira.Api.Data
                 Peso = 100m,
                 Tipo = TipoCriterio.Numerico,
                 EsPuntuable = true,
-                MayorMejor = true
+                MayorMejor = true,
+                ValorMinimo = 0m,
+                ValorMaximo = 50m
             });
 
             await context.CriteriosLicitacion.AddRangeAsync(criterios);
