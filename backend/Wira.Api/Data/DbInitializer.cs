@@ -500,6 +500,21 @@ namespace Wira.Api.Data
                     Condiciones = "Periodo de seguimiento 3 años; entregables trimestrales.",
                     EstadoLicitacionID = estadoCerrada.EstadoLicitacionID,
                     ProyectoMineroID = proyectoBorax?.ProyectoMineroID
+                },
+                // Nueva licitación cerrada para Equipos Mineros como ganador
+                new Licitacion
+                {
+                    MineraID = mineraBorax.EmpresaID,
+                    RubroID = rubroEquipos.RubroID,
+                    MonedaID = monedaARS.MonedaID,
+                    Titulo = "Mantenimiento de Cierre de Planta - Equipos Mineros",
+                    Descripcion = "Servicios de cierre de planta y desmantelamiento de equipos, con documentación de retiro y seguridad.",
+                    FechaInicio = DateTime.UtcNow.AddDays(-500),
+                    FechaCierre = DateTime.UtcNow.AddDays(-450),
+                    PresupuestoEstimado = 150000m,
+                    Condiciones = "Plan de cierre integral; reportes certificados; protocolos de seguridad.",
+                    EstadoLicitacionID = estadoCerrada.EstadoLicitacionID,
+                    ProyectoMineroID = proyectoBorax?.ProyectoMineroID
                 }
             };
 
@@ -514,6 +529,7 @@ namespace Wira.Api.Data
             var licBorrador = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Mantenimiento Planta"));
             var licCancelada = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Impacto Ambiental"));
             var licCerrada = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Post-Cierre"));
+            var licCerradaEquipos = await context.Licitaciones.FirstOrDefaultAsync(l => l.Titulo.Contains("Equipos Mineros") && l.EstadoLicitacionID == estadoCerrada.EstadoLicitacionID);
 
             if (licPublicada == null || licEnEvaluacion == null || licAdjudicada == null || licBorrador == null || licCancelada == null || licCerrada == null)
             {
@@ -746,6 +762,30 @@ namespace Wira.Api.Data
                 // Post-Cierre (cerrada) - Borax (por registro histórico)
                 new Propuesta { LicitacionID = licCerrada.LicitacionID, ProveedorID = mineraBorax.EmpresaID, PresupuestoOfrecido = 88000m, MonedaID = monedaARS.MonedaID, EstadoPropuestaID = estadoPropEnviada.EstadoPropuestaID, Descripcion = "Propuesta histórica (registro)." }
             };
+
+            // Propuestas para la nueva licitación cerrada de Equipos Mineros
+            if (licCerradaEquipos != null)
+            {
+                propuestas.Add(new Propuesta
+                {
+                    LicitacionID = licCerradaEquipos.LicitacionID,
+                    ProveedorID = proveedorEquipos.EmpresaID,
+                    PresupuestoOfrecido = 140000m,
+                    MonedaID = monedaARS.MonedaID,
+                    EstadoPropuestaID = estadoPropEnviada.EstadoPropuestaID,
+                    Descripcion = "Oferta cierre de planta - Equipos Mineros."
+                });
+
+                propuestas.Add(new Propuesta
+                {
+                    LicitacionID = licCerradaEquipos.LicitacionID,
+                    ProveedorID = mineraBorax.EmpresaID,
+                    PresupuestoOfrecido = 155000m,
+                    MonedaID = monedaARS.MonedaID,
+                    EstadoPropuestaID = estadoPropEnviada.EstadoPropuestaID,
+                    Descripcion = "Propuesta interna de Borax (comparativa)."
+                });
+            }
 
             await context.Propuestas.AddRangeAsync(propuestas);
             await context.SaveChangesAsync();
@@ -1055,6 +1095,73 @@ namespace Wira.Api.Data
             catch
             {
                 // No detener el seed si hay algún problema en la sección de licitación cerrada
+            }
+
+            // Marcar ganador y calificación para la nueva licitación cerrada de Equipos Mineros
+            try
+            {
+                if (licCerradaEquipos != null && proveedorEquipos != null)
+                {
+                    var propuestaEquipos = await context.Propuestas
+                        .Where(p => p.LicitacionID == licCerradaEquipos.LicitacionID && p.ProveedorID == proveedorEquipos.EmpresaID)
+                        .OrderBy(p => p.FechaEnvio)
+                        .FirstOrDefaultAsync();
+
+                    if (propuestaEquipos != null)
+                    {
+                        var historialWinnerExists = await context.HistorialProveedorLicitacion
+                            .FirstOrDefaultAsync(h => h.LicitacionID == licCerradaEquipos.LicitacionID && h.Ganador == true);
+
+                        if (historialWinnerExists == null)
+                        {
+                            var nuevoHistorialEquipos = new HistorialProveedorLicitacion
+                            {
+                                ProveedorID = propuestaEquipos.ProveedorID,
+                                LicitacionID = propuestaEquipos.LicitacionID,
+                                Resultado = "Adjudicada",
+                                Ganador = true,
+                                Observaciones = "Ganador: Equipos Mineros en licitación cerrada.",
+                                FechaParticipacion = propuestaEquipos.FechaEnvio,
+                                FechaGanador = DateTime.UtcNow
+                            };
+
+                            await context.HistorialProveedorLicitacion.AddAsync(nuevoHistorialEquipos);
+
+                            var estadoAdjudicadaProp2 = await context.EstadosPropuesta.FirstOrDefaultAsync(e => e.NombreEstado == "Adjudicada");
+                            if (estadoAdjudicadaProp2 != null)
+                            {
+                                propuestaEquipos.EstadoPropuestaID = estadoAdjudicadaProp2.EstadoPropuestaID;
+                                context.Propuestas.Update(propuestaEquipos);
+                            }
+
+                            await context.SaveChangesAsync();
+                        }
+
+                        var califEquiposExists = await context.CalificacionesPostLicitacion
+                            .FirstOrDefaultAsync(c => c.LicitacionID == licCerradaEquipos.LicitacionID && c.ProveedorID == proveedorEquipos.EmpresaID);
+
+                        if (califEquiposExists == null)
+                        {
+                            var calificacionEquipos = new CalificacionPostLicitacion
+                            {
+                                ProveedorID = proveedorEquipos.EmpresaID,
+                                LicitacionID = licCerradaEquipos.LicitacionID,
+                                Puntualidad = 4,
+                                Calidad = 3,
+                                Comunicacion = 5,
+                                Comentarios = "Buena ejecución general; mejorar coordinación en calidad.",
+                                FechaCalificacion = DateTime.UtcNow
+                            };
+
+                            await context.CalificacionesPostLicitacion.AddAsync(calificacionEquipos);
+                            await context.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Ignorar errores en esta sección del seed de Equipos Mineros
             }
         }
 
