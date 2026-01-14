@@ -949,6 +949,86 @@ namespace Wira.Api.Data
             {
                 // Ignorar errores en esta sección del seed
             }
+
+            // Asegurar que la licitación cerrada tenga una propuesta ganadora y su calificación
+            try
+            {
+                // Buscar si ya existe un historial ganador para la licitación cerrada
+                var historialExistente = await context.HistorialProveedorLicitacion
+                    .FirstOrDefaultAsync(h => h.LicitacionID == licCerrada.LicitacionID && h.Ganador == true);
+
+                if (historialExistente == null)
+                {
+                    // Intentar obtener la mejor propuesta por calificación final o, si no existe, por fecha de envío
+                    Propuesta propuestaElegida = null;
+
+                    // Si la tabla de evaluaciones contiene calificaciones finales, usar la que tenga mayor calificación
+                    var propuestasConCalif = await context.Propuestas
+                        .Include(p => p.Licitacion)
+                        .Where(p => p.LicitacionID == licCerrada.LicitacionID)
+                        .ToListAsync();
+
+                    if (propuestasConCalif.Count > 0)
+                    {
+                        // Intentar encontrar una calificación post-licitación ya asociada a alguna propuesta
+                        var califs = await context.CalificacionesPostLicitacion
+                            .Where(c => c.LicitacionID == licCerrada.LicitacionID)
+                            .ToListAsync();
+
+                        if (califs.Count > 0)
+                        {
+                            // Elegir la propuesta que coincida con la primera calificación encontrada
+                            var primeraCalif = califs.First();
+                            propuestaElegida = propuestasConCalif.FirstOrDefault(p => p.ProveedorID == primeraCalif.ProveedorID);
+                        }
+
+                        // Si no encontramos por calificación, escoger la primera por FechaEnvio
+                        propuestaElegida ??= propuestasConCalif.OrderBy(p => p.FechaEnvio).FirstOrDefault();
+                    }
+
+                    if (propuestaElegida != null)
+                    {
+                        var nuevoHistorial = new HistorialProveedorLicitacion
+                        {
+                            ProveedorID = propuestaElegida.ProveedorID,
+                            LicitacionID = propuestaElegida.LicitacionID,
+                            Resultado = "Cerrada - Seleccionada",
+                            Ganador = true,
+                            Observaciones = "Propuesta marcada automáticamente como ganadora en seed para licitación cerrada.",
+                            FechaParticipacion = propuestaElegida.FechaEnvio,
+                            FechaGanador = DateTime.UtcNow
+                        };
+
+                        await context.HistorialProveedorLicitacion.AddAsync(nuevoHistorial);
+                        await context.SaveChangesAsync();
+
+                        // Añadir una calificación post-licitación si no existe para esta propuesta
+                        var califExistente = await context.CalificacionesPostLicitacion
+                            .FirstOrDefaultAsync(c => c.LicitacionID == licCerrada.LicitacionID && c.ProveedorID == propuestaElegida.ProveedorID);
+
+                        if (califExistente == null)
+                        {
+                            var calificacionAutomatica = new CalificacionPostLicitacion
+                            {
+                                ProveedorID = propuestaElegida.ProveedorID,
+                                LicitacionID = propuestaElegida.LicitacionID,
+                                Puntualidad = 4,
+                                Calidad = 4,
+                                Comunicacion = 4,
+                                Comentarios = "Calificación automática agregada en seed para la propuesta ganadora de la licitación cerrada.",
+                                FechaCalificacion = DateTime.UtcNow
+                            };
+
+                            await context.CalificacionesPostLicitacion.AddAsync(calificacionAutomatica);
+                            await context.SaveChangesAsync();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // No detener el seed si hay algún problema en la sección de licitación cerrada
+            }
         }
     }
 }
