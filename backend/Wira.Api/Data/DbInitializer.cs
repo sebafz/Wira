@@ -32,6 +32,16 @@ namespace Wira.Api.Data
             // Verificar si ya hay datos
             if (await context.Roles.AnyAsync())
             {
+                // Si la base ya está inicializada, asegurar que la licitación cerrada tenga ganador
+                try
+                {
+                    await EnsureClosedLicitacionHasWinner(context);
+                }
+                catch
+                {
+                    // No detener el arranque si hay algún problema
+                }
+
                 return; // La base de datos ya está inicializada
             }
 
@@ -988,11 +998,12 @@ namespace Wira.Api.Data
 
                     if (propuestaElegida != null)
                     {
+                        // Crear historial como adjudicada para que se muestre como ganadora en la UI
                         var nuevoHistorial = new HistorialProveedorLicitacion
                         {
                             ProveedorID = propuestaElegida.ProveedorID,
                             LicitacionID = propuestaElegida.LicitacionID,
-                            Resultado = "Cerrada - Seleccionada",
+                            Resultado = "Adjudicada",
                             Ganador = true,
                             Observaciones = "Propuesta marcada automáticamente como ganadora en seed para licitación cerrada.",
                             FechaParticipacion = propuestaElegida.FechaEnvio,
@@ -1000,6 +1011,22 @@ namespace Wira.Api.Data
                         };
 
                         await context.HistorialProveedorLicitacion.AddAsync(nuevoHistorial);
+
+                        // Intentar actualizar el estado de la propuesta a Adjudicada si el estado existe
+                        var estadoAdjudicadaProp = await context.EstadosPropuesta.FirstOrDefaultAsync(e => e.NombreEstado == "Adjudicada");
+                        if (estadoAdjudicadaProp != null)
+                        {
+                            try
+                            {
+                                propuestaElegida.EstadoPropuestaID = estadoAdjudicadaProp.EstadoPropuestaID;
+                                context.Propuestas.Update(propuestaElegida);
+                            }
+                            catch
+                            {
+                                // No detener el seed si no se puede actualizar la propuesta
+                            }
+                        }
+
                         await context.SaveChangesAsync();
 
                         // Añadir una calificación post-licitación si no existe para esta propuesta
@@ -1029,6 +1056,83 @@ namespace Wira.Api.Data
             {
                 // No detener el seed si hay algún problema en la sección de licitación cerrada
             }
+        }
+    }
+
+    private static async Task EnsureClosedLicitacionHasWinner(WiraDbContext context)
+    {
+        try
+        {
+            // Buscar la licitación "Servicios de Gestión Ambiental Post-Cierre" en estado Cerrada
+            var licCerrada = await context.Licitaciones
+                .Include(l => l.EstadoLicitacion)
+                .FirstOrDefaultAsync(l => l.Titulo.Contains("Servicios de Gestión Ambiental Post-Cierre") && l.EstadoLicitacion != null && l.EstadoLicitacion.NombreEstado == "Cerrada");
+
+            if (licCerrada == null) return;
+
+            // Verificar si ya existe un historial ganador
+            var historialExistente = await context.HistorialProveedorLicitacion
+                .FirstOrDefaultAsync(h => h.LicitacionID == licCerrada.LicitacionID && h.Ganador == true);
+
+            if (historialExistente != null) return;
+
+            // Buscar propuestas asociadas
+            var propuestas = await context.Propuestas
+                .Where(p => p.LicitacionID == licCerrada.LicitacionID)
+                .OrderBy(p => p.FechaEnvio)
+                .ToListAsync();
+
+            var propuestaElegida = propuestas.FirstOrDefault();
+            if (propuestaElegida == null) return;
+
+            // Crear historial ganador con Resultado = 'Adjudicada'
+            var nuevoHistorial = new HistorialProveedorLicitacion
+            {
+                ProveedorID = propuestaElegida.ProveedorID,
+                LicitacionID = propuestaElegida.LicitacionID,
+                Resultado = "Adjudicada",
+                Ganador = true,
+                Observaciones = "Seed asegura ganador para licitación cerrada.",
+                FechaParticipacion = propuestaElegida.FechaEnvio,
+                FechaGanador = DateTime.UtcNow
+            };
+
+            await context.HistorialProveedorLicitacion.AddAsync(nuevoHistorial);
+
+            // Actualizar estado de la propuesta si existe el estado Adjudicada
+            var estadoAdjudicadaProp = await context.EstadosPropuesta.FirstOrDefaultAsync(e => e.NombreEstado == "Adjudicada");
+            if (estadoAdjudicadaProp != null)
+            {
+                propuestaElegida.EstadoPropuestaID = estadoAdjudicadaProp.EstadoPropuestaID;
+                context.Propuestas.Update(propuestaElegida);
+            }
+
+            await context.SaveChangesAsync();
+
+            // Agregar calificación si no existe
+            var califExistente = await context.CalificacionesPostLicitacion
+                .FirstOrDefaultAsync(c => c.LicitacionID == licCerrada.LicitacionID && c.ProveedorID == propuestaElegida.ProveedorID);
+
+            if (califExistente == null)
+            {
+                var calificacion = new CalificacionPostLicitacion
+                {
+                    ProveedorID = propuestaElegida.ProveedorID,
+                    LicitacionID = propuestaElegida.LicitacionID,
+                    Puntualidad = 4,
+                    Calidad = 4,
+                    Comunicacion = 4,
+                    Comentarios = "Calificación agregada automáticamente por seed.",
+                    FechaCalificacion = DateTime.UtcNow
+                };
+
+                await context.CalificacionesPostLicitacion.AddAsync(calificacion);
+                await context.SaveChangesAsync();
+            }
+        }
+        catch
+        {
+            // No propagar errores desde este helper
         }
     }
 }
