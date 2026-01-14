@@ -277,7 +277,7 @@ const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [mineras, setMineras] = useState([]);
-  const [proveedores, setProveedores] = useState([]);
+  const [setProveedores] = useState([]);
   const [rubros, setRubros] = useState([]);
 
   const [formData, setFormData] = useState({

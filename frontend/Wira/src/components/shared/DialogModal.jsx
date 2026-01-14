@@ -134,15 +134,15 @@ const DialogModal = ({
   showCancel = true,
   closeOnBackdrop = true,
 }) => {
-  if (!isOpen) {
-    return null;
-  }
-
   const [confirmLoading, setConfirmLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) setConfirmLoading(false);
   }, [isOpen]);
+
+  if (!isOpen) {
+    return null;
+  }
 
   const handleOverlayClick = (event) => {
     if (!closeOnBackdrop) {
