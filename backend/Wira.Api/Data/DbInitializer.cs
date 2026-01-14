@@ -1057,7 +1057,6 @@ namespace Wira.Api.Data
                 // No detener el seed si hay algún problema en la sección de licitación cerrada
             }
         }
-    }
 
     private static async Task EnsureClosedLicitacionHasWinner(WiraDbContext context)
     {
