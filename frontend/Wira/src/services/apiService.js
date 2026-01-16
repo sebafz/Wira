@@ -92,7 +92,7 @@ export const apiService = {
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
-  getUsuarios: () => apiClient.get("/auth/users"),
+  getUsuarios: (params = {}) => apiClient.get("/auth/users/by-empresa", { params }),
   createUsuario: (usuario) => apiClient.post("/auth/users", usuario),
   updateUsuarioStatus: (usuarioId, activo) =>
     apiClient.patch(`/auth/users/${usuarioId}/status`, { activo }),

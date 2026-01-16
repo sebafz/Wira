@@ -11,5 +11,7 @@ namespace Wira.Api.Services.Interfaces
         Task SendPasswordResetEmailAsync(string toEmail, string userName, string resetToken);
         Task SendApprovalEmailAsync(string toEmail, string userName, string empresaNombre);
         Task SendRejectionEmailAsync(string toEmail, string userName, string empresaNombre, string? motivo);
+        Task SendLicitacionCanceladaAsync(string toEmail, string userName, string licitacionTitulo);
+        Task SendLicitacionAdjudicadaAsync(string toEmail, string userName, string licitacionTitulo, string adjudicadoNombre);
     }
 }

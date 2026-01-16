@@ -134,6 +134,12 @@ const DialogModal = ({
   showCancel = true,
   closeOnBackdrop = true,
 }) => {
+  const [confirmLoading, setConfirmLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isOpen) setConfirmLoading(false);
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
@@ -145,6 +151,22 @@ const DialogModal = ({
 
     if (event.target === event.currentTarget) {
       onCancel?.();
+    }
+  };
+
+  const handleConfirm = () => {
+    if (confirmDisabled || confirmLoading) return;
+    try {
+      const result = onConfirm?.();
+      // If onConfirm throws synchronously, reset loading. Otherwise keep loading until modal closes.
+      setConfirmLoading(true);
+      if (result && typeof result.then === "function") {
+        // swallow errors here; parent should handle and close modal
+        result.catch(() => {});
+      }
+    } catch (err) {
+      setConfirmLoading(false);
+      throw err;
     }
   };
 
@@ -166,11 +188,11 @@ const DialogModal = ({
           )}
           <PrimaryButton
             type="button"
-            onClick={onConfirm}
-            disabled={confirmDisabled}
+            onClick={handleConfirm}
+            disabled={confirmDisabled || confirmLoading}
             $variant={variant}
           >
-            {confirmText}
+            {confirmLoading ? "Cargando..." : confirmText}
           </PrimaryButton>
         </DialogActions>
       </DialogContent>

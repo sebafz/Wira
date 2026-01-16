@@ -1834,7 +1834,14 @@ const LicitacionesProveedor = () => {
   };
 
   const handleNumericoRespuestaChange = (criterioId, value) => {
-    updateRespuestaCriterio(criterioId, { valorNumerico: value });
+    // Normalizar: permitir solo números y punto; guardar como string (vacío si inválido)
+    const cleaned =
+      value === null || value === undefined || value === ""
+        ? ""
+        : String(value)
+            .replace(/[^0-9.,-]/g, "")
+            .replace(",", ".");
+    updateRespuestaCriterio(criterioId, { valorNumerico: cleaned });
   };
 
   const handleBooleanRespuestaChange = (criterioId, value) => {
@@ -1911,7 +1918,6 @@ const LicitacionesProveedor = () => {
           }
           return {
             ...basePayload,
-            ValorProveedor: respuesta.valorNumerico.toString(),
             ValorNumerico: numericValue,
           };
         }
@@ -1921,7 +1927,6 @@ const LicitacionesProveedor = () => {
           }
           return {
             ...basePayload,
-            ValorProveedor: respuesta.valorBooleano ? "true" : "false",
             ValorBooleano: respuesta.valorBooleano,
           };
         }
@@ -1937,7 +1942,6 @@ const LicitacionesProveedor = () => {
             Number(respuesta.opcionSeleccionadaId);
           return {
             ...basePayload,
-            ValorProveedor: opcionSeleccionada?.valor || "",
             CriterioOpcionID: Number.isNaN(parsedOpcionId)
               ? null
               : parsedOpcionId,

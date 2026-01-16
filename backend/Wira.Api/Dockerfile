@@ -13,4 +13,6 @@ COPY --from=build /app/publish .
 ENV PORT=8080
 ENV ASPNETCORE_URLS=http://+:$PORT
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Wira.Api.dll"]
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]

@@ -1669,16 +1669,25 @@ const LicitacionesMinera = () => {
   });
 
   const formatCriterioValor = (respuesta) => {
-    const rawValor =
+    // Prefer numeric -> boolean -> option -> text
+    const numeric = respuesta?.valorNumerico ?? respuesta?.ValorNumerico;
+    const booleano = respuesta?.valorBooleano ?? respuesta?.ValorBooleano;
+    const opcion =
+      respuesta?.opcionSeleccionada ?? respuesta?.OpcionSeleccionada ?? null;
+    const texto =
       respuesta?.valorProveedor ??
       respuesta?.ValorProveedor ??
-      respuesta?.valorBooleano ??
-      respuesta?.ValorBooleano ??
-      respuesta?.valorNumerico ??
-      respuesta?.ValorNumerico ??
       respuesta?.valorTexto ??
       respuesta?.ValorTexto ??
       null;
+
+    const rawValor =
+      numeric ??
+      (booleano !== undefined && booleano !== null
+        ? booleano
+        : opcion
+        ? opcion.Valor ?? opcion?.valor
+        : texto ?? null);
 
     if (rawValor === null || rawValor === undefined || rawValor === "") {
       return "No especificado";
@@ -2151,6 +2160,9 @@ const LicitacionesMinera = () => {
 
     let rankingCounter = rankingOffset;
     const mostrarRanking = !resaltarGanadora;
+    // For tie handling: remember last non-null score (rounded) and its assigned rank
+    let prevScoreKey = null;
+    let prevRanking = null;
 
     return (
       <PropuestasList>
@@ -2169,7 +2181,16 @@ const LicitacionesMinera = () => {
           const criteriosFallidos = getCriteriosExcluyentesFallidos(propuesta);
           let rankingPosition = null;
           if (mostrarRanking && !descalificada && score !== null) {
-            rankingPosition = ++rankingCounter;
+            // normalize score to one decimal for ranking comparison (same as display)
+            const scoreKey = Number(score.toFixed(1));
+            if (prevScoreKey !== null && scoreKey === prevScoreKey) {
+              // tie: use previous ranking
+              rankingPosition = prevRanking;
+            } else {
+              rankingPosition = ++rankingCounter;
+              prevScoreKey = scoreKey;
+              prevRanking = rankingPosition;
+            }
           }
           const rankingBadgeVariant = descalificada ? "invalid" : undefined;
           const rankingBadgeLabel = descalificada
@@ -3051,7 +3072,7 @@ const LicitacionesMinera = () => {
               <ResultsInfo>
                 {(() => {
                   const stats = getLicitacionesStats();
-                  return `${stats.total} licitaciones activas (${stats.postuladas} postuladas, ${stats.disponibles} disponibles)`;
+                  return `${stats.total} licitaciones activas`;
                 })()}
               </ResultsInfo>
             </div>
@@ -3288,10 +3309,11 @@ const LicitacionesMinera = () => {
 
                   {/* Archivos adjuntos */}
                   {(() => {
-                    const archivos =
-                      (selectedLicitacion.archivosAdjuntos || []).filter(
-                        (a) => (a.entidadTipo || a.EntidadTipo) === "LICITACION"
-                      );
+                    const archivos = (
+                      selectedLicitacion.archivosAdjuntos || []
+                    ).filter(
+                      (a) => (a.entidadTipo || a.EntidadTipo) === "LICITACION"
+                    );
 
                     return archivos.length > 0 ? (
                       <>
@@ -3306,7 +3328,8 @@ const LicitacionesMinera = () => {
                                 onClick={() =>
                                   handleDownloadArchivo(
                                     archivo.archivoID || archivo.ArchivoID,
-                                    archivo.nombreArchivo || archivo.NombreArchivo
+                                    archivo.nombreArchivo ||
+                                      archivo.NombreArchivo
                                   )
                                 }
                               >
@@ -3603,6 +3626,8 @@ const LicitacionesMinera = () => {
 
                 {(() => {
                   let ganadorRankingCounter = 0;
+                  let prevGScoreKey = null;
+                  let prevGRanking = null;
                   return (
                     <GanadorPropuestasList>
                       {propuestas.map((propuesta) => {
@@ -3610,10 +3635,20 @@ const LicitacionesMinera = () => {
                         const score = getScoreFromPropuesta(propuesta);
                         const descalificada =
                           isPropuestaDescalificada(propuesta);
-                        const rankingPosition =
-                          !descalificada && score !== null
-                            ? ++ganadorRankingCounter
-                            : null;
+                        let rankingPosition = null;
+                        if (!descalificada && score !== null) {
+                          const scoreKey = Number(score.toFixed(1));
+                          if (
+                            prevGScoreKey !== null &&
+                            scoreKey === prevGScoreKey
+                          ) {
+                            rankingPosition = prevGRanking;
+                          } else {
+                            rankingPosition = ++ganadorRankingCounter;
+                            prevGScoreKey = scoreKey;
+                            prevGRanking = rankingPosition;
+                          }
+                        }
                         const handleSelect = () => {
                           if (descalificada) {
                             toast.error(

@@ -222,7 +222,7 @@ const formatDate = (value) => {
       month: "short",
       day: "numeric",
     });
-  } catch (error) {
+  } catch {
     return "Fecha invalida";
   }
 };
@@ -241,7 +241,7 @@ const formatCurrency = (value, currency = "USD") => {
       currency,
       maximumFractionDigits: 0,
     });
-  } catch (error) {
+  } catch {
     return numeric.toLocaleString("es-AR");
   }
 };
@@ -311,7 +311,7 @@ const CalificacionesPosLicitacion = () => {
             );
             const propuestaGanadora = ganadorResponse.data;
             return { licitacion, propuestaGanadora };
-          } catch (innerError) {
+          } catch {
             return { licitacion, propuestaGanadora: null };
           }
         })
@@ -401,7 +401,7 @@ const CalificacionesPosLicitacion = () => {
         <PageHeader>
           <Title>Calificaciones post licitacion</Title>
           <Subtitle>
-            Registra la evaluacion final de tus proveedores adjudicados para
+            Registre la evaluacion final de sus proveedores adjudicados para
             cerrar sus licitaciones.
           </Subtitle>
         </PageHeader>

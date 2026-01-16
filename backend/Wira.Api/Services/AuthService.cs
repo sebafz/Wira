@@ -254,30 +254,84 @@ namespace Wira.Api.Services
                 }
                 else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor)
                 {
-                    if (!request.ProveedorID.HasValue)
+                    // If ProveedorID provided, validate existing provider
+                    if (request.ProveedorID.HasValue)
+                    {
+                        var proveedorExiste = await _context.Empresas.AnyAsync(p =>
+                            p.EmpresaID == request.ProveedorID &&
+                            p.TipoEmpresa == EmpresaTipos.Proveedor &&
+                            p.Activo);
+
+                        if (!proveedorExiste)
+                        {
+                            return new AuthResponse
+                            {
+                                Success = false,
+                                Message = "El proveedor seleccionado no existe o está inactivo"
+                            };
+                        }
+
+                        empresaId = request.ProveedorID;
+                    }
+                    else if (request.ProveedorNuevo != null)
+                    {
+                        // Validate CUIT uniqueness
+                        var newCuit = request.ProveedorNuevo.CUIT?.Trim() ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(newCuit))
+                        {
+                            return new AuthResponse { Success = false, Message = "CUIT de la empresa es obligatorio" };
+                        }
+
+                        var cuitExists = await _context.Empresas.AnyAsync(e => e.CUIT == newCuit);
+                        if (cuitExists)
+                        {
+                            return new AuthResponse { Success = false, Message = "El CUIT ya está registrado" };
+                        }
+
+                        // Validate rubro if provided
+                        if (request.ProveedorNuevo.RubroID.HasValue)
+                        {
+                            var rubroExiste = await _context.Rubros.AnyAsync(r => r.RubroID == request.ProveedorNuevo.RubroID && r.Activo);
+                            if (!rubroExiste)
+                            {
+                                return new AuthResponse { Success = false, Message = "Rubro inválido" };
+                            }
+                        }
+
+                        // Create new provider company as inactive (will activate on email verification)
+                        var newProv = new Models.Empresa
+                        {
+                            Nombre = request.ProveedorNuevo.Nombre.Trim(),
+                            RazonSocial = request.ProveedorNuevo.RazonSocial.Trim(),
+                            CUIT = newCuit,
+                            TipoEmpresa = EmpresaTipos.Proveedor,
+                            Activo = false,
+                            FechaAlta = DateTime.UtcNow,
+                            RubroID = request.ProveedorNuevo.RubroID
+                        };
+
+                        _context.Empresas.Add(newProv);
+                        try
+                        {
+                            await _context.SaveChangesAsync();
+                        }
+                        catch (DbUpdateException dbEx)
+                        {
+                            var baseMsg = dbEx.GetBaseException()?.Message ?? dbEx.Message;
+                            _logger.LogError(dbEx, "DB error creating Empresa for CUIT {CUIT}: {BaseMessage}", newCuit, baseMsg);
+                            return new AuthResponse { Success = false, Message = $"Error al crear la empresa (BD): {baseMsg}" };
+                        }
+
+                        empresaId = newProv.EmpresaID;
+                    }
+                    else
                     {
                         return new AuthResponse
                         {
                             Success = false,
-                            Message = "Debe seleccionar un proveedor"
+                            Message = "Debe seleccionar un proveedor o completar los datos de su empresa"
                         };
                     }
-
-                    var proveedorExiste = await _context.Empresas.AnyAsync(p =>
-                        p.EmpresaID == request.ProveedorID &&
-                        p.TipoEmpresa == EmpresaTipos.Proveedor &&
-                        p.Activo);
-
-                    if (!proveedorExiste)
-                    {
-                        return new AuthResponse
-                        {
-                            Success = false,
-                            Message = "El proveedor seleccionado no existe o está inactivo"
-                        };
-                    }
-
-                    empresaId = request.ProveedorID;
                 }
 
                 // Crear el usuario
@@ -301,6 +355,9 @@ namespace Wira.Api.Services
                     EmpresaID = empresaId
                 };
 
+                // If a new provider was created, keep account pending verification.
+                // The company will be activated and the provider admin role assigned after email verification.
+
                 _context.Usuarios.Add(user);
                 await _context.SaveChangesAsync();
 
@@ -321,6 +378,8 @@ namespace Wira.Api.Services
                     _logger.LogError(emailEx, "Error enviando email de verificación a: {Email}", user.Email);
                     // No fallar el registro por error de email
                 }
+
+                // Note: role assignment and company activation happen upon email verification.
 
                 return new AuthResponse
                 {
@@ -435,10 +494,14 @@ namespace Wira.Api.Services
         {
             try
             {
-                var user = await _context.Usuarios.FirstOrDefaultAsync(u =>
-                    u.Email == request.Email &&
-                    u.TokenVerificacionEmail == request.Code &&
-                    u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
+                var user = await _context.Usuarios
+                    .Include(u => u.Empresa)
+                    .Include(u => u.UsuariosRoles)
+                        .ThenInclude(ur => ur.Rol)
+                    .FirstOrDefaultAsync(u =>
+                        u.Email == request.Email &&
+                        u.TokenVerificacionEmail == request.Code &&
+                        u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
 
                 if (user == null)
                 {
@@ -462,6 +525,21 @@ namespace Wira.Api.Services
                 user.ValidadoEmail = true;
                 user.TokenVerificacionEmail = null;
                 user.FechaVencimientoTokenVerificacion = null;
+
+                // If the user belongs to a provider company that was created during registration and is inactive,
+                // activate the company and assign provider admin role to this user.
+                if (user.Empresa != null && user.Empresa.TipoEmpresa == EmpresaTipos.Proveedor && !user.Empresa.Activo)
+                {
+                    user.Empresa.Activo = true;
+                    user.EstadoAprobacion = AprobacionEstados.Aprobado;
+                    user.FechaAprobacion = DateTime.UtcNow;
+
+                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+                    if (rol != null)
+                    {
+                        await ReplaceUserRolesAsync(user.UsuarioID, new List<Rol> { rol });
+                    }
+                }
 
                 await _context.SaveChangesAsync();
 
@@ -533,6 +611,29 @@ namespace Wira.Api.Services
                     Success = false,
                     Message = "Error interno del servidor"
                 };
+            }
+        }
+
+        private async Task ReplaceUserRolesAsync(int usuarioId, List<Rol> roles)
+        {
+            var existingRoles = await _context.UsuariosRoles
+                .Where(ur => ur.UsuarioID == usuarioId)
+                .ToListAsync();
+
+            _context.UsuariosRoles.RemoveRange(existingRoles);
+
+            if (roles == null || roles.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var rol in roles)
+            {
+                _context.UsuariosRoles.Add(new UsuarioRol
+                {
+                    UsuarioID = usuarioId,
+                    RolID = rol.RolID
+                });
             }
         }
 

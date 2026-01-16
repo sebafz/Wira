@@ -311,6 +311,8 @@ namespace Wira.Api.Data
             {
                 return saveFunc();
             }
+            // Normalizar todas las fechas a UTC antes de guardar para evitar excepciones de Kind
+            EnsureDateTimePropertiesAreUtc();
 
             var auditoriasPendientes = PrepararEntradasAuditoria();
             var result = saveFunc();
@@ -343,6 +345,8 @@ namespace Wira.Api.Data
             {
                 return await saveFunc();
             }
+            // Normalizar todas las fechas a UTC antes de guardar para evitar excepciones de Kind
+            EnsureDateTimePropertiesAreUtc();
 
             var auditoriasPendientes = PrepararEntradasAuditoria();
             var result = await saveFunc();
@@ -405,6 +409,136 @@ namespace Wira.Api.Data
         {
             var userIdClaim = _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+        }
+
+        private void EnsureDateTimePropertiesAreUtc()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .ToList();
+
+            foreach (var entry in entries)
+            {
+                foreach (var prop in entry.Properties)
+                {
+                    if (prop.CurrentValue == null)
+                        continue;
+
+                    try
+                    {
+                        if (prop.Metadata.ClrType == typeof(DateTime))
+                        {
+                            var dt = (DateTime)prop.CurrentValue!;
+                            DateTime utc = dt.Kind switch
+                            {
+                                DateTimeKind.Utc => dt,
+                                DateTimeKind.Local => dt.ToUniversalTime(),
+                                _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+                            };
+
+                            prop.CurrentValue = utc;
+                        }
+                        else if (prop.Metadata.ClrType == typeof(DateTimeOffset))
+                        {
+                            var dto = (DateTimeOffset)prop.CurrentValue!;
+                            prop.CurrentValue = dto.ToUniversalTime();
+                        }
+                        else if (prop.Metadata.ClrType.IsArray)
+                        {
+                            var elemType = prop.Metadata.ClrType.GetElementType();
+                            if (elemType == typeof(DateTime))
+                            {
+                                var arr = (DateTime[])prop.CurrentValue!;
+                                for (int i = 0; i < arr.Length; i++)
+                                {
+                                    var d = arr[i];
+                                    arr[i] = d.Kind switch
+                                    {
+                                        DateTimeKind.Utc => d,
+                                        DateTimeKind.Local => d.ToUniversalTime(),
+                                        _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                                    };
+                                }
+                                prop.CurrentValue = arr;
+                            }
+                        }
+                        else if (prop.Metadata.ClrType.IsGenericType)
+                        {
+                            var genDef = prop.Metadata.ClrType.GetGenericTypeDefinition();
+                            var genArg = prop.Metadata.ClrType.GetGenericArguments().FirstOrDefault();
+                            if (genArg == typeof(DateTime))
+                            {
+                                // Handle List<DateTime>, ICollection<DateTime>, IEnumerable<DateTime> etc.
+                                if (prop.CurrentValue is System.Collections.IEnumerable enumerable)
+                                {
+                                    var list = new System.Collections.Generic.List<DateTime>();
+                                    foreach (var item in enumerable)
+                                    {
+                                        if (item is DateTime d)
+                                        {
+                                            var utc = d.Kind switch
+                                            {
+                                                DateTimeKind.Utc => d,
+                                                DateTimeKind.Local => d.ToUniversalTime(),
+                                                _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                                            };
+                                            list.Add(utc);
+                                        }
+                                    }
+
+                                    // Try to assign back a List<DateTime> (compatible with most collection properties)
+                                    prop.CurrentValue = list;
+                                }
+                            }
+                            else if (genArg == typeof(DateTime?))
+                            {
+                                if (prop.CurrentValue is System.Collections.IEnumerable enumerable)
+                                {
+                                    var list = new System.Collections.Generic.List<DateTime?>();
+                                    foreach (var item in enumerable)
+                                    {
+                                        if (item is DateTime d)
+                                        {
+                                            var utc = d.Kind switch
+                                            {
+                                                DateTimeKind.Utc => d,
+                                                DateTimeKind.Local => d.ToUniversalTime(),
+                                                _ => DateTime.SpecifyKind(d, DateTimeKind.Utc)
+                                            };
+                                            list.Add(utc);
+                                        }
+                                        else
+                                        {
+                                            list.Add(null);
+                                        }
+                                    }
+                                    prop.CurrentValue = list;
+                                }
+                            }
+                        }
+                        else if (prop.Metadata.ClrType == typeof(DateTime?))
+                        {
+                            var nullable = (DateTime?)prop.CurrentValue;
+                            if (nullable.HasValue)
+                            {
+                                var dt = nullable.Value;
+                                DateTime utc = dt.Kind switch
+                                {
+                                    DateTimeKind.Utc => dt,
+                                    DateTimeKind.Local => dt.ToUniversalTime(),
+                                    _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+                                };
+
+                                prop.CurrentValue = (DateTime?)utc;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // No propagar errores de conversión de tipos; continuar con otras propiedades
+                    }
+                }
+            }
         }
 
         private static string ObtenerOperacion(EntityState state) => state switch
