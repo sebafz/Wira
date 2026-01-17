@@ -6,6 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
+import apiService from "../../services/apiService";
 
 const FormContainer = styled.div`
   min-height: 100vh;
@@ -251,6 +252,49 @@ const RetryButton = styled.button`
     transform: translateY(0);
   }
 `;
+
+const DATE_INPUT_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const toUtcDate = (value, { endOfDay = false } = {}) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+  }
+
+  const match = DATE_INPUT_REGEX.exec(value);
+  if (match) {
+    const [, yearStr, monthStr, dayStr] = match;
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    if ([year, month, day].some((n) => Number.isNaN(n))) {
+      return null;
+    }
+
+    const hours = endOfDay ? 23 : 0;
+    const minutes = endOfDay ? 59 : 0;
+    const seconds = endOfDay ? 59 : 0;
+    const milliseconds = endOfDay ? 999 : 0;
+
+    return new Date(
+      Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds)
+    );
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : new Date(parsed.getTime());
+};
+
+const toUtcISOString = (value) => {
+  const date = toUtcDate(value);
+  if (!date) return null;
+  return date.toISOString();
+};
+
+const toDateInputValue = (value) => {
+  const iso = toUtcISOString(value);
+  return iso ? iso.split("T")[0] : "";
+};
 
 const CriteriosSection = styled.div`
   margin-top: 30px;
@@ -755,29 +799,14 @@ const EditarPropuesta = () => {
         setLoading(true);
         setError("");
 
-        const response = await fetch(
-          `http://localhost:5242/api/propuestas/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Propuesta no encontrada");
-          }
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const res = await apiService.get(`/propuestas/${id}`);
+        const data = res?.data ?? {};
 
         setFormData({
           descripcion: data.descripcion || "",
           presupuestoOfrecido: data.presupuestoOfrecido?.toString() || "",
           fechaEntrega: data.fechaEntrega
-            ? new Date(data.fechaEntrega).toISOString().split("T")[0]
+            ? toDateInputValue(data.fechaEntrega)
             : "",
         });
 
@@ -786,11 +815,16 @@ const EditarPropuesta = () => {
         let criteriosActuales = [];
         if (licitacionId) {
           try {
-            const criteriosResponse = await fetch(
-              `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
-            );
-            if (criteriosResponse.ok) {
-              criteriosActuales = await criteriosResponse.json();
+            try {
+              const criteriosRes = await apiService.getCriteriosLicitacion(
+                licitacionId
+              );
+              criteriosActuales = criteriosRes?.data ?? [];
+            } catch (e) {
+              console.error(
+                "Error al cargar criterios vigentes de la licitación:",
+                e
+              );
             }
           } catch (criteriosError) {
             console.error(
@@ -1009,20 +1043,9 @@ const EditarPropuesta = () => {
 
   const downloadFile = async (archivoID, nombreArchivo) => {
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/descargar/${archivoID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      const blob = await response.blob();
+      const res = await apiService.downloadArchivo(archivoID);
+      if (!res || !res.data) throw new Error("Error al descargar el archivo");
+      const blob = res.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -1132,7 +1155,7 @@ const EditarPropuesta = () => {
         descripcion: formData.descripcion,
         presupuestoOfrecido: parseFloat(formData.presupuestoOfrecido),
         fechaEntrega: formData.fechaEntrega
-          ? new Date(formData.fechaEntrega).toISOString()
+          ? toUtcISOString(formData.fechaEntrega)
           : null,
         respuestasCriterios: criteriosRespuestas.map((criterio) => ({
           criterioID: criterio.criterioID,
@@ -1151,21 +1174,7 @@ const EditarPropuesta = () => {
         })),
       };
 
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(dataToSend),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
+      await apiService.put(`/propuestas/${id}`, dataToSend);
 
       toast.success("Propuesta actualizada exitosamente");
       navigate("/propuestas-proveedor");
@@ -1184,6 +1193,8 @@ const EditarPropuesta = () => {
   const handleCancel = () => {
     navigate("/propuestas-proveedor");
   };
+
+  const todayInputValue = toDateInputValue(new Date());
 
   // Mostrar spinner de carga inicial
   if (loading) {
@@ -1281,7 +1292,7 @@ const EditarPropuesta = () => {
                   name="fechaEntrega"
                   value={formData.fechaEntrega}
                   onChange={handleInputChange}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={todayInputValue}
                 />
               </FormGroup>
             </FormRow>

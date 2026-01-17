@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import Navbar from "../shared/Navbar";
 import { toast } from "react-toastify";
 import { buttonBaseStyles } from "../shared/buttonStyles";
+import apiService from "../../services/apiService";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -486,14 +487,10 @@ const HistorialProveedor = () => {
   });
 
   useEffect(() => {
-    console.log("HistorialProveedor useEffect called:", {
-      user: !!user,
-      token: !!token,
-    });
     if (user && token) {
       fetchHistorial();
     }
-  }, [user, token]); // Removemos fetchHistorial para evitar dependencia circular
+  }, [user, token]);
 
   const fetchHistorial = useCallback(async () => {
     try {
@@ -508,21 +505,10 @@ const HistorialProveedor = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/historial-proveedor-licitacion/proveedor/${proveedorId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const res = await apiService.get(
+        `/historial-proveedor-licitacion/proveedor/${proveedorId}`
       );
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = res?.data ?? [];
       setHistorial(data);
 
       // Calcular estadísticas

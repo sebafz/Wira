@@ -46,7 +46,7 @@ namespace Wira.Api.Models
 
         public int? ProyectoMineroID { get; set; }
 
-        public DateTime FechaCreacion { get; set; } = DateTime.Now;
+        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
         // Navegación
         [ForeignKey("MineraID")]

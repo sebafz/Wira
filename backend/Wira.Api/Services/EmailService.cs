@@ -21,7 +21,13 @@ namespace Wira.Api.Services
             try
             {
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Wira Sistema", _configuration["Email:FromEmail"]));
+                var fromEmail = _configuration["Email:FromEmail"] ?? _configuration["Email:Username"];
+                if (string.IsNullOrWhiteSpace(fromEmail))
+                {
+                    _logger.LogError("Email From address is not configured. Set Email:FromEmail or Email:Username in configuration.");
+                    throw new InvalidOperationException("Email From address is not configured. Set Email:FromEmail or Email:Username in configuration.");
+                }
+                message.From.Add(new MailboxAddress("Wira Sistema", fromEmail));
                 message.To.Add(new MailboxAddress("", toEmail));
                 message.Subject = subject;
 
@@ -65,7 +71,7 @@ namespace Wira.Api.Services
 
         public async Task SendVerificationEmailAsync(string toEmail, string userName, string verificationCode)
         {
-            var subject = "Código de verificación - Wira Sistema";
+            var subject = "Código de verificación - Wira";
             var body = $@"
                 <!DOCTYPE html>
                 <html>
@@ -90,7 +96,7 @@ namespace Wira.Api.Services
                         </div>
                         <div class='content'>
                             <h2>Hola {userName},</h2>
-                            <p>Gracias por registrarte en Wira. Para completar tu registro y activar tu cuenta, ingresa el siguiente código de verificación en la aplicación:</p>
+                            <p>Gracias por registrarse en Wira. Para completar su registro y activar su cuenta, ingrese el siguiente código de verificación en nuestra web:</p>
 
                             <div class='code-box'>
                                 <div class='code'>{verificationCode}</div>
@@ -100,16 +106,16 @@ namespace Wira.Api.Services
                                 <p><strong>⚠️ Importante:</strong></p>
                                 <ul>
                                     <li>Este código expirará en 10 minutos</li>
-                                    <li>Solo puedes usar este código una vez</li>
-                                    <li>No compartas este código con nadie</li>
+                                    <li>Solo puede usar este código una vez</li>
+                                    <li>No comparta este código con nadie</li>
                                 </ul>
                             </div>
 
-                            <p>Si no creaste esta cuenta, puedes ignorar este email de forma segura.</p>
+                            <p>Si no creó esta cuenta, puede ignorar este email de forma segura.</p>
                         </div>
                         <div class='footer'>
-                            <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
-                            <p>Este es un email automático, por favor no respondas.</p>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda.</p>
                         </div>
                     </div>
                 </body>
@@ -123,7 +129,7 @@ namespace Wira.Api.Services
             var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:5173";
             var resetUrl = $"{frontendUrl}/reset-password?token={resetToken}";
 
-            var subject = "Restablecer contraseña - Wira Sistema";
+            var subject = "Restablecer contraseña - Wira";
             var body = $@"
                 <!DOCTYPE html>
                 <html>
@@ -147,27 +153,27 @@ namespace Wira.Api.Services
                         </div>
                         <div class='content'>
                             <h2>Hola {userName},</h2>
-                            <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Si fuiste tú quien la solicitó, haz clic en el siguiente botón:</p>
+                            <p>Recibimos una solicitud para restablecer la contraseña de su cuenta. Si fue usted quien la solicitó, haga clic en el siguiente botón:</p>
 
                             <div style='text-align: center;'>
                                 <a href='{resetUrl}' class='button'>Restablecer Contraseña</a>
                             </div>
 
-                            <p>Si el botón no funciona, también puedes copiar y pegar el siguiente enlace en tu navegador:</p>
+                            <p>Si el botón no funciona, también puede copiar y pegar el siguiente enlace en su navegador:</p>
                             <p style='background: #e9ecef; padding: 10px; border-radius: 4px; word-break: break-all;'>{resetUrl}</p>
 
                             <div class='warning'>
                                 <p><strong>⚠️ Importante:</strong></p>
                                 <ul>
-                                    <li>Este enlace expirará en 1 hora por seguridad</li>
-                                    <li>Solo puedes usar este enlace una vez</li>
-                                    <li>Si no solicitaste este cambio, ignora este email</li>
+                                    <li>Este enlace expirará en 1 hora</li>
+                                    <li>Solo puede usar este enlace una vez</li>
+                                    <li>Si no solicitó este cambio, ignore este email</li>
                                 </ul>
                             </div>
                         </div>
                         <div class='footer'>
-                            <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
-                            <p>Este es un email automático, por favor no respondas.</p>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda</p>
                         </div>
                     </div>
                 </body>
@@ -199,11 +205,12 @@ namespace Wira.Api.Services
                         </div>
                         <div class='content'>
                             <p>Hola {userName},</p>
-                            <p>Te confirmamos que tu cuenta para <strong>{empresaNombre}</strong> fue aprobada. Ya puedes iniciar sesión y usar Wira.</p>
-                            <p>Gracias por sumarte.</p>
+                            <p>Le confirmamos que su cuenta para <strong>{empresaNombre}</strong> fue aprobada. Ya puede iniciar sesión y usar Wira.</p>
+                            <p>Gracias por sumarse.</p>
                         </div>
                         <div class='footer'>
-                            <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda</p>
                         </div>
                     </div>
                 </body>
@@ -238,10 +245,87 @@ namespace Wira.Api.Services
                             <p>Hola {userName},</p>
                             <p>La solicitud de cuenta asociada a <strong>{empresaNombre}</strong> fue rechazada.</p>
                             {reasonText}
-                            <p>Si crees que se trata de un error, por favor contacta al administrador de la empresa.</p>
+                            <p>Si cree que se trata de un error, por favor contacte al administrador de la empresa.</p>
                         </div>
                         <div class='footer'>
-                            <p>© 2025 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
+
+        public async Task SendLicitacionCanceladaAsync(string toEmail, string userName, string licitacionTitulo)
+        {
+            var subject = $"Licitación cancelada: {licitacionTitulo}";
+            var body = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #ef4444 0%, #d63636 100%); color: white; padding: 24px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .content {{ background: #f8f9fa; padding: 28px; border-radius: 0 0 8px 8px; }}
+                        .footer {{ text-align: center; margin-top: 22px; color: #666; font-size: 13px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>Licitación cancelada</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Hola {userName},</p>
+                            <p>Le informamos que la licitación <strong>{licitacionTitulo}</strong> ha sido cancelada por la minera. Su propuesta asociada a esta licitación ya no será considerada.</p>
+                            <p>Si tiene preguntas o necesita más detalles, por favor contacte a la minera responsable desde la plataforma.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body, true);
+        }
+
+        public async Task SendLicitacionAdjudicadaAsync(string toEmail, string userName, string licitacionTitulo, string adjudicadoNombre)
+        {
+            var subject = $"Licitación adjudicada: {licitacionTitulo}";
+            var body = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='utf-8'>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 24px; text-align: center; border-radius: 8px 8px 0 0; }}
+                        .content {{ background: #f8f9fa; padding: 28px; border-radius: 0 0 8px 8px; }}
+                        .highlight {{ font-weight: bold; color: #0b5e1a; }}
+                        .footer {{ text-align: center; margin-top: 22px; color: #666; font-size: 13px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h1>Licitación adjudicada</h1>
+                        </div>
+                        <div class='content'>
+                            <p>Hola {userName},</p>
+                            <p>La licitación <strong>{licitacionTitulo}</strong> ha sido adjudicada.</p>
+                            <p>Proveedor adjudicado: <span class='highlight'>{adjudicadoNombre}</span></p>
+                            <p>Para más detalles, ingrese a la plataforma o contacte a la minera responsable.</p>
+                        </div>
+                        <div class='footer'>
+                            <p>© 2026 Wira - Sistema de Licitaciones Mineras</p>
+                            <p>Este es un email automático, por favor no responda.</p>
                         </div>
                     </div>
                 </body>

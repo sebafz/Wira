@@ -41,6 +41,15 @@ const DialogContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    padding: 20px;
+    border-radius: 12px;
+    max-height: 80vh;
+  }
 `;
 
 const DialogTitle = styled.h3`
@@ -64,6 +73,11 @@ const DialogBody = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: auto;
+  /* Allow body to scroll when dialog reaches max-height */
+  @media (max-width: 768px) {
+    max-height: calc(80vh - 140px);
+  }
 `;
 
 const DialogActions = styled.div`
@@ -120,6 +134,12 @@ const DialogModal = ({
   showCancel = true,
   closeOnBackdrop = true,
 }) => {
+  const [confirmLoading, setConfirmLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isOpen) setConfirmLoading(false);
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
@@ -131,6 +151,22 @@ const DialogModal = ({
 
     if (event.target === event.currentTarget) {
       onCancel?.();
+    }
+  };
+
+  const handleConfirm = () => {
+    if (confirmDisabled || confirmLoading) return;
+    try {
+      const result = onConfirm?.();
+      // If onConfirm throws synchronously, reset loading. Otherwise keep loading until modal closes.
+      setConfirmLoading(true);
+      if (result && typeof result.then === "function") {
+        // swallow errors here; parent should handle and close modal
+        result.catch(() => {});
+      }
+    } catch (err) {
+      setConfirmLoading(false);
+      throw err;
     }
   };
 
@@ -152,11 +188,11 @@ const DialogModal = ({
           )}
           <PrimaryButton
             type="button"
-            onClick={onConfirm}
-            disabled={confirmDisabled}
+            onClick={handleConfirm}
+            disabled={confirmDisabled || confirmLoading}
             $variant={variant}
           >
-            {confirmText}
+            {confirmLoading ? "Cargando..." : confirmText}
           </PrimaryButton>
         </DialogActions>
       </DialogContent>

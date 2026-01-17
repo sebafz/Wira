@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.ComponentModel.DataAnnotations;
 using Wira.Api.Data;
 using Wira.Api.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace Wira.Api.Controllers
 {
@@ -13,6 +14,7 @@ namespace Wira.Api.Controllers
         private readonly WiraDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<ArchivosController> _logger;
+        private readonly string? _storageBasePath;
 
         // Tipos de archivo permitidos
         private readonly string[] _allowedMimeTypes = {
@@ -37,11 +39,48 @@ namespace Wira.Api.Controllers
             ".zip", ".rar", ".dwg"
         };
 
-        public ArchivosController(WiraDbContext context, IWebHostEnvironment environment, ILogger<ArchivosController> logger)
+        public ArchivosController(
+            WiraDbContext context,
+            IWebHostEnvironment environment,
+            ILogger<ArchivosController> logger,
+            IConfiguration configuration)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
+            _storageBasePath = configuration["UPLOADS_BASE_PATH"];
+        }
+
+        private string GetStorageRoot()
+        {
+            if (!string.IsNullOrWhiteSpace(_storageBasePath))
+            {
+                return _storageBasePath!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_environment.WebRootPath))
+            {
+                return _environment.WebRootPath!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_environment.ContentRootPath))
+            {
+                return _environment.ContentRootPath!;
+            }
+
+            return Path.GetTempPath();
+        }
+
+        private string ResolvePhysicalPath(string storedPath)
+        {
+            if (string.IsNullOrWhiteSpace(storedPath))
+            {
+                return GetStorageRoot();
+            }
+
+            return Path.IsPathRooted(storedPath)
+                ? storedPath
+                : Path.Combine(GetStorageRoot(), storedPath);
         }
 
         [HttpPost("upload")]
@@ -81,7 +120,8 @@ namespace Wira.Api.Controllers
                 }
 
                 // Crear directorio si no existe
-                var uploadsFolder = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, "uploads", request.EntidadTipo.ToLower());
+                var storageRoot = GetStorageRoot();
+                var uploadsFolder = Path.Combine(storageRoot, "uploads", request.EntidadTipo.ToLower());
                 if (!Directory.Exists(uploadsFolder))
                 {
                     Directory.CreateDirectory(uploadsFolder);
@@ -104,10 +144,11 @@ namespace Wira.Api.Controllers
                     EntidadID = request.EntidadID,
                     PropuestaID = request.EntidadTipo == "PROPUESTA" ? request.EntidadID : null,
                     NombreArchivo = request.File.FileName,
-                    RutaArchivo = Path.Combine("uploads", request.EntidadTipo.ToLower(), fileName),
+                    RutaArchivo = Path.Combine("uploads", request.EntidadTipo.ToLower(), fileName)
+                        .Replace("\\", "/"),
                     TipoMime = request.File.ContentType,
                     TamañoBytes = (int)request.File.Length,
-                    FechaSubida = DateTime.Now
+                    FechaSubida = DateTime.UtcNow
                 };
 
                 _context.ArchivosAdjuntos.Add(archivoAdjunto);
@@ -141,7 +182,7 @@ namespace Wira.Api.Controllers
                     return NotFound("Archivo no encontrado.");
                 }
 
-                var filePath = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, archivo.RutaArchivo);
+                var filePath = ResolvePhysicalPath(archivo.RutaArchivo);
                 if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound("El archivo físico no existe.");
@@ -169,7 +210,7 @@ namespace Wira.Api.Controllers
                 }
 
                 // Eliminar archivo físico
-                var filePath = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, archivo.RutaArchivo);
+                var filePath = ResolvePhysicalPath(archivo.RutaArchivo);
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);

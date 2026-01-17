@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "../shared/Navbar";
 import { useAuth } from "../../contexts/AuthContext";
+import apiService from "../../services/apiService";
 import { buttonBaseStyles } from "../shared/buttonStyles";
 import CalificacionProveedorModal from "./CalificacionProveedorModal";
 import { registrarCalificacionPostLicitacion } from "../../services/calificacionesService";
@@ -61,7 +62,8 @@ const TableSubtitle = styled.p`
 `;
 
 const TableWrapper = styled.div`
-  overflow-x: auto;
+  /* Allow table to adapt; on small screens we stack rows */
+  overflow-x: visible;
 `;
 
 const Table = styled.table`
@@ -73,6 +75,9 @@ const Table = styled.table`
     padding: 14px;
     text-align: left;
     border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+    word-break: break-word;
+    white-space: normal;
   }
 
   tbody tr:last-child td {
@@ -87,6 +92,37 @@ const Table = styled.table`
 
   tr:hover td {
     background: #f8fafc;
+  }
+
+  /* Responsive: stack rows and show labels */
+  @media (max-width: 768px) {
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      display: block;
+      margin-bottom: 12px;
+      border: 1px solid #e6eef8;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: white;
+    }
+
+    tbody td {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: none;
+    }
+
+    tbody td::before {
+      content: attr(data-label);
+      flex: 0 0 auto;
+      color: #475569;
+      font-weight: 600;
+      margin-right: 12px;
+    }
   }
 `;
 
@@ -186,7 +222,7 @@ const formatDate = (value) => {
       month: "short",
       day: "numeric",
     });
-  } catch (error) {
+  } catch {
     return "Fecha invalida";
   }
 };
@@ -205,7 +241,7 @@ const formatCurrency = (value, currency = "USD") => {
       currency,
       maximumFractionDigits: 0,
     });
-  } catch (error) {
+  } catch {
     return numeric.toLocaleString("es-AR");
   }
 };
@@ -244,11 +280,6 @@ const CalificacionesPosLicitacion = () => {
     return null;
   }, [user]);
 
-  const buildAuthHeaders = useCallback(() => {
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
-  }, [token]);
-
   const fetchPendientes = useCallback(async () => {
     try {
       setLoading(true);
@@ -258,16 +289,8 @@ const CalificacionesPosLicitacion = () => {
         setPendientes([]);
         return;
       }
-
-      const response = await fetch("http://localhost:5242/api/licitaciones", {
-        headers: buildAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error("No pudimos cargar las licitaciones adjudicadas");
-      }
-
-      const data = await response.json();
+      const licitacionesResp = await apiService.get("/licitaciones");
+      const data = licitacionesResp.data;
       const adjudicadas = data.filter((licitacion) => {
         const estado = licitacion.estadoNombre;
         const itemMineraId = licitacion.mineraID;
@@ -283,20 +306,12 @@ const CalificacionesPosLicitacion = () => {
           }
 
           try {
-            const ganadorResponse = await fetch(
-              `http://localhost:5242/api/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`,
-              {
-                headers: buildAuthHeaders(),
-              }
+            const ganadorResponse = await apiService.get(
+              `/historial-proveedor-licitacion/licitacion/${licitacionId}/propuesta-ganadora`
             );
-
-            if (!ganadorResponse.ok) {
-              return { licitacion, propuestaGanadora: null };
-            }
-
-            const propuestaGanadora = await ganadorResponse.json();
+            const propuestaGanadora = ganadorResponse.data;
             return { licitacion, propuestaGanadora };
-          } catch (innerError) {
+          } catch {
             return { licitacion, propuestaGanadora: null };
           }
         })
@@ -316,7 +331,7 @@ const CalificacionesPosLicitacion = () => {
     } finally {
       setLoading(false);
     }
-  }, [buildAuthHeaders, getUserMineraID]);
+  }, [getUserMineraID]);
 
   useEffect(() => {
     if (user && token) {
@@ -386,7 +401,7 @@ const CalificacionesPosLicitacion = () => {
         <PageHeader>
           <Title>Calificaciones post licitacion</Title>
           <Subtitle>
-            Registra la evaluacion final de tus proveedores adjudicados para
+            Registre la evaluacion final de sus proveedores adjudicados para
             cerrar sus licitaciones.
           </Subtitle>
         </PageHeader>
@@ -470,21 +485,21 @@ const CalificacionesPosLicitacion = () => {
 
                     return (
                       <tr key={rowKey}>
-                        <td>
+                        <td data-label="Licitación">
                           <LicitacionCell>
                             <LicitacionTitle>{titulo}</LicitacionTitle>
                           </LicitacionCell>
                         </td>
-                        <td>
+                        <td data-label="Proveedor adjudicado">
                           <ProveedorCell>
                             <ProveedorName>{proveedorNombre}</ProveedorName>
                             <ProveedorMeta>{proveedorEmail}</ProveedorMeta>
                           </ProveedorCell>
                         </td>
-                        <td>
+                        <td data-label="Adjudicada el">
                           <ValueText>{formatDate(fechaAdjudicacion)}</ValueText>
                         </td>
-                        <td>
+                        <td data-label="Presupuesto máximo">
                           <ValueText>
                             {formatCurrencyWithSymbol(
                               presupuestoParaMostrar,
@@ -504,7 +519,7 @@ const CalificacionesPosLicitacion = () => {
                             </LicitacionMeta>
                           )}
                         </td>
-                        <td>
+                        <td data-label="Acción">
                           <PrimaryButton onClick={() => handleOpenModal(item)}>
                             Calificar
                           </PrimaryButton>

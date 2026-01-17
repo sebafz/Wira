@@ -223,8 +223,50 @@ namespace Wira.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("users/by-empresa")]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
+        public async Task<IActionResult> GetUsersByEmpresa([FromQuery] int? empresaId = null)
+        {
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var (mineraId, proveedorId) = GetEmpresaContext();
+
+            var query = AdminUsersQuery();
+
+            if (isSystemAdmin)
+            {
+                if (empresaId.HasValue)
+                {
+                    query = query.Where(u => u.EmpresaID == empresaId.Value);
+                }
+            }
+            else
+            {
+                if (mineraId.HasValue)
+                {
+                    query = query.Where(u => u.EmpresaID == mineraId.Value && u.Empresa != null && u.Empresa.TipoEmpresa == EmpresaTipos.Minera);
+                }
+                else if (proveedorId.HasValue)
+                {
+                    query = query.Where(u => u.EmpresaID == proveedorId.Value && u.Empresa != null && u.Empresa.TipoEmpresa == EmpresaTipos.Proveedor);
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+
+            var usuarios = await query
+                .OrderBy(u => u.Nombre ?? string.Empty)
+                .ThenBy(u => u.Apellido ?? string.Empty)
+                .ThenBy(u => u.Email)
+                .ToListAsync();
+
+            var result = usuarios.Select(MapAdminUserDto).ToList();
+            return Ok(result);
+        }
+
         [HttpPost("users")]
-        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
         {
             if (!ModelState.IsValid)
@@ -269,6 +311,42 @@ namespace Wira.Api.Controllers
                 return BadRequest(new { message = "La contraseña es obligatoria" });
             }
 
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var isMineraAdmin = User.IsInRole(RoleNames.MineraAdministrador);
+            var isProveedorAdmin = User.IsInRole(RoleNames.ProveedorAdministrador);
+            var (mineraId, proveedorId) = GetEmpresaContext();
+
+            int? empresaId = request.EmpresaID;
+
+            if (!isSystemAdmin)
+            {
+                if (isMineraAdmin && mineraId.HasValue)
+                {
+                    empresaId = mineraId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("MINERA", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return Forbid();
+                    }
+                }
+                else if (isProveedorAdmin && proveedorId.HasValue)
+                {
+                    empresaId = proveedorId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("PROVEEDOR", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+
+            if (!empresaId.HasValue)
+            {
+                return BadRequest(new { message = "Debe indicar la empresa del usuario." });
+            }
+
             var usuario = new Usuario
             {
                 Email = normalizedEmail,
@@ -281,7 +359,7 @@ namespace Wira.Api.Controllers
                 FechaRegistro = DateTime.UtcNow,
                 FechaBaja = request.Activo ? null : DateTime.UtcNow,
                 ValidadoEmail = true,
-                EmpresaID = request.EmpresaID,
+                EmpresaID = empresaId.Value,
                 EstadoAprobacion = AprobacionEstados.Aprobado,
                 FechaAprobacion = DateTime.UtcNow,
                 AprobadoPorUsuarioID = currentUserId,
@@ -305,7 +383,7 @@ namespace Wira.Api.Controllers
         }
 
         [HttpPut("users/{usuarioId:int}")]
-        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> UpdateUser(int usuarioId, [FromBody] UpdateAdminUserRequest request)
         {
             if (!ModelState.IsValid)
@@ -320,6 +398,11 @@ namespace Wira.Api.Controllers
             {
                 return NotFound(new { message = "Usuario no encontrado" });
             }
+
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var isMineraAdmin = User.IsInRole(RoleNames.MineraAdministrador);
+            var isProveedorAdmin = User.IsInRole(RoleNames.ProveedorAdministrador);
+            var (mineraId, proveedorId) = GetEmpresaContext();
 
             var normalizedEmail = request.Email.Trim();
             var normalizedEmailLower = normalizedEmail.ToLower();
@@ -347,12 +430,52 @@ namespace Wira.Api.Controllers
                 return BadRequest(new { message = rolesResult.ErrorMessage });
             }
 
+            int? empresaId = request.EmpresaID;
+            if (!isSystemAdmin)
+            {
+                if (isMineraAdmin && mineraId.HasValue)
+                {
+                    if (usuario.EmpresaID != mineraId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Minera)
+                    {
+                        return Forbid();
+                    }
+
+                    empresaId = mineraId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("MINERA", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return Forbid();
+                    }
+                }
+                else if (isProveedorAdmin && proveedorId.HasValue)
+                {
+                    if (usuario.EmpresaID != proveedorId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Proveedor)
+                    {
+                        return Forbid();
+                    }
+
+                    empresaId = proveedorId.Value;
+                    if (normalizedRoles.Any(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("PROVEEDOR", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+
+            if (!empresaId.HasValue)
+            {
+                return BadRequest(new { message = "Debe indicar la empresa del usuario." });
+            }
+
             usuario.Email = normalizedEmail;
             usuario.Nombre = string.IsNullOrWhiteSpace(request.Nombre) ? null : request.Nombre.Trim();
             usuario.Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim();
             usuario.DNI = normalizedDni;
             usuario.Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim();
-            usuario.EmpresaID = request.EmpresaID;
+            usuario.EmpresaID = empresaId.Value;
             usuario.Activo = request.Activo;
             usuario.FechaBaja = request.Activo ? null : DateTime.UtcNow;
 
@@ -375,7 +498,7 @@ namespace Wira.Api.Controllers
         }
 
         [HttpPatch("users/{usuarioId:int}/status")]
-        [Authorize(Roles = RoleNames.AdministradorSistema)]
+        [Authorize(Roles = $"{RoleNames.AdministradorSistema},{RoleNames.MineraAdministrador},{RoleNames.ProveedorAdministrador}")]
         public async Task<IActionResult> UpdateUserStatus(int usuarioId, [FromBody] UpdateUserStatusRequest request)
         {
             var usuario = await AdminUsersQuery()
@@ -384,6 +507,32 @@ namespace Wira.Api.Controllers
             if (usuario == null)
             {
                 return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            var isSystemAdmin = User.IsInRole(RoleNames.AdministradorSistema);
+            var (mineraId, proveedorId) = GetEmpresaContext();
+
+            if (!isSystemAdmin)
+            {
+                // Company admins can only modify users from their own company of the matching type
+                if (mineraId.HasValue)
+                {
+                    if (usuario.EmpresaID != mineraId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Minera)
+                    {
+                        return Forbid();
+                    }
+                }
+                else if (proveedorId.HasValue)
+                {
+                    if (usuario.EmpresaID != proveedorId.Value || usuario.Empresa == null || usuario.Empresa.TipoEmpresa != EmpresaTipos.Proveedor)
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    return Forbid();
+                }
             }
 
             usuario.Activo = request.Activo;

@@ -121,10 +121,21 @@ namespace Wira.Api.Controllers
                         r.RespuestaID,
                         r.CriterioID,
                         r.ValorProveedor,
+                        r.ValorNumerico,
+                        r.ValorBooleano,
+                        r.CriterioOpcionID,
+                        OpcionSeleccionada = r.OpcionSeleccionada == null ? null : new
+                        {
+                            r.OpcionSeleccionada.OpcionID,
+                            r.OpcionSeleccionada.Valor,
+                            r.OpcionSeleccionada.Descripcion,
+                            r.OpcionSeleccionada.Puntaje
+                        },
                         CriterioNombre = r.Criterio?.Nombre,
                         CriterioDescripcion = r.Criterio?.Descripcion,
                         CriterioPeso = r.Criterio?.Peso,
-                        CriterioMayorMejor = r.Criterio?.MayorMejor
+                        CriterioMayorMejor = r.Criterio?.MayorMejor,
+                        CriterioTipo = r.Criterio?.Tipo
                     })
                     .ToList();
 
@@ -351,7 +362,7 @@ namespace Wira.Api.Controllers
                 {
                     LicitacionID = createDto.LicitacionID,
                     ProveedorID = createDto.ProveedorID,
-                    FechaEnvio = DateTime.Now,
+                    FechaEnvio = DateTime.UtcNow,
                     EstadoPropuestaID = 1, // Estado inicial - "Enviada"
                     Descripcion = createDto.Descripcion,
                     PresupuestoOfrecido = createDto.PresupuestoOfrecido,
@@ -366,19 +377,103 @@ namespace Wira.Api.Controllers
                 // Guardar respuestas a los criterios si existen
                 if (createDto.RespuestasCriterios != null && createDto.RespuestasCriterios.Any())
                 {
-                    var respuestasCriterios = createDto.RespuestasCriterios
-                        .Where(r => !string.IsNullOrWhiteSpace(r.ValorProveedor))
-                        .Select(r => new RespuestaCriterioLicitacion
+                    var criterioIds = createDto.RespuestasCriterios.Select(r => r.CriterioID).Distinct().ToList();
+                    var criteriosMap = await _context.CriteriosLicitacion
+                        .Where(c => criterioIds.Contains(c.CriterioID))
+                        .ToDictionaryAsync(c => c.CriterioID);
+
+                    var respuestas = new List<RespuestaCriterioLicitacion>();
+
+                    foreach (var rDto in createDto.RespuestasCriterios)
+                    {
+                        criteriosMap.TryGetValue(rDto.CriterioID, out var criterio);
+
+                        var respuesta = new RespuestaCriterioLicitacion
                         {
                             PropuestaID = propuesta.PropuestaID,
-                            CriterioID = r.CriterioID,
-                            ValorProveedor = r.ValorProveedor
-                        })
-                        .ToList();
+                            CriterioID = rDto.CriterioID
+                        };
 
-                    if (respuestasCriterios.Any())
+                        var valor = rDto.ValorProveedor?.Trim();
+
+                        if (criterio == null)
+                        {
+                            respuesta.ValorProveedor = valor;
+                            respuestas.Add(respuesta);
+                            continue;
+                        }
+
+                        switch (criterio.Tipo)
+                        {
+                            case TipoCriterio.Numerico:
+                                if (!string.IsNullOrWhiteSpace(valor))
+                                {
+                                    if (decimal.TryParse(valor, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsedInvariant))
+                                    {
+                                        respuesta.ValorNumerico = parsedInvariant;
+                                    }
+                                    else if (decimal.TryParse(valor, System.Globalization.NumberStyles.Number, new System.Globalization.CultureInfo("es-AR"), out var parsedEs))
+                                    {
+                                        respuesta.ValorNumerico = parsedEs;
+                                    }
+                                    else
+                                    {
+                                        respuesta.ValorProveedor = valor;
+                                    }
+                                }
+                                break;
+
+                            case TipoCriterio.Booleano:
+                                if (!string.IsNullOrWhiteSpace(valor))
+                                {
+                                    var normalized = valor.ToLowerInvariant();
+                                    if (normalized == "true" || normalized == "1" || normalized == "si" || normalized == "sí") respuesta.ValorBooleano = true;
+                                    else if (normalized == "false" || normalized == "0" || normalized == "no") respuesta.ValorBooleano = false;
+                                    else respuesta.ValorProveedor = valor;
+                                }
+                                break;
+
+                            case TipoCriterio.Escala:
+                                if (!string.IsNullOrWhiteSpace(valor) && int.TryParse(valor, out var opcionId))
+                                {
+                                    var opcion = criterio.Opciones?.FirstOrDefault(o => o.OpcionID == opcionId);
+                                    if (opcion != null)
+                                    {
+                                        respuesta.CriterioOpcionID = opcionId;
+                                    }
+                                    else
+                                    {
+                                        respuesta.ValorProveedor = valor;
+                                    }
+                                }
+                                else
+                                {
+                                    if (!string.IsNullOrWhiteSpace(valor) && criterio.Opciones != null)
+                                    {
+                                        var match = criterio.Opciones.FirstOrDefault(o => string.Equals(o.Valor, valor, System.StringComparison.OrdinalIgnoreCase) || string.Equals(o.Descripcion, valor, System.StringComparison.OrdinalIgnoreCase));
+                                        if (match != null)
+                                        {
+                                            respuesta.CriterioOpcionID = match.OpcionID;
+                                        }
+                                        else
+                                        {
+                                            respuesta.ValorProveedor = valor;
+                                        }
+                                    }
+                                }
+                                break;
+
+                            default:
+                                respuesta.ValorProveedor = valor;
+                                break;
+                        }
+
+                        respuestas.Add(respuesta);
+                    }
+
+                    if (respuestas.Any())
                     {
-                        _context.RespuestasCriteriosLicitacion.AddRange(respuestasCriterios);
+                        _context.RespuestasCriteriosLicitacion.AddRange(respuestas);
                         await _context.SaveChangesAsync();
                     }
                 }
@@ -412,7 +507,12 @@ namespace Wira.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear la propuesta");
-                return StatusCode(500, new { message = "Error al crear la propuesta" });
+                return StatusCode(500, new
+                {
+                    message = "Error al crear la propuesta",
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message
+                });
             }
         }
 
@@ -485,16 +585,108 @@ namespace Wira.Api.Controllers
                         _context.RespuestasCriteriosLicitacion.RemoveRange(respuestasExistentes);
                     }
 
-                    // Agregar nuevas respuestas
-                    var nuevasRespuestas = updateDto.RespuestasCriterios
-                        .Where(r => !string.IsNullOrWhiteSpace(r.ValorProveedor))
-                        .Select(r => new RespuestaCriterioLicitacion
+                    // Cargar criterios involucrados para conocer su tipo
+                    var criterioIds = updateDto.RespuestasCriterios.Select(r => r.CriterioID).Distinct().ToList();
+                    var criteriosMap = await _context.CriteriosLicitacion
+                        .Where(c => criterioIds.Contains(c.CriterioID))
+                        .ToDictionaryAsync(c => c.CriterioID);
+
+                    var nuevasRespuestas = new List<RespuestaCriterioLicitacion>();
+
+                    foreach (var rDto in updateDto.RespuestasCriterios)
+                    {
+                        criteriosMap.TryGetValue(rDto.CriterioID, out var criterio);
+
+                        // Normalizar según tipo de criterio
+                        var respuesta = new RespuestaCriterioLicitacion
                         {
                             PropuestaID = id,
-                            CriterioID = r.CriterioID,
-                            ValorProveedor = r.ValorProveedor
-                        })
-                        .ToList();
+                            CriterioID = rDto.CriterioID
+                        };
+
+                        var valor = rDto.ValorProveedor?.Trim();
+
+                        if (criterio == null)
+                        {
+                            // Si no encontramos el criterio, guardar como texto por compatibilidad
+                            respuesta.ValorProveedor = valor;
+                            nuevasRespuestas.Add(respuesta);
+                            continue;
+                        }
+
+                        switch (criterio.Tipo)
+                        {
+                            case TipoCriterio.Numerico:
+                                // Intentar parsear número (acepta formatos locales)
+                                if (!string.IsNullOrWhiteSpace(valor))
+                                {
+                                    if (decimal.TryParse(valor, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsedInvariant))
+                                    {
+                                        respuesta.ValorNumerico = parsedInvariant;
+                                    }
+                                    else if (decimal.TryParse(valor, System.Globalization.NumberStyles.Number, new System.Globalization.CultureInfo("es-AR"), out var parsedEs))
+                                    {
+                                        respuesta.ValorNumerico = parsedEs;
+                                    }
+                                    else
+                                    {
+                                        // Fallback: no parseable numeric -> guardar en ValorProveedor para historial
+                                        respuesta.ValorProveedor = valor;
+                                    }
+                                }
+                                break;
+
+                            case TipoCriterio.Booleano:
+                                if (!string.IsNullOrWhiteSpace(valor))
+                                {
+                                    var normalized = valor.ToLowerInvariant();
+                                    if (normalized == "true" || normalized == "1" || normalized == "si" || normalized == "sí") respuesta.ValorBooleano = true;
+                                    else if (normalized == "false" || normalized == "0" || normalized == "no") respuesta.ValorBooleano = false;
+                                    else respuesta.ValorProveedor = valor; // non-parseable -> keep raw
+                                }
+                                break;
+
+                            case TipoCriterio.Escala:
+                                // Si se envió un id de opción (número) en el texto, intentar parsearlo
+                                if (!string.IsNullOrWhiteSpace(valor) && int.TryParse(valor, out var opcionId))
+                                {
+                                    // Verificar que la opción pertenezca al criterio
+                                    var opcion = criterio.Opciones?.FirstOrDefault(o => o.OpcionID == opcionId);
+                                    if (opcion != null)
+                                    {
+                                        respuesta.CriterioOpcionID = opcionId;
+                                    }
+                                    else
+                                    {
+                                        respuesta.ValorProveedor = valor;
+                                    }
+                                }
+                                else
+                                {
+                                    // Buscar por texto en opciones
+                                    if (!string.IsNullOrWhiteSpace(valor) && criterio.Opciones != null)
+                                    {
+                                        var match = criterio.Opciones.FirstOrDefault(o => string.Equals(o.Valor, valor, System.StringComparison.OrdinalIgnoreCase) || string.Equals(o.Descripcion, valor, System.StringComparison.OrdinalIgnoreCase));
+                                        if (match != null)
+                                        {
+                                            respuesta.CriterioOpcionID = match.OpcionID;
+                                        }
+                                        else
+                                        {
+                                            respuesta.ValorProveedor = valor;
+                                        }
+                                    }
+                                }
+                                break;
+
+                            default:
+                                // Descriptivo u otros: guardar texto
+                                respuesta.ValorProveedor = valor;
+                                break;
+                        }
+
+                        nuevasRespuestas.Add(respuesta);
+                    }
 
                     if (nuevasRespuestas.Any())
                     {

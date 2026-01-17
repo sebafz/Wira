@@ -86,7 +86,8 @@ namespace Wira.Api.Services
                         continue;
                     }
 
-                    var valor = respuesta.ValorNumerico ?? ParseDecimal(respuesta.ValorProveedor);
+                    // Use only ValorNumerico for numeric statistics (do not fallback to ValorProveedor)
+                    var valor = respuesta.ValorNumerico;
                     if (!valor.HasValue)
                     {
                         continue;
@@ -151,7 +152,8 @@ namespace Wira.Api.Services
 
         private static bool CumpleNumerico(CriterioLicitacion criterio, RespuestaCriterioLicitacion? respuesta)
         {
-            var valor = respuesta?.ValorNumerico ?? ParseDecimal(respuesta?.ValorProveedor);
+            // Use only ValorNumerico for scoring numeric criteria (do not fallback to ValorProveedor)
+            var valor = respuesta?.ValorNumerico;
             if (!valor.HasValue)
             {
                 return false;
@@ -189,7 +191,8 @@ namespace Wira.Api.Services
             RespuestaCriterioLicitacion? respuesta,
             IDictionary<int, NumericCriterionStats>? criteriosStats)
         {
-            var valor = respuesta?.ValorNumerico ?? ParseDecimal(respuesta?.ValorProveedor);
+            // Use only ValorNumerico for scoring numeric criteria (do not fallback to ValorProveedor)
+            var valor = respuesta?.ValorNumerico;
             if (!valor.HasValue)
             {
                 return 0m;

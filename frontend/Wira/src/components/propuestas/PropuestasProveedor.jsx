@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import { buttonBaseStyles } from "../shared/buttonStyles";
+import apiService from "../../services/apiService";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -723,14 +724,13 @@ const PropuestasProveedor = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/proveedor/${proveedorId}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setPropuestas(data);
-      } else {
+      try {
+        const res = await apiService.get(
+          `/propuestas/proveedor/${proveedorId}`
+        );
+        setPropuestas(res?.data ?? []);
+      } catch (e) {
+        console.error("Error al cargar propuestas:", e);
         setError("Error al cargar las propuestas");
         setPropuestas([]);
       }
@@ -855,12 +855,34 @@ const PropuestasProveedor = () => {
     return statusMap[status] || status;
   };
 
+  const isFinalProposalState = (status) => {
+    const s = status || "";
+    return ["Adjudicada", "Aprobada", "Rechazada"].includes(s);
+  };
+
   const handleBrowseLicitaciones = () => {
     navigate("/licitaciones-activas");
   };
 
   const getCompanyName = () => {
     return user?.proveedor?.nombre || "Empresa Proveedora";
+  };
+
+  const getPropuestaDisplayName = (propuesta) => {
+    if (!propuesta) {
+      return "esta propuesta";
+    }
+
+    const descripcion = propuesta.descripcion || propuesta.Descripcion;
+    if (descripcion && descripcion.trim().length > 0) {
+      return descripcion.trim();
+    }
+
+    return (
+      propuesta.licitacionTitulo ||
+      propuesta.LicitacionTitulo ||
+      "esta propuesta"
+    );
   };
 
   const handlePropuestaClick = async (propuestaId) => {
@@ -872,19 +894,9 @@ const PropuestasProveedor = () => {
         setShowModal(true);
 
         // Luego cargar los detalles completos incluyendo criterios
-        const response = await fetch(
-          `http://localhost:5242/api/propuestas/${propuestaId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const detailedData = await response.json();
-          setSelectedPropuesta(detailedData);
-        }
+        const res = await apiService.get(`/propuestas/${propuestaId}`);
+        const detailedData = res?.data ?? null;
+        if (detailedData) setSelectedPropuesta(detailedData);
       }
     } catch (error) {
       console.error("Error al descargar detalles de la propuesta:", error);
@@ -918,22 +930,7 @@ const PropuestasProveedor = () => {
     if (!deletingPropuesta) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/${deletingPropuesta.propuestaID}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al eliminar la propuesta");
-      }
-
+      await apiService.delete(`/propuestas/${deletingPropuesta.propuestaID}`);
       toast.success("Propuesta eliminada exitosamente");
 
       // Recargar la lista de propuestas
@@ -968,21 +965,9 @@ const PropuestasProveedor = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      // Crear blob con el contenido del archivo
-      const blob = await response.blob();
+      const res = await apiService.downloadArchivoById(ArchivoID);
+      if (!res || !res.data) throw new Error("Error al descargar el archivo");
+      const blob = res.data;
 
       // Crear URL temporal para el blob
       const url = window.URL.createObjectURL(blob);
@@ -1331,9 +1316,30 @@ const PropuestasProveedor = () => {
 
                           <InfoLabel>Valor ofrecido</InfoLabel>
                           <CriterioValue>
-                            {respuesta.valorProveedor ||
-                              respuesta.ValorProveedor ||
-                              "No especificado"}
+                            {(() => {
+                              const numeric =
+                                respuesta.valorNumerico ??
+                                respuesta.ValorNumerico;
+                              const booleano =
+                                respuesta.valorBooleano ??
+                                respuesta.ValorBooleano;
+                              const opcion =
+                                respuesta.opcionSeleccionada ??
+                                respuesta.OpcionSeleccionada ??
+                                null;
+                              const texto =
+                                respuesta.valorProveedor ??
+                                respuesta.ValorProveedor ??
+                                null;
+
+                              if (numeric !== undefined && numeric !== null)
+                                return numeric;
+                              if (booleano !== undefined && booleano !== null)
+                                return booleano ? "Sí" : "No";
+                              if (opcion) return opcion.Valor ?? opcion.valor;
+                              if (texto) return texto;
+                              return "No especificado";
+                            })()}
                           </CriterioValue>
                         </CriterioItem>
                       ))}
@@ -1389,18 +1395,22 @@ const PropuestasProveedor = () => {
             </ModalBody>
 
             <ModalActions>
-              <EditButton
-                onClick={() => {
-                  handleEditarPropuesta(selectedPropuesta.propuestaID);
-                }}
-              >
-                ✏️ Editar
-              </EditButton>
-              <DeleteButton
-                onClick={() => handleEliminarPropuesta(selectedPropuesta)}
-              >
-                🗑️ Eliminar
-              </DeleteButton>
+              {!isFinalProposalState(selectedPropuesta.estadoNombre) && (
+                <>
+                  <EditButton
+                    onClick={() => {
+                      handleEditarPropuesta(selectedPropuesta.propuestaID);
+                    }}
+                  >
+                    ✏️ Editar
+                  </EditButton>
+                  <DeleteButton
+                    onClick={() => handleEliminarPropuesta(selectedPropuesta)}
+                  >
+                    🗑️ Eliminar
+                  </DeleteButton>
+                </>
+              )}
             </ModalActions>
           </ModalContent>
         </ModalOverlay>
@@ -1413,14 +1423,11 @@ const PropuestasProveedor = () => {
         variant="red"
         description={
           <>
-            ¿Está seguro que desea eliminar la propuesta para
-            <strong>
-              {" "}
-              "{deletingPropuesta?.licitacionTitulo || "esta licitación"}"
-            </strong>
-            ?
+            ¿Está seguro de que desea eliminar la propuesta{" "}
+            <strong>"{getPropuestaDisplayName(deletingPropuesta)}"</strong>?
             <br />
-            Esta acción no se puede deshacer.
+            Esta acción no se puede deshacer: la minera dejará de ver tu
+            propuesta y será notificada inmediatamente sobre la eliminación.
           </>
         }
         confirmText="Eliminar"

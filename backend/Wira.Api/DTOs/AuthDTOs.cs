@@ -46,6 +46,24 @@ namespace Wira.Api.DTOs
 
         public int? MineraID { get; set; }
         public int? ProveedorID { get; set; }
+        public NewEmpresaDto? ProveedorNuevo { get; set; }
+    }
+
+    public class NewEmpresaDto
+    {
+        [Required]
+        [StringLength(255)]
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(255)]
+        public string RazonSocial { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20)]
+        public string CUIT { get; set; } = string.Empty;
+
+        public int? RubroID { get; set; }
     }
 
     public class ForgotPasswordRequest

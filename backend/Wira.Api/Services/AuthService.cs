@@ -166,8 +166,21 @@ namespace Wira.Api.Services
         {
             try
             {
-                // Verificar si el email ya existe
-                if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
+                var normalizedEmail = request.Email?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(normalizedEmail))
+                {
+                    return new AuthResponse
+                    {
+                        Success = false,
+                        Message = "El email es obligatorio"
+                    };
+                }
+
+                var normalizedEmailLower = normalizedEmail.ToLowerInvariant();
+                var emailExists = await _context.Usuarios
+                    .AnyAsync(u => u.Email.ToLower() == normalizedEmailLower);
+
+                if (emailExists)
                 {
                     return new AuthResponse
                     {
@@ -186,7 +199,10 @@ namespace Wira.Api.Services
                     };
                 }
 
-                if (await _context.Usuarios.AnyAsync(u => u.DNI == dniNormalizado))
+                var dniExists = await _context.Usuarios
+                    .AnyAsync(u => u.DNI == dniNormalizado);
+
+                if (dniExists)
                 {
                     return new AuthResponse
                     {
@@ -196,6 +212,7 @@ namespace Wira.Api.Services
                 }
 
                 var tipoCuentaNormalizado = EmpresaTipos.Normalizar(request.TipoCuenta);
+                int? empresaId = null;
 
                 // Validar que el tipo de cuenta sea válido
                 if (!EmpresaTipos.EsValido(tipoCuentaNormalizado))
@@ -208,8 +225,17 @@ namespace Wira.Api.Services
                 }
 
                 // Validar que la empresa existe según el tipo
-                if (tipoCuentaNormalizado == EmpresaTipos.Minera && request.MineraID.HasValue)
+                if (tipoCuentaNormalizado == EmpresaTipos.Minera)
                 {
+                    if (!request.MineraID.HasValue)
+                    {
+                        return new AuthResponse
+                        {
+                            Success = false,
+                            Message = "Debe seleccionar una minera"
+                        };
+                    }
+
                     var mineraExiste = await _context.Empresas.AnyAsync(m =>
                         m.EmpresaID == request.MineraID &&
                         m.TipoEmpresa == EmpresaTipos.Minera &&
@@ -223,20 +249,87 @@ namespace Wira.Api.Services
                             Message = "La minera seleccionada no existe o está inactiva"
                         };
                     }
-                }
-                else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor && request.ProveedorID.HasValue)
-                {
-                    var proveedorExiste = await _context.Empresas.AnyAsync(p =>
-                        p.EmpresaID == request.ProveedorID &&
-                        p.TipoEmpresa == EmpresaTipos.Proveedor &&
-                        p.Activo);
 
-                    if (!proveedorExiste)
+                    empresaId = request.MineraID;
+                }
+                else if (tipoCuentaNormalizado == EmpresaTipos.Proveedor)
+                {
+                    // If ProveedorID provided, validate existing provider
+                    if (request.ProveedorID.HasValue)
+                    {
+                        var proveedorExiste = await _context.Empresas.AnyAsync(p =>
+                            p.EmpresaID == request.ProveedorID &&
+                            p.TipoEmpresa == EmpresaTipos.Proveedor &&
+                            p.Activo);
+
+                        if (!proveedorExiste)
+                        {
+                            return new AuthResponse
+                            {
+                                Success = false,
+                                Message = "El proveedor seleccionado no existe o está inactivo"
+                            };
+                        }
+
+                        empresaId = request.ProveedorID;
+                    }
+                    else if (request.ProveedorNuevo != null)
+                    {
+                        // Validate CUIT uniqueness
+                        var newCuit = request.ProveedorNuevo.CUIT?.Trim() ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(newCuit))
+                        {
+                            return new AuthResponse { Success = false, Message = "CUIT de la empresa es obligatorio" };
+                        }
+
+                        var cuitExists = await _context.Empresas.AnyAsync(e => e.CUIT == newCuit);
+                        if (cuitExists)
+                        {
+                            return new AuthResponse { Success = false, Message = "El CUIT ya está registrado" };
+                        }
+
+                        // Validate rubro if provided
+                        if (request.ProveedorNuevo.RubroID.HasValue)
+                        {
+                            var rubroExiste = await _context.Rubros.AnyAsync(r => r.RubroID == request.ProveedorNuevo.RubroID && r.Activo);
+                            if (!rubroExiste)
+                            {
+                                return new AuthResponse { Success = false, Message = "Rubro inválido" };
+                            }
+                        }
+
+                        // Create new provider company as inactive (will activate on email verification)
+                        var newProv = new Models.Empresa
+                        {
+                            Nombre = request.ProveedorNuevo.Nombre.Trim(),
+                            RazonSocial = request.ProveedorNuevo.RazonSocial.Trim(),
+                            CUIT = newCuit,
+                            TipoEmpresa = EmpresaTipos.Proveedor,
+                            Activo = false,
+                            FechaAlta = DateTime.UtcNow,
+                            RubroID = request.ProveedorNuevo.RubroID
+                        };
+
+                        _context.Empresas.Add(newProv);
+                        try
+                        {
+                            await _context.SaveChangesAsync();
+                        }
+                        catch (DbUpdateException dbEx)
+                        {
+                            var baseMsg = dbEx.GetBaseException()?.Message ?? dbEx.Message;
+                            _logger.LogError(dbEx, "DB error creating Empresa for CUIT {CUIT}: {BaseMessage}", newCuit, baseMsg);
+                            return new AuthResponse { Success = false, Message = $"Error al crear la empresa (BD): {baseMsg}" };
+                        }
+
+                        empresaId = newProv.EmpresaID;
+                    }
+                    else
                     {
                         return new AuthResponse
                         {
                             Success = false,
-                            Message = "El proveedor seleccionado no existe o está inactivo"
+                            Message = "Debe seleccionar un proveedor o completar los datos de su empresa"
                         };
                     }
                 }
@@ -245,26 +338,25 @@ namespace Wira.Api.Services
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
                 var user = new Usuario
                 {
-                    Email = request.Email,
+                    Email = normalizedEmail,
                     PasswordHash = hashedPassword,
-                    Nombre = request.Nombre?.Trim(),
+                    Nombre = string.IsNullOrWhiteSpace(request.Nombre) ? null : request.Nombre.Trim(),
                     Apellido = string.IsNullOrWhiteSpace(request.Apellido) ? null : request.Apellido.Trim(),
                     DNI = dniNormalizado,
                     Telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim(),
                     Activo = true,
                     ValidadoEmail = false,
-                    FechaRegistro = DateTime.Now,
+                    FechaRegistro = DateTime.UtcNow,
                     FechaBaja = null,
                     EstadoAprobacion = AprobacionEstados.Pendiente,
                     FechaAprobacion = null,
                     AprobadoPorUsuarioID = null,
                     MotivoRechazo = null,
-                    EmpresaID = tipoCuentaNormalizado == EmpresaTipos.Minera
-                        ? request.MineraID
-                        : tipoCuentaNormalizado == EmpresaTipos.Proveedor
-                            ? request.ProveedorID
-                            : null
+                    EmpresaID = empresaId
                 };
+
+                // If a new provider was created, keep account pending verification.
+                // The company will be activated and the provider admin role assigned after email verification.
 
                 _context.Usuarios.Add(user);
                 await _context.SaveChangesAsync();
@@ -286,6 +378,8 @@ namespace Wira.Api.Services
                     _logger.LogError(emailEx, "Error enviando email de verificación a: {Email}", user.Email);
                     // No fallar el registro por error de email
                 }
+
+                // Note: role assignment and company activation happen upon email verification.
 
                 return new AuthResponse
                 {
@@ -400,10 +494,14 @@ namespace Wira.Api.Services
         {
             try
             {
-                var user = await _context.Usuarios.FirstOrDefaultAsync(u =>
-                    u.Email == request.Email &&
-                    u.TokenVerificacionEmail == request.Code &&
-                    u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
+                var user = await _context.Usuarios
+                    .Include(u => u.Empresa)
+                    .Include(u => u.UsuariosRoles)
+                        .ThenInclude(ur => ur.Rol)
+                    .FirstOrDefaultAsync(u =>
+                        u.Email == request.Email &&
+                        u.TokenVerificacionEmail == request.Code &&
+                        u.FechaVencimientoTokenVerificacion > DateTime.UtcNow);
 
                 if (user == null)
                 {
@@ -427,6 +525,21 @@ namespace Wira.Api.Services
                 user.ValidadoEmail = true;
                 user.TokenVerificacionEmail = null;
                 user.FechaVencimientoTokenVerificacion = null;
+
+                // If the user belongs to a provider company that was created during registration and is inactive,
+                // activate the company and assign provider admin role to this user.
+                if (user.Empresa != null && user.Empresa.TipoEmpresa == EmpresaTipos.Proveedor && !user.Empresa.Activo)
+                {
+                    user.Empresa.Activo = true;
+                    user.EstadoAprobacion = AprobacionEstados.Aprobado;
+                    user.FechaAprobacion = DateTime.UtcNow;
+
+                    var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == RoleNames.ProveedorAdministrador);
+                    if (rol != null)
+                    {
+                        await ReplaceUserRolesAsync(user.UsuarioID, new List<Rol> { rol });
+                    }
+                }
 
                 await _context.SaveChangesAsync();
 
@@ -498,6 +611,29 @@ namespace Wira.Api.Services
                     Success = false,
                     Message = "Error interno del servidor"
                 };
+            }
+        }
+
+        private async Task ReplaceUserRolesAsync(int usuarioId, List<Rol> roles)
+        {
+            var existingRoles = await _context.UsuariosRoles
+                .Where(ur => ur.UsuarioID == usuarioId)
+                .ToListAsync();
+
+            _context.UsuariosRoles.RemoveRange(existingRoles);
+
+            if (roles == null || roles.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var rol in roles)
+            {
+                _context.UsuariosRoles.Add(new UsuarioRol
+                {
+                    UsuarioID = usuarioId,
+                    RolID = rol.RolID
+                });
             }
         }
 

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -90,7 +91,7 @@ namespace Wira.Api.Controllers
                     return NotFound("Minera no encontrada");
                 }
 
-                var fechaInicio = DateTime.Now.AddDays(-30); // Últimos 30 días
+                var fechaInicio = DateTimeOffset.UtcNow.AddDays(-30); // Últimos 30 días
 
                 // Licitaciones creadas en los últimos 30 días
                 var licitacionesRecientes = await _context.Licitaciones
@@ -108,14 +109,14 @@ namespace Wira.Api.Controllers
                     .CountAsync();
 
                 // Licitaciones que vencen en los próximos 7 días
-                var fechaLimite = DateTime.Now.AddDays(7);
+                var fechaLimite = DateTimeOffset.UtcNow.AddDays(7);
                 var licitacionesProximasVencer = await _context.Licitaciones
                     .Include(l => l.EstadoLicitacion)
                     .Where(l => l.MineraID == mineraId &&
                                !l.Eliminado &&
                                l.EstadoLicitacion.NombreEstado == "Publicada" &&
                                l.FechaCierre <= fechaLimite &&
-                               l.FechaCierre > DateTime.Now)
+                               l.FechaCierre > DateTimeOffset.UtcNow)
                     .CountAsync();
 
                 // Valor promedio de propuestas recibidas por moneda
@@ -176,7 +177,7 @@ namespace Wira.Api.Controllers
                     .Where(l => !l.Eliminado &&
                                l.EstadoLicitacion.NombreEstado == "Publicada" &&
                                l.RubroID == proveedor.RubroID &&
-                               l.FechaCierre > DateTime.Now)
+                               l.FechaCierre > DateTimeOffset.UtcNow)
                     .CountAsync();
 
                 // KPI 2: Propuestas enviadas por este proveedor

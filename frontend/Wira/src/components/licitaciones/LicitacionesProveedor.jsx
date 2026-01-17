@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthContext";
 // import { useNavigate } from "react-router-dom"; // Currently not used
@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import DialogModal from "../shared/DialogModal";
 import Navbar from "../shared/Navbar";
 import { buttonBaseStyles } from "../shared/buttonStyles";
+import apiService from "../../services/apiService";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -406,6 +407,8 @@ const RetryButton = styled.button`
   }
 `;
 
+const DATE_INPUT_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -591,6 +594,8 @@ const ModalActions = styled.div`
   display: flex;
   gap: 15px;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   padding: 20px 30px;
   background: #f8f9fa;
   border-top: 1px solid #e1e5e9;
@@ -626,6 +631,14 @@ const AlreadyAppliedButton = styled(ActionButton)`
     transform: none;
     box-shadow: none;
   }
+`;
+
+const ActionRestrictionText = styled.p`
+  width: 100%;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  text-align: right;
 `;
 
 const PropuestaModal = styled.div`
@@ -970,13 +983,6 @@ const FileErrorMessage = styled.div`
   font-size: 0.8rem;
 `;
 
-const tipoCriterioLabels = {
-  Numerico: "Valor numérico",
-  Booleano: "Sí / No",
-  Descriptivo: "Respuesta descriptiva",
-  Escala: "Escala personalizada",
-};
-
 const resolveTipoCriterio = (tipoValue) => {
   if (typeof tipoValue === "string" && tipoValue.trim()) {
     const normalized = tipoValue.trim().toLowerCase();
@@ -1096,8 +1102,6 @@ const createRespuestaInicial = () => ({
   opcionSeleccionadaId: "",
 });
 
-const getTipoDisplayLabel = (tipo) => tipoCriterioLabels[tipo] || "Texto libre";
-
 const LicitacionesProveedor = () => {
   const { user, token } = useAuth();
   // const navigate = useNavigate(); // Currently not used
@@ -1152,6 +1156,57 @@ const LicitacionesProveedor = () => {
   const [rubros, setRubros] = useState([]);
   const [mineras, setMineras] = useState([]);
 
+  const toUtcDate = useCallback((value, { endOfDay = false } = {}) => {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+    }
+
+    const match = DATE_INPUT_REGEX.exec(value);
+    if (match) {
+      const [, yearStr, monthStr, dayStr] = match;
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      const day = Number(dayStr);
+      if ([year, month, day].some((n) => Number.isNaN(n))) {
+        return null;
+      }
+
+      const hours = endOfDay ? 23 : 0;
+      const minutes = endOfDay ? 59 : 0;
+      const seconds = endOfDay ? 59 : 0;
+      const milliseconds = endOfDay ? 999 : 0;
+
+      return new Date(
+        Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds)
+      );
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : new Date(parsed.getTime());
+  }, []);
+
+  const toUtcISOString = useCallback(
+    (value, options = {}) => {
+      const date = toUtcDate(value, options);
+      return date ? date.toISOString() : null;
+    },
+    [toUtcDate]
+  );
+
+  const toDateInputValue = useCallback(
+    (value) => {
+      const iso = toUtcISOString(value);
+      return iso ? iso.split("T")[0] : "";
+    },
+    [toUtcISOString]
+  );
+
+  const todayInputValue = useMemo(
+    () => toDateInputValue(new Date()),
+    [toDateInputValue]
+  );
+
   // Cargar datos iniciales
   useEffect(() => {
     fetchLicitacionesActivas();
@@ -1195,12 +1250,8 @@ const LicitacionesProveedor = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5242/api/licitaciones");
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const res = await apiService.getLicitaciones();
+      const data = res?.data ?? [];
 
       // Filtrar solo licitaciones activas (Publicada y En Evaluación)
       let licitacionesActivas = data.filter((licitacion) => {
@@ -1209,6 +1260,10 @@ const LicitacionesProveedor = () => {
       });
 
       // Aplicar filtros adicionales
+      const fechaCierreDesdeUtc = toUtcDate(filters.fechaCierreDesde);
+      const fechaCierreHastaUtc = toUtcDate(filters.fechaCierreHasta, {
+        endOfDay: true,
+      });
       if (filters.titulo) {
         licitacionesActivas = licitacionesActivas.filter((l) =>
           (l.titulo || l.Titulo || "")
@@ -1239,20 +1294,18 @@ const LicitacionesProveedor = () => {
         );
       }
 
-      if (filters.fechaCierreDesde) {
-        licitacionesActivas = licitacionesActivas.filter(
-          (l) =>
-            new Date(l.fechaCierre || l.FechaCierre) >=
-            new Date(filters.fechaCierreDesde)
-        );
+      if (fechaCierreDesdeUtc) {
+        licitacionesActivas = licitacionesActivas.filter((l) => {
+          const cierreDate = toUtcDate(l.fechaCierre || l.FechaCierre);
+          return cierreDate ? cierreDate >= fechaCierreDesdeUtc : false;
+        });
       }
 
-      if (filters.fechaCierreHasta) {
-        licitacionesActivas = licitacionesActivas.filter(
-          (l) =>
-            new Date(l.fechaCierre || l.FechaCierre) <=
-            new Date(filters.fechaCierreHasta)
-        );
+      if (fechaCierreHastaUtc) {
+        licitacionesActivas = licitacionesActivas.filter((l) => {
+          const cierreDate = toUtcDate(l.fechaCierre || l.FechaCierre);
+          return cierreDate ? cierreDate <= fechaCierreHastaUtc : false;
+        });
       }
 
       if (filters.minera) {
@@ -1282,8 +1335,8 @@ const LicitacionesProveedor = () => {
             valueB = (b.titulo || b.Titulo || "").toLowerCase();
             break;
           case "fechaCierre":
-            valueA = new Date(a.fechaCierre || a.FechaCierre);
-            valueB = new Date(b.fechaCierre || b.FechaCierre);
+            valueA = toUtcDate(a.fechaCierre || a.FechaCierre)?.getTime() || 0;
+            valueB = toUtcDate(b.fechaCierre || b.FechaCierre)?.getTime() || 0;
             break;
           case "presupuesto":
             valueA = a.presupuestoEstimado || a.PresupuestoEstimado || 0;
@@ -1298,8 +1351,8 @@ const LicitacionesProveedor = () => {
             valueB = b.mineraNombre || b.MineraNombre || "";
             break;
           default:
-            valueA = new Date(a.fechaCierre || a.FechaCierre);
-            valueB = new Date(b.fechaCierre || b.FechaCierre);
+            valueA = toUtcDate(a.fechaCierre || a.FechaCierre)?.getTime() || 0;
+            valueB = toUtcDate(b.fechaCierre || b.FechaCierre)?.getTime() || 0;
             break;
         }
 
@@ -1322,11 +1375,8 @@ const LicitacionesProveedor = () => {
 
   const fetchRubros = async () => {
     try {
-      const response = await fetch("http://localhost:5242/api/rubros");
-      if (response.ok) {
-        const data = await response.json();
-        setRubros(data);
-      }
+      const res = await apiService.getRubros();
+      setRubros(res?.data ?? []);
     } catch (error) {
       console.error("Error al cargar rubros:", error);
     }
@@ -1334,11 +1384,8 @@ const LicitacionesProveedor = () => {
 
   const fetchMineras = async () => {
     try {
-      const response = await fetch("http://localhost:5242/api/mineras");
-      if (response.ok) {
-        const data = await response.json();
-        setMineras(data);
-      }
+      const res = await apiService.getMineras();
+      setMineras(res?.data ?? []);
     } catch (error) {
       console.error("Error al cargar mineras:", error);
     }
@@ -1354,13 +1401,8 @@ const LicitacionesProveedor = () => {
 
       if (!proveedorID) return;
 
-      const response = await fetch(
-        `http://localhost:5242/api/propuestas/proveedor/${proveedorID}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setUserPropuestas(data);
-      }
+      const res = await apiService.get(`/propuestas/proveedor/${proveedorID}`);
+      setUserPropuestas(res?.data ?? []);
     } catch (error) {
       console.error("Error al cargar propuestas del usuario:", error);
     }
@@ -1370,27 +1412,18 @@ const LicitacionesProveedor = () => {
     try {
       setLoadingCriterios(true);
 
-      const response = await fetch(
-        `http://localhost:5242/api/licitaciones/${licitacionId}/criterios`
+      const res = await apiService.getCriteriosLicitacion(licitacionId);
+      const data = res?.data ?? [];
+      const normalized = data.map((criterio, index) =>
+        normalizeCriterioResponse(criterio, index)
       );
+      setCriteriosLicitacion(normalized);
 
-      if (response.ok) {
-        const data = await response.json();
-        const normalized = data.map((criterio, index) =>
-          normalizeCriterioResponse(criterio, index)
-        );
-        setCriteriosLicitacion(normalized);
-
-        const respuestasIniciales = {};
-        normalized.forEach((criterio) => {
-          respuestasIniciales[criterio.id] = createRespuestaInicial();
-        });
-        setRespuestasCriterios(respuestasIniciales);
-      } else {
-        console.error("Error al cargar criterios:", response.statusText);
-        setCriteriosLicitacion([]);
-        setRespuestasCriterios({});
-      }
+      const respuestasIniciales = {};
+      normalized.forEach((criterio) => {
+        respuestasIniciales[criterio.id] = createRespuestaInicial();
+      });
+      setRespuestasCriterios(respuestasIniciales);
     } catch (error) {
       console.error("Error al cargar criterios de licitación:", error);
       setCriteriosLicitacion([]);
@@ -1429,18 +1462,14 @@ const LicitacionesProveedor = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "No especificada";
 
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "Fecha inválida";
+    const date = toUtcDate(dateString);
+    if (!date) return "Fecha inválida";
 
-      return date.toLocaleDateString("es-AR", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "Fecha inválida";
-    }
+    return date.toLocaleDateString("es-AR", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const formatCurrency = (amount, monedaInfo) => {
@@ -1485,31 +1514,6 @@ const LicitacionesProveedor = () => {
     nombre: licitacion?.monedaNombre || licitacion?.MonedaNombre,
   });
 
-  const getCurrencyLabelText = (currency) => {
-    if (!currency) return "ARS";
-
-    const code =
-      currency?.codigo ||
-      currency?.Codigo ||
-      currency?.monedaCodigo ||
-      currency?.MonedaCodigo;
-    const name =
-      currency?.nombre ||
-      currency?.Nombre ||
-      currency?.monedaNombre ||
-      currency?.MonedaNombre;
-    const symbol =
-      currency?.simbolo ||
-      currency?.Simbolo ||
-      currency?.monedaSimbolo ||
-      currency?.MonedaSimbolo;
-
-    if (code && name) return `${code} - ${name}`;
-    if (code && symbol) return `${code} (${symbol})`;
-    if (symbol && name) return `${symbol} - ${name}`;
-    return code || symbol || name || "ARS";
-  };
-
   const getCurrencyAbbreviation = (currency) => {
     if (!currency) return "ARS";
 
@@ -1529,9 +1533,10 @@ const LicitacionesProveedor = () => {
   const calculateTimeRemaining = (fechaCierre) => {
     if (!fechaCierre) return null;
 
-    const now = new Date();
-    const cierre = new Date(fechaCierre);
-    const diffTime = cierre - now;
+    const now = toUtcDate(new Date()) || new Date();
+    const cierre = toUtcDate(fechaCierre);
+    if (!cierre) return null;
+    const diffTime = cierre.getTime() - now.getTime();
 
     if (diffTime <= 0) return "Vencida";
 
@@ -1558,39 +1563,27 @@ const LicitacionesProveedor = () => {
   // Función para obtener archivos adjuntos de una licitación
   const fetchArchivosLicitacion = async (licitacionId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/entidad/LICITACION/${licitacionId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const res = await apiService.getArchivosByLicitacion(licitacionId);
+      const archivos = res?.data ?? [];
+
+      // Actualizar la licitación seleccionada con los archivos
+      setSelectedLicitacion((prev) => {
+        if (prev) {
+          const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
+          return {
+            ...prev,
+            archivosAdjuntos: archivos,
+            // Para mantener compatibilidad con el código existente
+            archivoNombre:
+              archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+            ArchivoNombre:
+              archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
+            archivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+            ArchivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
+          };
         }
-      );
-
-      if (response.ok) {
-        const archivos = await response.json();
-
-        // Actualizar la licitación seleccionada con los archivos
-        setSelectedLicitacion((prev) => {
-          if (prev) {
-            const archivoAdjunto = archivos.length > 0 ? archivos[0] : null;
-            return {
-              ...prev,
-              archivosAdjuntos: archivos,
-              // Para mantener compatibilidad con el código existente
-              archivoNombre:
-                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
-              ArchivoNombre:
-                archivoAdjunto?.nombreArchivo || archivoAdjunto?.NombreArchivo,
-              archivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
-              ArchivoID: archivoAdjunto?.archivoID || archivoAdjunto?.ArchivoID,
-            };
-          }
-          return prev;
-        });
-      } else {
-        // No se encontraron archivos para la licitación
-      }
+        return prev;
+      });
     } catch (error) {
       console.error("Error al cargar archivos de licitación:", error);
     }
@@ -1615,6 +1608,28 @@ const LicitacionesProveedor = () => {
   };
 
   const handlePostularse = async (licitacionId) => {
+    const licitacionActual =
+      (selectedLicitacion &&
+        (selectedLicitacion.licitacionID ||
+          selectedLicitacion.LicitacionID) ===
+          licitacionId &&
+        selectedLicitacion) ||
+      licitaciones.find(
+        (l) => (l.licitacionID || l.LicitacionID) === licitacionId
+      );
+
+    const estadoActual =
+      licitacionActual?.estadoNombre ||
+      licitacionActual?.EstadoNombre ||
+      "";
+
+    if (estadoActual !== "Publicada") {
+      toast.info(
+        "Solo podés enviar propuestas cuando la licitación está publicada."
+      );
+      return;
+    }
+
     // Cargar criterios de la licitación
     await fetchCriteriosLicitacion(licitacionId);
     setShowPropuestaModal(true);
@@ -1662,54 +1677,23 @@ const LicitacionesProveedor = () => {
         .map((criterio) => buildRespuestaPayload(criterio))
         .filter((respuesta) => respuesta !== null);
 
-      const response = await fetch("http://localhost:5242/api/propuestas", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          LicitacionID: licitacionId,
-          ProveedorID: proveedorID,
-          Descripcion: propuestaForm.descripcion,
-          PresupuestoOfrecido: parseFloat(propuestaForm.presupuestoOfrecido),
-          MonedaID:
-            selectedLicitacion.monedaID ||
-            selectedLicitacion.MonedaID ||
-            selectedLicitacion.moneda?.monedaID ||
-            selectedLicitacion.Moneda?.MonedaID,
-          FechaEntrega: propuestaForm.fechaEntrega
-            ? new Date(propuestaForm.fechaEntrega).toISOString()
-            : null,
-          RespuestasCriterios: respuestasCriteriosArray,
-        }),
+      const createRes = await apiService.post("/propuestas", {
+        LicitacionID: licitacionId,
+        ProveedorID: proveedorID,
+        Descripcion: propuestaForm.descripcion,
+        PresupuestoOfrecido: parseFloat(propuestaForm.presupuestoOfrecido),
+        MonedaID:
+          selectedLicitacion.monedaID ||
+          selectedLicitacion.MonedaID ||
+          selectedLicitacion.moneda?.monedaID ||
+          selectedLicitacion.Moneda?.MonedaID,
+        FechaEntrega: propuestaForm.fechaEntrega
+          ? toUtcISOString(propuestaForm.fechaEntrega)
+          : null,
+        RespuestasCriterios: respuestasCriteriosArray,
       });
 
-      if (!response.ok) {
-        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-
-        try {
-          const contentType = response.headers.get("content-type");
-
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
-          } else {
-            // Si no es JSON, intentar leer como texto
-            const errorText = await response.text();
-            if (errorText) {
-              errorMessage = errorText;
-            }
-          }
-        } catch (parseError) {
-          // Usar el mensaje de error por defecto
-          console.error("Parse error:", parseError);
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      // Obtener la respuesta de la propuesta creada
-      const propuestaData = await response.json();
+      const propuestaData = createRes?.data;
 
       // Intentar múltiples variaciones del campo ID
       const propuestaId =
@@ -1720,31 +1704,13 @@ const LicitacionesProveedor = () => {
 
       // Crear registro en historial con ganador como null (vacío)
       try {
-        const historialResponse = await fetch(
-          "http://localhost:5242/api/historial-proveedor-licitacion",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              ProveedorID: proveedorID,
-              LicitacionID: licitacionId,
-              Resultado: "EN_PROCESO",
-              Observaciones: "Propuesta enviada - En proceso de evaluación",
-              FechaParticipacion: new Date().toISOString(),
-            }),
-          }
-        );
-
-        if (!historialResponse.ok) {
-          console.warn(
-            "Error al crear registro de historial:",
-            historialResponse.statusText
-          );
-          // No lanzamos error para no interrumpir el flujo principal
-        }
+        await apiService.post("/historial-proveedor-licitacion", {
+          ProveedorID: proveedorID,
+          LicitacionID: licitacionId,
+          Resultado: "EN_PROCESO",
+          Observaciones: "Propuesta enviada - En proceso de evaluación",
+          FechaParticipacion: toUtcISOString(new Date()),
+        });
       } catch (historialError) {
         console.warn("Error al crear registro de historial:", historialError);
         // No lanzamos error para no interrumpir el flujo principal
@@ -1769,30 +1735,17 @@ const LicitacionesProveedor = () => {
           formData.append("EntidadTipo", "PROPUESTA");
           formData.append("EntidadID", propuestaId.toString());
 
-          const uploadResponse = await fetch(
-            "http://localhost:5242/api/archivos/upload",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-              body: formData,
-            }
-          );
+          const uploadRes = await apiService.uploadArchivo(formData);
 
           // Cerrar la notificación de subida
           toast.dismiss("uploading-propuesta");
 
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error("Upload error text:", errorText);
+          if (!uploadRes || !uploadRes.data) {
             toast.warn(
               "Propuesta creada exitosamente, pero hubo un error al subir el archivo adjunto"
             );
           } else {
-            const fileResult = await uploadResponse.json();
-            console.log("File upload result:", fileResult);
-            toast.success("✅ Propuesta y archivo enviados exitosamente!");
+            toast.success("Propuesta enviada exitosamente");
           }
         } catch (uploadError) {
           console.error("Upload error:", uploadError);
@@ -1858,12 +1811,13 @@ const LicitacionesProveedor = () => {
   const selectedLicitacionCurrency = selectedLicitacion
     ? getLicitacionCurrency(selectedLicitacion)
     : null;
-  const selectedPropuestaCurrencyLabel = getCurrencyLabelText(
-    selectedLicitacionCurrency
-  );
   const selectedPropuestaCurrencyAbbr = getCurrencyAbbreviation(
     selectedLicitacionCurrency
   );
+  const selectedLicitacionEstado = selectedLicitacion
+    ? selectedLicitacion.estadoNombre || selectedLicitacion.EstadoNombre || ""
+    : "";
+  const canSubmitSelectedLicitacion = selectedLicitacionEstado === "Publicada";
 
   const updateRespuestaCriterio = (criterioId, updates) => {
     setRespuestasCriterios((prev) => ({
@@ -1880,7 +1834,14 @@ const LicitacionesProveedor = () => {
   };
 
   const handleNumericoRespuestaChange = (criterioId, value) => {
-    updateRespuestaCriterio(criterioId, { valorNumerico: value });
+    // Normalizar: permitir solo números y punto; guardar como string (vacío si inválido)
+    const cleaned =
+      value === null || value === undefined || value === ""
+        ? ""
+        : String(value)
+            .replace(/[^0-9.,-]/g, "")
+            .replace(",", ".");
+    updateRespuestaCriterio(criterioId, { valorNumerico: cleaned });
   };
 
   const handleBooleanRespuestaChange = (criterioId, value) => {
@@ -1957,7 +1918,6 @@ const LicitacionesProveedor = () => {
           }
           return {
             ...basePayload,
-            ValorProveedor: respuesta.valorNumerico.toString(),
             ValorNumerico: numericValue,
           };
         }
@@ -1967,7 +1927,6 @@ const LicitacionesProveedor = () => {
           }
           return {
             ...basePayload,
-            ValorProveedor: respuesta.valorBooleano ? "true" : "false",
             ValorBooleano: respuesta.valorBooleano,
           };
         }
@@ -1983,7 +1942,6 @@ const LicitacionesProveedor = () => {
             Number(respuesta.opcionSeleccionadaId);
           return {
             ...basePayload,
-            ValorProveedor: opcionSeleccionada?.valor || "",
             CriterioOpcionID: Number.isNaN(parsedOpcionId)
               ? null
               : parsedOpcionId,
@@ -2095,21 +2053,9 @@ const LicitacionesProveedor = () => {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:5242/api/archivos/${ArchivoID}/download`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al descargar el archivo");
-      }
-
-      // Crear blob con el contenido del archivo
-      const blob = await response.blob();
+      const res = await apiService.downloadArchivoById(ArchivoID);
+      if (!res || !res.data) throw new Error("Error al descargar el archivo");
+      const blob = res.data;
 
       // Crear URL temporal para el blob
       const url = window.URL.createObjectURL(blob);
@@ -2610,26 +2556,38 @@ const LicitacionesProveedor = () => {
             </ModalBody>
 
             <ModalActions>
-              {hasUserApplied(
-                selectedLicitacion.licitacionID ||
-                  selectedLicitacion.LicitacionID
-              ) ? (
-                <AlreadyAppliedButton disabled>
-                  ✓ Ya enviaste tu propuesta
-                </AlreadyAppliedButton>
-              ) : (
-                <PostularButton
-                  onClick={() =>
-                    handlePostularse(
-                      selectedLicitacion.licitacionID ||
-                        selectedLicitacion.LicitacionID
-                    )
-                  }
-                  disabled={postulando}
-                >
-                  📝 Enviar propuesta
-                </PostularButton>
-              )}
+              {(() => {
+                const selectedId =
+                  selectedLicitacion.licitacionID ||
+                  selectedLicitacion.LicitacionID;
+                const alreadyApplied = hasUserApplied(selectedId);
+
+                if (alreadyApplied) {
+                  return (
+                    <AlreadyAppliedButton disabled>
+                      ✓ Ya enviaste tu propuesta
+                    </AlreadyAppliedButton>
+                  );
+                }
+
+                return (
+                  <>
+                    {canSubmitSelectedLicitacion && (
+                      <PostularButton
+                        onClick={() => handlePostularse(selectedId)}
+                        disabled={postulando || !canSubmitSelectedLicitacion}
+                        title={
+                          !canSubmitSelectedLicitacion
+                            ? "Esta licitación está en evaluación. Ya no puede enviar propuestas."
+                            : undefined
+                        }
+                      >
+                        📝 Enviar propuesta
+                      </PostularButton>
+                    )}
+                  </>
+                );
+              })()}
             </ModalActions>
           </ModalContent>
         </ModalOverlay>
@@ -2711,7 +2669,7 @@ const LicitacionesProveedor = () => {
                       fechaEntrega: e.target.value,
                     }))
                   }
-                  min={new Date().toISOString().split("T")[0]}
+                  min={todayInputValue}
                 />
                 <FormHint>
                   Fecha límite de la licitación:{" "}
@@ -2991,7 +2949,7 @@ const LicitacionesProveedor = () => {
                         </FileDetails>
                       </FileInfo>
                       <RemoveFileButton onClick={removeFile}>
-                        Quitar
+                        Eliminar
                       </RemoveFileButton>
                     </SelectedFileContainer>
                   )}

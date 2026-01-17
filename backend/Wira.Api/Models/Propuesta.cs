@@ -15,7 +15,7 @@ namespace Wira.Api.Models
         [Required]
         public int ProveedorID { get; set; }
 
-        public DateTime FechaEnvio { get; set; } = DateTime.Now;
+        public DateTime FechaEnvio { get; set; } = DateTime.UtcNow;
 
         [Required]
         public int EstadoPropuestaID { get; set; }

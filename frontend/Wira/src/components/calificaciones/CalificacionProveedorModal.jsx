@@ -206,24 +206,23 @@ const CalificacionProveedorModal = ({
     try {
       const date = new Date(fechaAdjudicacion);
       if (Number.isNaN(date.getTime())) {
-        return "Fecha invalida";
+        return "Fecha inválida";
       }
       return date.toLocaleString("es-AR", {
         year: "numeric",
         month: "short",
         day: "numeric",
       });
-    } catch (error) {
-      return "Fecha invalida";
+    } catch {
+      return "Fecha inválida";
     }
   }, [fechaAdjudicacion]);
 
   const validateRatings = () => {
     const missing = ratingFields.reduce((acc, field) => {
       if (!field.value || field.value < 1) {
-        acc[
-          field.key
-        ] = `Selecciona una calificacion para ${field.label.toLowerCase()}`;
+        acc[field.key] =
+          `Selecciona una calificación para ${field.label.toLowerCase()}`;
       }
       return acc;
     }, {});
@@ -243,7 +242,7 @@ const CalificacionProveedorModal = ({
       isOpen={isOpen}
       title="Calificar proveedor"
       variant="green"
-      confirmText={isSubmitting ? "Guardando..." : "Registrar calificacion"}
+      confirmText={isSubmitting ? "Guardando..." : "Registrar calificación"}
       confirmDisabled={isSubmitting}
       onConfirm={handleConfirm}
       onCancel={onCancel}
@@ -251,16 +250,16 @@ const CalificacionProveedorModal = ({
     >
       <ModalContent>
         <p>
-          Deja una calificacion final para el proveedor ganador. Esta accion
-          marcara la licitacion como cerrada.
+          Deje una calificación final para el proveedor ganador. Esta acción
+          marcará la licitación como cerrada.
         </p>
         <DetailCard>
-          <DetailLabel>Licitacion</DetailLabel>
-          <DetailValue>{licitacionTitulo || "Sin titulo"}</DetailValue>
+          <DetailLabel>Licitación</DetailLabel>
+          <DetailValue>{licitacionTitulo || "Sin título"}</DetailValue>
           <DetailLabel style={{ marginTop: "10px" }}>Proveedor</DetailLabel>
           <DetailValue>{proveedorNombre || "Sin proveedor"}</DetailValue>
           <DetailLabel style={{ marginTop: "10px" }}>
-            Fecha de adjudicacion
+            Fecha de adjudicación
           </DetailLabel>
           <DetailValue>{adjudicacionText}</DetailValue>
         </DetailCard>
@@ -271,7 +270,7 @@ const CalificacionProveedorModal = ({
                 <RatingHeader>
                   <RatingLabel>{label}</RatingLabel>
                   <RatingValue>
-                    {value ? `${value} / 5` : "Sin seleccion"}
+                    {value ? `${value} / 5` : "Sin selección"}
                   </RatingValue>
                 </RatingHeader>
                 <StarsRow>{renderStars(value, setter, label, key)}</StarsRow>

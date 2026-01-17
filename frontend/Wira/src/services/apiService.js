@@ -49,6 +49,11 @@ apiClient.interceptors.response.use(
 
 // Servicios de la API
 export const apiService = {
+  // Generic helpers
+  get: (path, config) => apiClient.get(path, config),
+  post: (path, data, config) => apiClient.post(path, data, config),
+  put: (path, data, config) => apiClient.put(path, data, config),
+  delete: (path, config) => apiClient.delete(path, config),
   // Auth endpoints
   login: (credentials) => apiClient.post("/auth/login", credentials),
   register: (userData) => apiClient.post("/auth/register", userData),
@@ -83,10 +88,11 @@ export const apiService = {
   updateProveedor: (proveedorId, proveedor) =>
     apiClient.put(`/proveedores/${proveedorId}`, proveedor),
   getProveedoresRubros: () => apiClient.get("/proveedores/rubros"),
+  getRubros: () => apiClient.get("/rubros"),
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
-  getUsuarios: () => apiClient.get("/auth/users"),
+  getUsuarios: (params = {}) => apiClient.get("/auth/users/by-empresa", { params }),
   createUsuario: (usuario) => apiClient.post("/auth/users", usuario),
   updateUsuarioStatus: (usuarioId, activo) =>
     apiClient.patch(`/auth/users/${usuarioId}/status`, { activo }),
@@ -109,6 +115,30 @@ export const apiService = {
   testConnection: () => apiClient.get("/test/connection"),
   getRoles: () => apiClient.get("/test/roles"),
   getEstados: () => apiClient.get("/test/estados"),
+
+  // Licitaciones endpoints
+  getLicitaciones: (params = {}) => apiClient.get("/licitaciones", { params }),
+  createLicitacion: (payload) => apiClient.post("/licitaciones", payload),
+
+  getLicitacionById: (id) => apiClient.get(`/licitaciones/${id}`),
+  updateLicitacion: (id, payload) => apiClient.put(`/licitaciones/${id}`, payload),
+  getCriteriosLicitacion: (id) => apiClient.get(`/licitaciones/${id}/criterios`),
+
+  // Archivos endpoints
+  uploadArchivo: (formData) =>
+    apiClient.post("/archivos/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  downloadArchivo: (archivoId) =>
+    apiClient.get(`/archivos/descargar/${archivoId}`, {
+      responseType: "blob",
+    }),
+  downloadArchivoById: (archivoId) =>
+    apiClient.get(`/archivos/${archivoId}/download`, {
+      responseType: "blob",
+    }),
+  getArchivosByLicitacion: (licitacionId) =>
+    apiClient.get(`/archivos/entidad/LICITACION/${licitacionId}`),
 
   // Notification endpoints
   getUserNotifications: (usuarioId, params = {}) =>
