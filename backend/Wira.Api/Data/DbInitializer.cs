@@ -196,7 +196,7 @@ namespace Wira.Api.Data
                 {
                     Email = "mineraadmin@borax.com",
                     PasswordHash = passwordHash,
-                    Nombre = "Lucas",
+                    Nombre = "Santiago",
                     Apellido = "Mansilla",
                     DNI = "24450982",
                     Telefono = "+54 9 387 480 3010",
