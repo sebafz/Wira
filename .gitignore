@@ -64,6 +64,7 @@ ScaffoldingReadMe.txt
 backend/Wira.Api/uploads/
 .vs/                   # Visual Studio local settings
 .vs/**/*
+desktop.ini
 
 # Others
 *.ntvs*
