@@ -1,4 +1,4 @@
-# Proyecto Wira
+# Sistema Wira
 <div align="center">
 <img src="https://res.cloudinary.com/dbkb6ywuz/image/upload/v1752202258/wira2-removebg-preview_aoecda.png" width="35%" >
   <br>
@@ -6,44 +6,59 @@
 </div>
 Este proyecto tiene como objetivo desarrollar una plataforma de licitación en línea que promueva la libre competencia, transparencia y eficiencia en la contratación de proveedores por parte de empresas mineras del norte argentino.
 
-## Contexto
+## Objetivos del sistema
 
-En el norte argentino, particularmente en Salta, la actividad minera ha crecido exponencialmente en la última década. Sin embargo, la falta de competencia entre proveedores impide el desarrollo de un ecosistema comercial justo y eficiente. Este sistema busca digitalizar y democratizar el proceso de compra, facilitando la conexión entre empresas mineras y proveedores locales.
+- Facilitar la interacción entre empresas mineras y proveedores mediante una plataforma digital unificada.
+- Mejorar la transparencia y trazabilidad de los procesos de evaluación y adjudicación.
+- Permitir la gestión de usuarios, roles y permisos acorde a los distintos actores del sistema.
+- Proveer herramientas que acompañen la toma de decisiones a partir de criterios objetivos y configurables.
+- Proteger la integridad y confidencialidad de los datos a través de prácticas de ciberseguridad (HTTPS, autenticación, encriptación, logging).
 
-## Estructura del Proyecto
+## Funcionalidades previstas
+
+- Autenticación y gestión de usuarios con roles (minera / proveedor / admin).
+- Administración de empresas mineras y rubros.
+- Creación, publicación y gestión de licitaciones con criterios y opciones.
+- Presentación de propuestas por proveedores; generación automática de ranking.
+- Historial de participación por proveedor y calificación post-licitación.
+- Notificaciones y trazabilidad mediante auditoría de acciones.
+- Gestión de archivos adjuntos en licitaciones y propuestas.
+- Búsquedas y filtros por rubro, fecha, estado y moneda.
+
+## Estructura del proyecto
 
 ```
 /Wira
 ├── backend/            # API RESTful en .NET Core 9
-│   ├── Controllers/
-│   ├── Models/
-│   ├── Repositories/
-│   │   └── Interfaces/
-│   ├── Services/
-│   │   └── Interfaces/
+│   ├── Controllers/    # Endpoints HTTP
+│   ├── Data/           # DbContext e inicialización
+│   ├── DTOs/           # Contratos de entrada/salida
+│   ├── Migrations/     # Migraciones EF Core
+│   ├── Models/         # Entidades de dominio
+│   ├── Services/       # Lógica de negocio
 │   ├── appsettings.json
 │   ├── Program.cs
-│   └── Wira.http
+│   └── Wira.Api.http
 │
 ├── frontend/           # Aplicación cliente en React
 │   ├── public/
 │   ├── src/
 │   ├── vite.config.js
-│   ├── package.json
-│   └── README.md
+│   └── package.json
 │
 └── README.md           # Este archivo
 ```
 
-## Tecnologías Utilizadas
+## Tecnologías utilizadas
 
 ### Backend (.NET Core 9)
 
 - C#
 - ASP.NET Core Web API
-- Entity Framework (planeado)
+- Entity Framework Core + Npgsql (PostgreSQL)
 - Patrón MVC y arquitectura por capas
 - Swagger para documentación de endpoints
+- Autenticación JWT y autorización por roles
 
 ### Frontend (React)
 
@@ -52,32 +67,21 @@ En el norte argentino, particularmente en Salta, la actividad minera ha crecido 
 - Axios (para conexión con API)
 - Eslint y config modular
 
-## Objetivos del sistema
-
-- Permitir a empresas mineras publicar licitaciones con fecha límite y presupuesto.
-- Habilitar a proveedores locales para presentar sus ofertas digitalmente.
-- Fomentar la libre competencia, accesibilidad y trazabilidad del proceso.
-- Aumentar la eficiencia del abastecimiento en el sector minero.
-- Proteger la integridad y confidencialidad de los datos a través de prácticas de ciberseguridad (HTTPS, autenticación, encriptación, logging).
-
-## Funcionalidades previstas
-
-- Registro y login de usuarios con roles diferenciados (minera / proveedor).
-- Creación y publicación de licitaciones por parte de empresas mineras.
-- Postulación de ofertas por parte de proveedores registrados.
-- Visualización del historial de licitaciones y ofertas.
-- Selección y adjudicación de ofertas ganadoras.
-- Envío y gestión de archivos adjuntos en licitaciones y ofertas.
-- Sistema de auditoría básica (acciones clave de usuarios).
-- Filtros de búsqueda en licitaciones por rubro, fecha, estado.
-- Sistema de notificaciones.
-- Preparado para futuras funcionalidades y escalabilidad.
-
 ## Requisitos para ejecutar el proyecto
 
-### Backend
+### Backend (local)
 - .NET 9 SDK
-- SQL Server o base de datos relacional compatible
+- PostgreSQL (migrado de SQL Server para compatibilidad con Render)
+
+Variables de entorno mínimas:
+
+```
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=wira;Username=postgres;Password=postgres
+Jwt__Key=<clave de 32+ caracteres>
+Jwt__Issuer=wira
+Jwt__Audience=wira-client
+Swagger__Enabled=true
+```
 
 ```bash
 cd backend/Wira.Api
@@ -89,7 +93,7 @@ Por defecto: `https://localhost:5242/swagger`
 
 ---
 
-### Frontend
+### Frontend (local)
 - Node.js >= 18
 
 ```bash
@@ -102,25 +106,28 @@ Por defecto: `http://localhost:5173`
 
 ---
 
-## Despliegue a Render (dev/main)
+## Despliegue a Render (main)
 
-- Infraestructura declarada en `render.yaml` con cuatro servicios: backend y frontend para `dev` y `main`, con despliegue automático por rama.
-- Base de datos: la API usa SQL Server (`Microsoft.EntityFrameworkCore.SqlServer`), Render no ofrece SQL Server gestionado. Usa un SQL Server externo (Azure SQL u on-prem expuesto de forma segura) y define `ConnectionStrings__DefaultConnection` en cada servicio.
-- Configurar env vars en Render: `Jwt__Key` (>=32 chars), `Jwt__Issuer`, `Jwt__Audience`, `Email__*`, `Frontend__BaseUrl`, `VITE_API_URL` en los sitios estáticos. El almacenamiento de adjuntos es en disco local y efímero en Render; para persistencia usa un bucket externo (S3/compatible) antes de producción.
-- Workflow `render-deploy.yml`: al hacer push a `dev` o `main` se llama al deploy hook de Render. Añade en GitHub Secrets los hooks de cada servicio: `RENDER_HOOK_API_DEV`, `RENDER_HOOK_WEB_DEV`, `RENDER_HOOK_API_PROD`, `RENDER_HOOK_WEB_PROD`.
-- Flujo: commit a `dev` → Render despliega `wira-api-dev` y `wira-web-dev`; commit a `main` → Render despliega `wira-api-prod` y `wira-web-prod`.
-- Verificación rápida: en Render revisa logs de build/run, prueba `/swagger` de la API y la SPA ya publicada con la URL configurada en `VITE_API_URL`.
-- Para ver Swagger en Render: añade env var `Swagger__Enabled=true` en el servicio de la API. La ruta es `/swagger`.
+- Infraestructura con backend y frontend para `main`, con despliegue automático.
+- Base de datos: PostgreSQL gestionado por Render. Crea una instancia y usa `ConnectionStrings__DefaultConnection` con cadena Npgsql.
+- URLs de prueba:
+  - Frontend (SPA): https://wira-app.onrender.com/
+  - Backend (Swagger): https://wira-vhg3.onrender.com/swagger/index.html
+- Variables de entorno en Render: `ConnectionStrings__DefaultConnection`, `Jwt__Key` (>=32 chars), `Jwt__Issuer`, `Jwt__Audience`, `Email__*`, `Frontend__BaseUrl`, y `VITE_API_URL` en el sitio estático.
 
 ## Seguridad y buenas prácticas
 
-- Autenticación: uso de contraseñas cifradas y roles
-- HTTPS y cifrado de datos en tránsito
-- Logs de auditoría de acciones de usuarios
-- Separación de responsabilidades por capas:
-  - `Controllers/` → entrada HTTP
-  - `Services/` → lógica de negocio
-  - `Repositories/` → acceso a datos
+- **Autenticación y autorización**: uso de contraseñas cifradas y control de acceso basado en roles (RBAC).
+- **Comunicación segura**: uso de HTTPS para el cifrado de datos en tránsito entre cliente y servidor.
+- **Trazabilidad y auditoría**: registro de acciones relevantes de los usuarios mediante logs de auditoría.
+- **Validación de datos**: validaciones en backend para prevenir datos inconsistentes o accesos no autorizados.
+- **Separación de responsabilidades**: arquitectura en capas para mejorar mantenibilidad y seguridad:
+  - `Controllers/` → gestión de solicitudes HTTP y validaciones iniciales
+  - `Services/` → lógica de negocio y reglas de negocio
+  - `Repositories/` → acceso a datos y persistencia
+- **Configuración segura**: uso de variables de entorno para credenciales y parámetros sensibles.
+- **Control de errores**: manejo centralizado de errores sin exponer información sensible al cliente.
+
 
 ## Metodología de trabajo
 
@@ -131,20 +138,27 @@ Por defecto: `http://localhost:5173`
 
 ## Autor
 
-**Nombre:** Sebastián Fernandez Zavalía
-**Carrera:** Ingeniería Informática
-**Universidad:** Universidad Católica de Salta
-**Fecha:** 2025
+- **Nombre:** Sebastián Fernandez Zavalía
+- **Carrera:** Ingeniería Informática
+- **Universidad:** Universidad Católica de Salta
+- **Fecha:** 2025
 
+
+## Versiones
+
+- v1.0.0: presentación del proyecto de grado.
+- v2.0.0: correcciones y mejoras solicitadas por el jurado.
+- v2.1.0 (actual): corrección de errores y migraciones de base de datos (PostgreSQL), ajustes en funcionalidades y despliegues en Render.
 
 ## Estado actual
 
 - [x] Estructura inicial
 - [x] Incremento 1 – Autenticación y carga de licitaciones
-- [x] Incremento 2 – Parámetros de licitaciones y recepción de ofertas
-- [x] Incremento 3 – Generación de ranking de propuestas
-- [x] Incremento 4 – Notificaciones y auditoría
-- [x] Incremento 5 – Historial de participación y calificación post-licitación
+- [x] Incremento 2 – Publicación de ofertas y generación de ranking
+- [x] Incremento 3 – Funciones para administradores, gestión de notificaciones; auditoría y trazabilidad
+- [x] Incremento 4 – Historial de participación y calificación poslicitacion; gestión del perfil.
 - [x] Validaciones y pruebas
-- [ ] Integraciones finales
-- [ ] CI/CD y producción
+- [x] Integraciones finales
+- [x] CI/CD y producción
+- [x] Despliegue en Render
+- [x] Correcciones del Tribunal Evaluador
