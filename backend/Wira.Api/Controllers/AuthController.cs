@@ -126,6 +126,78 @@ namespace Wira.Api.Controllers
             return BadRequest(result);
         }
 
+        [HttpPost("renew")]
+        [Authorize]
+        public async Task<IActionResult> RenewToken()
+        {
+            // Reemitir un JWT nuevo si el actual aún es válido (Authorize lo garantiza)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new { message = "Token inválido" });
+            }
+
+            var user = await _context.Usuarios
+                .Include(u => u.UsuariosRoles)
+                    .ThenInclude(ur => ur.Rol)
+                .Include(u => u.Empresa)
+                    .ThenInclude(e => e!.Rubro)
+                .FirstOrDefaultAsync(u => u.UsuarioID == userId);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Usuario no encontrado" });
+            }
+
+            MineraInfo? mineraInfo = null;
+            ProveedorInfo? proveedorInfo = null;
+
+            if (user.Empresa != null)
+            {
+                if (user.Empresa.TipoEmpresa == EmpresaTipos.Minera)
+                {
+                    mineraInfo = new MineraInfo
+                    {
+                        MineraID = user.Empresa.EmpresaID,
+                        Nombre = user.Empresa.Nombre,
+                        CUIT = user.Empresa.CUIT
+                    };
+                }
+                else if (user.Empresa.TipoEmpresa == EmpresaTipos.Proveedor)
+                {
+                    proveedorInfo = new ProveedorInfo
+                    {
+                        ProveedorID = user.Empresa.EmpresaID,
+                        Nombre = user.Empresa.Nombre,
+                        CUIT = user.Empresa.CUIT,
+                        RubroID = user.Empresa.RubroID,
+                        RubroNombre = user.Empresa.Rubro?.Nombre
+                    };
+                }
+            }
+
+            var userInfo = new UserInfo
+            {
+                UsuarioID = user.UsuarioID,
+                Email = user.Email,
+                Nombre = user.Nombre ?? "",
+                Apellido = user.Apellido,
+                DNI = user.DNI,
+                Telefono = user.Telefono,
+                FechaBaja = user.FechaBaja,
+                EstadoAprobacion = user.EstadoAprobacion,
+                MotivoRechazo = user.MotivoRechazo,
+                ValidadoEmail = user.ValidadoEmail,
+                Roles = user.UsuariosRoles.Select(ur => ur.Rol.Nombre).ToList(),
+                Minera = mineraInfo,
+                Proveedor = proveedorInfo
+            };
+
+            var newToken = _authService.GenerateJwtToken(userInfo);
+
+            return Ok(new { success = true, token = newToken });
+        }
+
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()

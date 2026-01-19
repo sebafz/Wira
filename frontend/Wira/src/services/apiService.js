@@ -58,6 +58,7 @@ export const apiService = {
   login: (credentials) => apiClient.post("/auth/login", credentials),
   register: (userData) => apiClient.post("/auth/register", userData),
   getCurrentUser: () => apiClient.get("/auth/me"),
+  renewToken: () => apiClient.post("/auth/renew"),
   verifyEmail: (email, code) =>
     apiClient.post("/auth/verify-email", { email, code }),
   resendVerificationEmail: (email) =>
@@ -92,7 +93,8 @@ export const apiService = {
   getMonedas: () => apiClient.get("/monedas"),
 
   // Admin endpoints
-  getUsuarios: (params = {}) => apiClient.get("/auth/users/by-empresa", { params }),
+  getUsuarios: (params = {}) =>
+    apiClient.get("/auth/users/by-empresa", { params }),
   createUsuario: (usuario) => apiClient.post("/auth/users", usuario),
   updateUsuarioStatus: (usuarioId, activo) =>
     apiClient.patch(`/auth/users/${usuarioId}/status`, { activo }),
@@ -121,8 +123,10 @@ export const apiService = {
   createLicitacion: (payload) => apiClient.post("/licitaciones", payload),
 
   getLicitacionById: (id) => apiClient.get(`/licitaciones/${id}`),
-  updateLicitacion: (id, payload) => apiClient.put(`/licitaciones/${id}`, payload),
-  getCriteriosLicitacion: (id) => apiClient.get(`/licitaciones/${id}/criterios`),
+  updateLicitacion: (id, payload) =>
+    apiClient.put(`/licitaciones/${id}`, payload),
+  getCriteriosLicitacion: (id) =>
+    apiClient.get(`/licitaciones/${id}/criterios`),
 
   // Archivos endpoints
   uploadArchivo: (formData) =>
@@ -147,7 +151,7 @@ export const apiService = {
     apiClient.get(`/notificaciones/usuario/${usuarioId}/no-leidas/count`),
   markNotificationAsRead: (notificacionId, usuarioId) =>
     apiClient.put(
-      `/notificaciones/${notificacionId}/marcar-leida/${usuarioId}`
+      `/notificaciones/${notificacionId}/marcar-leida/${usuarioId}`,
     ),
   markAllNotificationsAsRead: (usuarioId) =>
     apiClient.put(`/notificaciones/usuario/${usuarioId}/marcar-todas-leidas`),
