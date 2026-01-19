@@ -665,9 +665,17 @@ namespace Wira.Api.Services
                 claims.Add(new Claim("ProveedorID", user.Proveedor.ProveedorID.ToString()));
             }
 
+            // Preferir minutos si está configurado, sino usar horas
+            var expirationMinutes = 0d;
+            var expMinutesSetting = _configuration["Jwt:ExpirationMinutes"];
+            if (double.TryParse(expMinutesSetting, out var configuredMinutes) && configuredMinutes > 0)
+            {
+                expirationMinutes = configuredMinutes;
+            }
+
             var expirationHours = 4d;
-            var expirationSetting = _configuration["Jwt:ExpirationHours"];
-            if (double.TryParse(expirationSetting, out var configuredHours) && configuredHours > 0)
+            var expHoursSetting = _configuration["Jwt:ExpirationHours"];
+            if (double.TryParse(expHoursSetting, out var configuredHours) && configuredHours > 0)
             {
                 expirationHours = configuredHours;
             }
@@ -676,7 +684,7 @@ namespace Wira.Api.Services
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(expirationHours),
+                expires: expirationMinutes > 0 ? DateTime.UtcNow.AddMinutes(expirationMinutes) : DateTime.UtcNow.AddHours(expirationHours),
                 signingCredentials: creds
             );
 

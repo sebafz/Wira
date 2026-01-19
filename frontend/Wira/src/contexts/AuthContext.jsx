@@ -1,5 +1,13 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { apiService } from "../services/apiService";
+import DialogModal from "../components/shared/DialogModal";
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -70,6 +78,72 @@ const AuthContext = createContext();
 // Provider de autenticación
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const logoutTimerRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+  const warnedRef = useRef(false);
+  const renewThrottleRef = useRef({ last: 0 });
+  const [warningOpen, setWarningOpen] = useState(false);
+
+  const decodeJwt = (token) => {
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(""),
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return null;
+    }
+  };
+
+  const scheduleLogoutFromToken = (token) => {
+    const payload = decodeJwt(token);
+    if (!payload || !payload.exp) return;
+    const msRemaining = payload.exp * 1000 - Date.now();
+    if (msRemaining <= 0) {
+      // Token ya expirado
+      logout();
+      return;
+    }
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+    }
+    logoutTimerRef.current = setTimeout(() => {
+      logout();
+    }, msRemaining);
+  };
+
+  const renewToken = async () => {
+    try {
+      const response = await apiService.renewToken();
+      if (response.data?.success && response.data?.token) {
+        const newToken = response.data.token;
+        localStorage.setItem("authToken", newToken);
+        // re-schedule logout using new token
+        scheduleLogoutFromToken(newToken);
+        warnedRef.current = false; // reset warning state
+      }
+    } catch (e) {
+      console.warn("Token renew failed", e);
+      logout();
+    }
+  };
+
+  const handleUserActivity = () => {
+    lastActivityRef.current = Date.now();
+    if (warningOpen) setWarningOpen(false);
+    // Throttle renew calls (e.g., 60s)
+    const now = Date.now();
+    if (now - renewThrottleRef.current.last > 60_000) {
+      renewThrottleRef.current.last = now;
+      // Renew proactively to keep session alive while active
+      renewToken();
+    }
+  };
 
   // Verificar si hay un token guardado al cargar la aplicación
   useEffect(() => {
@@ -83,6 +157,7 @@ export const AuthProvider = ({ children }) => {
           type: "LOGIN_SUCCESS",
           payload: { user, token },
         });
+        scheduleLogoutFromToken(token);
       } catch (error) {
         console.error("Auth initialization error:", error);
         localStorage.removeItem("authToken");
@@ -92,6 +167,39 @@ export const AuthProvider = ({ children }) => {
 
     // Marcar que la inicialización está completa
     dispatch({ type: "INIT_COMPLETE" });
+
+    // Listeners de actividad del usuario
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    events.forEach((ev) =>
+      window.addEventListener(ev, handleUserActivity, { passive: true }),
+    );
+
+    // Chequeo de inactividad y aviso a los 13 minutos
+    const checkInterval = setInterval(() => {
+      const inactivityMs = Date.now() - lastActivityRef.current;
+      const warnMs = 13 * 60 * 1000;
+      const maxMs = 15 * 60 * 1000;
+
+      if (
+        inactivityMs >= warnMs &&
+        inactivityMs < maxMs &&
+        !warnedRef.current
+      ) {
+        warnedRef.current = true;
+        setWarningOpen(true);
+      }
+    }, 15_000); // cada 15s
+
+    return () => {
+      if (logoutTimerRef.current) {
+        clearTimeout(logoutTimerRef.current);
+      }
+      clearInterval(checkInterval);
+      events.forEach((ev) =>
+        window.removeEventListener(ev, handleUserActivity),
+      );
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Función de login
@@ -112,6 +220,9 @@ export const AuthProvider = ({ children }) => {
           type: "LOGIN_SUCCESS",
           payload: { user, token },
         });
+
+        // Programar logout automático según expiración del JWT
+        scheduleLogoutFromToken(token);
 
         return { success: true, user };
       } else {
@@ -140,6 +251,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userInfo");
+    if (logoutTimerRef.current) {
+      clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
     dispatch({ type: "LOGOUT" });
   };
 
@@ -180,7 +295,28 @@ export const AuthProvider = ({ children }) => {
     updateUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <DialogModal
+        isOpen={warningOpen}
+        title={"Sesión próxima a expirar"}
+        description={"Su sesión vence en 2 minutos. ¿Desea extenderla?"}
+        variant="yellow"
+        confirmText="Extender sesión"
+        cancelText="Cerrar"
+        closeOnBackdrop={false}
+        onConfirm={() => {
+          setWarningOpen(false);
+          lastActivityRef.current = Date.now();
+          renewToken();
+        }}
+        onCancel={() => {
+          setWarningOpen(false);
+        }}
+      />
+    </AuthContext.Provider>
+  );
 };
 
 // Hook para usar el contexto de autenticación
