@@ -277,7 +277,7 @@ const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [mineras, setMineras] = useState([]);
-  const [setProveedores] = useState([]);
+  const [_proveedores, setProveedores] = useState([]);
   const [rubros, setRubros] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -325,7 +325,7 @@ const Register = () => {
     };
 
     loadData();
-  }, []);
+  }, [setMineras, setProveedores, setRubros]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -747,6 +747,24 @@ const Register = () => {
           ))}
         </Select>
       </InputGroup>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <input
+          id="acceptTermsProvider"
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={(e) => setAcceptedTerms(e.target.checked)}
+        />
+        <label htmlFor="acceptTermsProvider" style={{ fontSize: 14 }}>
+          Acepto los{" "}
+          <span
+            onClick={() => navigate("/terminos")}
+            style={{ color: "#0b63d6", cursor: "pointer" }}
+          >
+            Términos y Condiciones
+          </span>
+        </label>
+      </div>
 
       <ButtonGroup>
         <SecondaryButton type="button" onClick={handlePrevStep}>
