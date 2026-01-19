@@ -37,7 +37,7 @@ const Terms = () => {
     <Page>
       <Main>
         <Card>
-          <Title>Términos y Condiciones (Ejemplo)</Title>
+          <Title>Términos y Condiciones</Title>
 
           <P>
             Estos términos y condiciones describen las reglas y regulaciones
