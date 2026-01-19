@@ -639,6 +639,24 @@ const Register = () => {
           </Select>
         </InputGroup>
       )}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <input
+          id="acceptTerms"
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={(e) => setAcceptedTerms(e.target.checked)}
+        />
+        <label htmlFor="acceptTerms" style={{ fontSize: 14 }}>
+          Acepto los{" "}
+          <span
+            onClick={() => navigate("/terminos")}
+            style={{ color: "#0b63d6", cursor: "pointer" }}
+          >
+            Términos y Condiciones
+          </span>
+        </label>
+      </div>
+
       {userType === "proveedor" ? (
         <ButtonGroup>
           <SecondaryButton type="button" onClick={handlePrevStep}>
@@ -649,41 +667,21 @@ const Register = () => {
           </Button>
         </ButtonGroup>
       ) : (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <input
-              id="acceptTerms"
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-            />
-            <label htmlFor="acceptTerms" style={{ fontSize: 14 }}>
-              Acepto los{" "}
-              <span
-                onClick={() => navigate("/terminos")}
-                style={{ color: "#0b63d6", cursor: "pointer" }}
-              >
-                Términos y Condiciones
-              </span>
-            </label>
-          </div>
-
-          <ButtonGroup>
-            <SecondaryButton type="button" onClick={handlePrevStep}>
-              Atrás
-            </SecondaryButton>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <LoadingSpinner />
-                  <span style={{ marginLeft: "8px" }}>Creando cuenta...</span>
-                </>
-              ) : (
-                "Crear cuenta"
-              )}
-            </Button>
-          </ButtonGroup>
-        </>
+        <ButtonGroup>
+          <SecondaryButton type="button" onClick={handlePrevStep}>
+            Atrás
+          </SecondaryButton>
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <LoadingSpinner />
+                <span style={{ marginLeft: "8px" }}>Creando cuenta...</span>
+              </>
+            ) : (
+              "Crear cuenta"
+            )}
+          </Button>
+        </ButtonGroup>
       )}
     </>
   );
