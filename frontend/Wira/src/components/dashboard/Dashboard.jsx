@@ -135,10 +135,8 @@ const Dashboard = () => {
             <WelcomeSubtitle>
               Parece que su cuenta no tiene roles asignados.
             </WelcomeSubtitle>
-            <UserCardTitle>Sin rol asignado</UserCardTitle>
             <UserInfo>
               <InfoItem>
-                <div className="label">Atención</div>
                 <div className="value">
                   Por favor comuníquese con su organización para solicitar
                   asignación de roles.

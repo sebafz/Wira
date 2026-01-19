@@ -1,6 +1,5 @@
 import React from "react";
 import styled from "styled-components";
-import Navbar from "../shared/Navbar";
 
 const Page = styled.div`
   min-height: 100vh;
@@ -36,7 +35,6 @@ const P = styled.p`
 const Terms = () => {
   return (
     <Page>
-      <Navbar />
       <Main>
         <Card>
           <Title>Términos y Condiciones (Ejemplo)</Title>
