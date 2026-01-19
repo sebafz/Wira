@@ -11,6 +11,7 @@ import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import VerifyEmail from "./components/auth/VerifyEmail";
 import ForgotPassword from "./components/auth/ForgotPassword";
+import Terms from "./components/static/Terms";
 import Dashboard from "./components/dashboard/Dashboard";
 import DashboardRouter from "./components/dashboard/DashboardRouter";
 import DashboardMinera from "./components/dashboard/DashboardMinera";
@@ -43,6 +44,7 @@ function App() {
             {/* Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/terminos" element={<Terms />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/color-palette" element={<ColorPalette />} />

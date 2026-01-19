@@ -298,6 +298,8 @@ const Register = () => {
     proveedorNuevoRubroId: "",
   });
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   const navigate = useNavigate();
 
   // Cargar listas de mineras y proveedores
@@ -314,8 +316,8 @@ const Register = () => {
         const rubrosData = Array.isArray(rubrosRes.data)
           ? rubrosRes.data
           : Array.isArray(rubrosRes.data?.value)
-          ? rubrosRes.data.value
-          : [];
+            ? rubrosRes.data.value
+            : [];
         setRubros(rubrosData);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -386,6 +388,12 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!acceptedTerms) {
+      setError("Debe aceptar los términos y condiciones para continuar");
+      setLoading(false);
+      return;
+    }
 
     try {
       // Validaciones
@@ -479,7 +487,7 @@ const Register = () => {
 
       if (response.data.success) {
         setSuccess(
-          "Cuenta creada exitosamente. Redirigiendo a verificación..."
+          "Cuenta creada exitosamente. Redirigiendo a verificación...",
         );
         // Redirigir a la página de verificación de email
         navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
@@ -641,21 +649,41 @@ const Register = () => {
           </Button>
         </ButtonGroup>
       ) : (
-        <ButtonGroup>
-          <SecondaryButton type="button" onClick={handlePrevStep}>
-            Atrás
-          </SecondaryButton>
-          <Button type="submit" disabled={loading}>
-            {loading ? (
-              <>
-                <LoadingSpinner />
-                <span style={{ marginLeft: "8px" }}>Creando cuenta...</span>
-              </>
-            ) : (
-              "Crear cuenta"
-            )}
-          </Button>
-        </ButtonGroup>
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input
+              id="acceptTerms"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+            />
+            <label htmlFor="acceptTerms" style={{ fontSize: 14 }}>
+              Acepto los{" "}
+              <span
+                onClick={() => navigate("/terminos")}
+                style={{ color: "#0b63d6", cursor: "pointer" }}
+              >
+                Términos y Condiciones
+              </span>
+            </label>
+          </div>
+
+          <ButtonGroup>
+            <SecondaryButton type="button" onClick={handlePrevStep}>
+              Atrás
+            </SecondaryButton>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <LoadingSpinner />
+                  <span style={{ marginLeft: "8px" }}>Creando cuenta...</span>
+                </>
+              ) : (
+                "Crear cuenta"
+              )}
+            </Button>
+          </ButtonGroup>
+        </>
       )}
     </>
   );
