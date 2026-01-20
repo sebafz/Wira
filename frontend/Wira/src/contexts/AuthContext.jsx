@@ -255,8 +255,19 @@ export const AuthProvider = ({ children }) => {
       clearTimeout(logoutTimerRef.current);
       logoutTimerRef.current = null;
     }
+    // Ensure any session warning modal is closed
+    warnedRef.current = false;
+    setWarningOpen(false);
     dispatch({ type: "LOGOUT" });
   };
+
+  // If auth state flips to unauthenticated (e.g., token expired), close warning
+  useEffect(() => {
+    if (!state.isAuthenticated) {
+      warnedRef.current = false;
+      setWarningOpen(false);
+    }
+  }, [state.isAuthenticated]);
 
   // Obtener información actualizada del usuario
   const refreshUser = async () => {
